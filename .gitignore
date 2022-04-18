@@ -1,2 +1,9 @@
+io/ppm/*
+io/drex/*
+io/plot/*
+
+# Jupyter
+.ipynb_checkpoints
+
 # macOS
 .DS_Store

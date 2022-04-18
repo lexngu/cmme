@@ -1,6 +1,6 @@
 from enum import Enum
 import numpy as np
-from matlab_worker import MatlabWorker
+from .matlab_worker import MatlabWorker
 from abc import ABC, abstractmethod
 import scipy.io as sio
 

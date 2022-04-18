@@ -1,12 +1,13 @@
 # Computational Models of Musical Expectation – Comparison Environment
-This Python3-library provides the environment to run models and to collect their output. 
+This Python3-library provides the environment to run model, to collect their output, and to generate the plot for visual inspection.
 
 Currently supported models: 
 * PPM-Decay (Harrison et al., 2020) 
 * D-REX (Skerritt-Davis & Elhilali, 2018; 2020; 2021a; 2021b)
 
-## Requirements
+## Actual requirements
 Installed software and packages:
+* Anaconda
 * Python 3.7, incl.
   * rpy2 v3.x
   * pymatbridge
@@ -22,14 +23,20 @@ Notes for future work:
 * Use Matplotlib for visualization (instead of MATLAB plots)?
 * Use "MATLAB engine" for interfacing with MATLAB (instead of pymatbridge)?
 * Use Python type hints?
+* Use virtualenv (instead of Anaconda)?
 
 ## Installation
-* Install MATLAB
-* Install Python and packages, e.g. inside a Conda environment (e.g. called "cmme": $ conda create -n cmme python=3.7 && conda activate cmme)
-  * Install jupyter: $ conda install jupyter
-  * Within, install dependencies: $ pip install rpy2 pandas numpy scipy zmq pymatbridge
-  * Regarding pymatbridge, you may need to run further steps: https://github.com/arokem/python-matlab-bridge#building-the-pymatbridge-messenger-from-source 
-* In R: Install ppm, dplyr, tidyr
+* Install MATLAB, R, Anaconda according to official guides
+* Open terminal, and go to the directory containing this repository
+  * Initalize Python environment (here, using Anaconda):
+    * Create: $ conda create -n cmme python=3.7 
+    * Activate: $ conda activate cmme
+    * Install jupyter: $ conda install jupyter
+    * Install other dependencies: $ pip install rpy2 pandas numpy scipy zmq pymatbridge
+* Open R, and run: 
+  * Install dplyr, tidyr: <code>install.packages(c("tidyr", "dplyr"))</code>
+  * Install PPM-Decay model: <code>if (!require("devtools")) install.packages("devtools") 
+devtools::install_github("pmcharrison/ppm")</code>
 
 ## Use
 Software design:

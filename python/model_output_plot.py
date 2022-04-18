@@ -1,7 +1,7 @@
-from model_output_aggregator import *
-from ppm import PPMOutputParameters
-from drex import DREXOutputParameters
-from matlab_worker import *
+from .model_output_aggregator import *
+from .ppm import PPMOutputParameters
+from .drex import DREXOutputParameters
+from .matlab_worker import *
 import shutil
 from pathlib import Path
 

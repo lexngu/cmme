@@ -1,3 +1,8 @@
+import os
+from .config import Config
+# R_HOME specifies the R instance to use by rpy2.
+os.environ["R_HOME"] = Config().r_home()
+
 import csv
 import pandas as pd
 from rpy2.robjects.packages import SignatureTranslatedAnonymousPackage
@@ -85,7 +90,7 @@ class PPMOutputParameters:
 
 
 class PPMInstance:
-    PPM_RUN_FILEPATH = (Path( __file__ ).parent.absolute() / "./res/r/ppm_run.R").resolve()
+    PPM_RUN_FILEPATH = (Path(__file__).parent.absolute() / "./res/r/ppm_run.R").resolve()
 
     def __init__(self, ppmInputParameters, model_io_paths):
         self._ppmInputParameters = ppmInputParameters

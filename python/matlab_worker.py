@@ -3,10 +3,10 @@ from datetime import datetime
 import time
 import threading
 from pathlib import Path
+from .config import Config
 
 
 class MatlabWorker:
-    MATLAB_PATH = "/Applications/MATLAB_R2021b.app/bin/matlab"
     _matlab_instance = None
     _matlab_instance_running = False
     _matlab_last_action = None
@@ -45,7 +45,7 @@ class MatlabWorker:
 
     def _start_matlab():
         if MatlabWorker._matlab_instance == None:
-            MatlabWorker._matlab_instance = pymat.Matlab(executable=MatlabWorker.MATLAB_PATH,
+            MatlabWorker._matlab_instance = pymat.Matlab(executable=Config().matlab_path(),
                                                          startup_options="-nodisplay -nodesktop -nosplash")
             MatlabWorker._matlab_instance.start()
             MatlabWorker._matlab_instance_running = True
