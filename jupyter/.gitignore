@@ -1,0 +1,6 @@
+io/ppm/*
+io/drex/*
+io/plot/*
+
+# Jupyter
+.ipynb_checkpoints
