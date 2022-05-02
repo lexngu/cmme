@@ -1,9 +1,11 @@
 # Computational Models of Musical Expectation – Comparison Environment
-This Python3-library provides the environment to run model, to collect their output, and to generate the plot for visual inspection.
+This Python3-library provides the environment to run model, to collect their output, and to generate the plot for visual inspection. 
 
 Currently supported models: 
 * PPM-Decay (Harrison et al., 2020) 
 * D-REX (Skerritt-Davis & Elhilali, 2018; 2020; 2021a; 2021b)
+
+The Jupyter notebooks are part of another repository: https://github.com/lexngu/cmme-jupyter
 
 ## Actual requirements
 Installed software and packages:
