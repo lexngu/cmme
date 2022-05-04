@@ -90,7 +90,7 @@ class PPMOutputParameters:
 
 
 class PPMInstance:
-    PPM_RUN_FILEPATH = (Path(__file__).parent.absolute() / "./res/r/ppm_run.R").resolve()
+    PPM_RUN_FILEPATH = (Path(__file__).parent.absolute() / "./res/wrappers/ppm-decay/ppm_run.R").resolve()
 
     def __init__(self, ppmInputParameters, model_io_paths):
         self._ppmInputParameters = ppmInputParameters

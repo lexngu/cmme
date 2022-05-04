@@ -1,6 +1,6 @@
 function out = drex_estimate(input_file_path)
 mfilepath=fileparts(which(mfilename));
-addpath(fullfile(mfilepath, "./drex/"));
+addpath(fullfile(mfilepath, "../../models/DREX-model/"));
 
 input = load(input_file_path);
 

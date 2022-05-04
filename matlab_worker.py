@@ -13,9 +13,9 @@ class MatlabWorker:
     _matlab_work_in_progress = 0
 
     AUTOSTOP_WAIT_TIME = 10  # seconds
-    DREX_ESTIMATE_PRIOR_SCRIPT_PATH = (Path( __file__ ).parent.absolute() / "./res/matlab/drex_estimate.m").resolve()
-    DREX_RUN_SCRIPT_PATH = (Path( __file__ ).parent.absolute() / "./res/matlab/drex_run.m").resolve()
-    SUMMARY_PLOT_SCRIPT_PATH = (Path( __file__ ).parent.absolute() / "./res/matlab/summary_plot.m").resolve()
+    DREX_ESTIMATE_PRIOR_SCRIPT_PATH = (Path( __file__ ).parent.absolute() / "./res/wrappers/d-rex/drex_estimate.m").resolve()
+    DREX_RUN_SCRIPT_PATH = (Path( __file__ ).parent.absolute() / "./res/wrappers/d-rex/drex_run.m").resolve()
+    SUMMARY_PLOT_SCRIPT_PATH = (Path( __file__ ).parent.absolute() / "./res/wrappers/d-rex/summary_plot.m").resolve()
 
     def estimate_prior(self, input_file_path):
         """Triggers the execution of the wrapper script, running D-REX's estimate_suffstat.m function."""
