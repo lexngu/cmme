@@ -41,6 +41,7 @@ Notes for future work:
   * Install dplyr, tidyr: <code>install.packages(c("tidyr", "dplyr"))</code>
   * Install PPM-Decay model: <code>if (!require("devtools")) install.packages("devtools") 
 devtools::install_github("pmcharrison/ppm")</code>
+* Change settings in cmme-comparison.ini, if needed.
 
 ## Use
 Software design:
