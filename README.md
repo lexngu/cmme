@@ -36,6 +36,7 @@ Notes for future work:
     * Activate: $ conda activate cmme
     * Install jupyter: $ conda install jupyter
     * Install other dependencies: $ pip install rpy2 pandas numpy scipy zmq pymatbridge
+    * Install matlab-engine within this Python environment (see: [Install MATLAB Engine API for Python](https://de.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html))
 * Open R, and run: 
   * Install dplyr, tidyr: <code>install.packages(c("tidyr", "dplyr"))</code>
   * Install PPM-Decay model: <code>if (!require("devtools")) install.packages("devtools") 
