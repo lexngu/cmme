@@ -6,7 +6,8 @@ input = load(input_file_path);
 
 drex_out = estimate_suffstat(input.xs, input.params);
 distribution = input.params.distribution;
+D = input.params.D;
 
-save(input.output_file_path, "drex_out", "input_file_path", "distribution");
+save(input.output_file_path, "drex_out", "input_file_path", "distribution", "D");
 out.output_file_path = input.output_file_path;
 end

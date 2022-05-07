@@ -1,8 +1,10 @@
 from enum import Enum
 import numpy as np
+import numpy.typing as npt
 from .matlab_worker import MatlabWorker
 from abc import ABC, abstractmethod
 import scipy.io as sio
+import matlab.engine
 
 
 class DREXDistribution(Enum):
@@ -15,11 +17,22 @@ class DREXDistribution(Enum):
 
 class DREXPrior(ABC):
     """Abstract class representing one prior distribution"""
+
     def __init__(self, drexDistribution: DREXDistribution):
         if isinstance(drexDistribution, DREXDistribution):
             self.drexDistribution = drexDistribution
         else:
             raise ValueError("drexDistribution invalid! Value must be member of enum DREXDistribution.")
+
+    @abstractmethod
+    def nfeatures(self):
+        """Returns the number of "features" present in the prior"""
+        pass
+
+    @abstractmethod
+    def D(self):
+        """Returns the used D parameter value"""
+        pass
 
     @abstractmethod
     def to_dict(self):
@@ -34,85 +47,145 @@ class DREXGaussianPrior(DREXPrior):
     After using D-REX's estimate_suffstat.m function, a 1x1 struct with fields mu, ss, n is returned. Each field contains a 1x1 cell (one for each feature), in which there is a single value containing a column vector with +D+ values.
     """
 
-    def __init__(self, mu, ss, n):
+    def __init__(self, mu, ss, n: list):
         super().__init__(DREXDistribution.GAUSSIAN)
-        self.mu = mu
-        self.ss = ss
-        self.n = n
+
+        self.mu = mu  # dim: nfeatures x (D x 1)
+        self.ss = ss  # dim: nfeatures x (D x D)
+        self.n = n  # dim: nfeatures x 1
+
+    def nfeatures(self):
+        return len(self.mu)
+
+    def D(self):
+        if isinstance(self.mu[0], matlab.double):
+            return self.mu[0].size[0]
+        else:
+            return 1
 
     def to_dict(self):
-        return {'mu': np.array([self.mu], dtype=object), 'ss': np.array([self.ss], dtype=object),
-                'n': np.array([self.n], dtype=object)}
+        return {'mu': self.mu, 'ss': self.ss, 'n': self.n}
 
 
 class DREXLognormalPrior(DREXPrior):
     """Log-scaled Gaussian (=normal) prior with specific values of mu, ss, n."""
 
-    def __init__(self, mu, ss, n):
+    def __init__(self, mu, ss, n: list):
         super().__init__(DREXDistribution.LOGNORMAL)
-        self.mu = mu
-        self.ss = ss
-        self.n = n
+
+        self.mu = mu  # dim: nfeatures x (D x 1)
+        self.ss = ss  # dim: nfeatures x (D x D)
+        self.n = n  # dim: nfeatures x 1
+
+    def nfeatures(self):
+        return len(self.mu)
+
+    def D(self):
+        if isinstance(self.mu[0], matlab.double):
+            return self.mu[0].size[0]
+        else:
+            return 1
 
     def to_dict(self):
-        return {'mu': np.array([self.mu], dtype=object), 'ss': np.array([self.ss], dtype=object),
-                'n': np.array([self.n], dtype=object)}
+        return {'mu': self.mu, 'ss': self.ss, 'n': self.n}
 
 
 class DREXGmmPrior(DREXPrior):
-    """Gaussin Mixture Model (GMM) prior"""
+    """Gaussian Mixture Model (GMM) prior"""
 
-    def __init__(self, mu, sigma, n, pi, sp, k):
+    def __init__(self,
+                 mu: matlab.double,
+                 sigma: matlab.double,
+                 n: matlab.double,
+                 pi: matlab.double,
+                 sp: matlab.double,
+                 k: matlab.double,
+                 D: matlab.double):
         super().__init__(DREXDistribution.GMM)
-        self.mu = mu
-        self.sigma = sigma
-        self.n = n
+
+        self.mu = mu  # dim: nfeatures x max_ncomp
+        self.sigma = sigma  # dim: nfeatures x max_ncomp
+        self.n = n  # dim: nfeatures x max_ncomp
         self.pi = pi
         self.sp = sp
         self.k = k
+        self._D = D
+        #ToDo add parameter: beta
+
+    def nfeatures(self):
+        return len(self.mu)
+
+    def D(self):
+        return self._D
+
+    def max_ncomp(self):
+        return self.mu[0].size[1]
 
     def to_dict(self):
-        return {'mu': self.mu, 'sigma': self.sigma, 'n': self.n,
-                'pi': self.pi, 'sp': self.sp, 'k': np.array([self.k])}
+        return {'mu': self.mu, 'sigma': self.sigma, 'n': self.n, 'pi': self.pi, 'sp': self.sp, 'k': self.k}
 
 
 class DREXPoissonPrior(DREXPrior):
     """Poisson prior with specific values of lambda and n."""
 
-    def __init__(self, lambd, n):
+    def __init__(self,
+                 lambd: matlab.double,
+                 n: matlab.double,
+                 D: matlab.double):
         super().__init__(DREXDistribution.POISSON)
-        self.lambd = lambd
-        self.n = n
+
+        self.lambd = lambd  # dim: nfeatures x nfeatures
+        self.n = n  # dim: nfeatures x 1
+        self._D = D # dim: 1
+
+    def nfeatures(self):
+        return len(self.n)
+
+    def D(self):
+        return self._D
 
     def to_dict(self):
-        return {'lambda': np.array([self.lambd], dtype=object), 'n': np.array([self.n], dtype=object)}
+        return {'lambda': self.lambd, 'n': self.n}
 
 
 class DREXPriorInputParameters:
     """This class contains instructions for D-REX's estimate_suffstat.m function, which outputs a file that is parsed
     by DREXPriorOutputParameters. """
 
-    def __init__(self, distribution: DREXDistribution, sequence, DOrMaxNComp=None):
+    def __init__(self,
+                 distribution: DREXDistribution,
+                 sequence: npt.NDArray,
+                 D,
+                 maxNComp = None):
+        if (distribution == DREXDistribution.GMM and maxNComp == None):
+            raise ValueError("maxNComp is invalid! If distribution == GMM, maxNComp needs to be set.")
+        if (distribution != DREXDistribution.GMM and maxNComp != None):
+            raise ValueError("maxNComp is invalid! If distribution != GMM, maxNComp must not be set.")
+
         self._distribution = distribution
-        self._DOrMaxNComp = DOrMaxNComp
-        self._sequence = np.array([sequence], dtype='d').T  # (dim: time x trial x feature)
+        self._D = D
+        self._maxNComp = maxNComp
+        self._sequence = sequence.reshape(sequence.shape[0], sequence.shape[1], 1) # dim: time x feature x 1(=trial)
+        self._sequence = np.moveaxis(self._sequence, 1, 2)
+        self._sequence = np.moveaxis(self._sequence, 0, 2)
+        self._sequence = np.moveaxis(self._sequence, 0, 1) # dim: trial x time x feature
+
 
     def with_output_file_path(self, output_file_path):
         self._output_file_path = output_file_path
         return self
 
     def write_mat(self, filename):
-        DOrMaxNCompKey = "max_ncomp" if self._distribution == DREXDistribution.GMM else "D"
         mat_data = {
             "xs": self._sequence,
             "params": {
                 "distribution": self._distribution.value,
-                DOrMaxNCompKey: self._DOrMaxNComp
+                "D": self._D
             },
             "output_file_path": self._output_file_path
         }
-        if self._DOrMaxNComp == None:
-            del mat_data["params"][DOrMaxNCompKey]
+        if self._distribution == DREXDistribution.GMM:
+            mat_data["params"]["max_ncomp"] = self._maxNComp
 
         sio.savemat(filename, mat_data)
 
@@ -126,20 +199,21 @@ class DREXPriorOutputParameters:
         pass
 
     def from_mat(file_path):
-        mat_data = sio.loadmat(file_path)
+        eng = matlab.engine.start_matlab()
+        mat_data = eng.load(file_path)
         data_set = mat_data["drex_out"]
         distribution = DREXDistribution(mat_data["distribution"])
-        columns = data_set.dtype.names
-        data = {c: data_set[c][0, 0][0][0] for c in columns}
+        columns = data_set.keys()
+        data = {c: data_set[c] for c in columns}
 
-        if distribution == DREXDistribution.GAUSSIAN:  # ToDo: support multiple "feature dimensions"
+        if distribution == DREXDistribution.GAUSSIAN:
             result = DREXGaussianPrior(data['mu'], data['ss'], data['n'])
         elif distribution == DREXDistribution.LOGNORMAL:
             result = DREXLognormalPrior(data['mu'], data['ss'], data['n'])
         elif distribution == DREXDistribution.GMM:
-            result = DREXGmmPrior(data['mu'], data['sigma'], data['n'], data['pi'], data['sp'], data['k'])
+            result = DREXGmmPrior(data['mu'], data['sigma'], data['n'], data['pi'], data['sp'], data['k'], mat_data['D'])
         elif distribution == DREXDistribution.POISSON:
-            result = DREXPoissonPrior(data['lambda'], data['n'])
+            result = DREXPoissonPrior(data['lambda'], data['n'], mat_data['D'])
 
         return result
 
@@ -151,21 +225,30 @@ class DREXPriorEstimator:
         self._matlab_worker = MatlabWorker()
         self._model_io_paths = model_io_paths
 
-    def estimate(self, distribution, sequence, DOrMaxNComp=None):
+    def estimate(self, distribution: DREXDistribution, sequence, D, maxNComp=None):
         """Given the desired distribution and the input sequence, D-REX's estimate_suffstat.m function is triggered."""
         input_file_path = self._model_io_paths["generic_filename_prefix"] + "estimate-prior_input.mat"
         output_file_path = self._model_io_paths["generic_filename_prefix"] + "estimate-prior_output.mat"
-        DREXPriorInputParameters(distribution, DOrMaxNComp, sequence).with_output_file_path(output_file_path).write_mat(
+
+        if len(sequence) == 0:
+            raise ValueError("sequence is empty! should contain at least one element.")
+        if isinstance(sequence[0], int):
+            input_sequence = np.array([sequence], dtype=float)  # dim: feature x time
+        elif isinstance(sequence[0], list):
+            input_sequence = np.array(sequence, dtype=float)  # dim: feature x time
+        else:
+            raise ValueError("sequence is invalid!")
+
+        DREXPriorInputParameters(distribution, input_sequence, D, maxNComp).with_output_file_path(output_file_path).write_mat(
             input_file_path)
+
         return self._matlab_worker.estimate_prior(input_file_path)
 
 
 class DREXInputParameters:
     """This class represents all of D-REX's input parameters."""
 
-    def __init__(self, distribution, D, prior, hazard, obsnz, memory, maxhyp):
-        self._distribution = distribution
-        self._D = D
+    def __init__(self, prior: DREXPrior, hazard, obsnz: list, memory, maxhyp):
         self._prior = prior
         self._hazard = hazard
         self._obsnz = obsnz
@@ -174,7 +257,7 @@ class DREXInputParameters:
         self._sequence = None
 
     def with_sequence(self, sequence):
-        self._sequence = np.array([sequence], dtype='d').T
+        self._sequence = matlab.double(sequence)
         return self
 
     def with_output_file_path(self, output_file_path):
@@ -182,22 +265,34 @@ class DREXInputParameters:
         return self
 
     def write_mat(self, filename):
-        DOrMaxNCompKey = "max_ncomp" if self._distribution == DREXDistribution.GMM.value else "D"
+        engs = matlab.engine.find_matlab()
+        if len(engs) > 0:
+            eng = matlab.engine.connect_matlab(engs[0])
+        else:
+            eng = matlab.engine.start_matlab()
+
         mat_data = {
-            "x": self._sequence,
+            "x": eng.transpose(self._sequence),
             "output_file_path": self._output_file_path,
             "params": {
-                "distribution": self._distribution,
-                DOrMaxNCompKey: self._D,
-                "prior": self._prior,
+                "distribution": self._prior.drexDistribution.value,
+                "D": eng.double(self._prior.D()),
+                "prior": self._prior.to_dict(),
                 "hazard": self._hazard,
-                "obsnz": self._obsnz,
+                "obsnz": matlab.double(self._obsnz),
                 "memory": self._memory,
                 "maxhyp": self._maxhyp,
             }
         }
+        if self._prior.drexDistribution == DREXDistribution.GMM:
+            mat_data["params"]["max_ncomp"] = self._prior.max_ncomp()
 
-        sio.savemat(filename, mat_data)
+        for k,v in mat_data.items():
+            eng.workspace[k] = v
+        keys = mat_data.keys()
+        eng.save(filename, *keys, nargout=0)
+
+        #sio.savemat(filename, mat_data)
 
         return filename
 
@@ -258,12 +353,13 @@ class DREXOutputParameters:
 
 class DREXInstance:
     """This class represents one D-REX instance."""
+
     def __init__(self, drex_input_parameters, model_io_paths):
         self._matlab_worker = MatlabWorker()
         self._model_io_paths = model_io_paths
         self._drex_input_parameters = drex_input_parameters
 
-    def observe(self, sequence):
+    def observe(self, sequence: list):
         input_file_path = self._model_io_paths["input_file_path"] + ".mat"
         output_file_path = self._model_io_paths["output_file_path"] + ".mat"
         self._drex_input_parameters.with_sequence(sequence).with_output_file_path(output_file_path).write_mat(
@@ -275,47 +371,22 @@ class DREXInstance:
 
 class DREXInstanceBuilder:
     """This class builds a DREXInstance."""
-    def __init__(self, model_io_paths):
-        self._model_io_paths = model_io_paths
 
-        self._distribution = DREXDistribution.GAUSSIAN
-        self._D = 1
-        self._DChanged = False
-        self._prior = []
-        self._hazard = 0.01
-        self._obsnz = 0.0
-        self._memory = np.inf
-        self._maxhyp = np.inf
-
-    def distribution(self, distribution):  # ToDo remove? since prior determines distribution.
-        if distribution == DREXDistribution.GAUSSIAN:
-            self._distribution = distribution
-            if self._DChanged == False:
-                self._D = 1
-        elif distribution == DREXDistribution.POISSON:
-            self._distribution = distribution
-            if self._DChanged == False:
-                self._D = 50
-        elif distribution in DREXDistribution._member_names_:
-            self._distribution = distribution
-        else:
-            raise ValueError("Invalid distribution!")
-        return self
-
-    def D(self, D):
-        if D > 0:
-            self._D = D
-            self._DChanged = True
-        else:
-            raise ValueError("Invalid D! Value must be greater than 0.")
-        return self
-
-    def prior(self, prior):
+    def __init__(self, model_io_paths, prior):
         if isinstance(prior, DREXPrior):
             self._prior = prior
+            self._nfeatures = self._prior.nfeatures()
         else:
             raise ValueError("Invalid prior! Value must be instance of DrexModelPrior.")
-        return self
+
+        self._model_io_paths = model_io_paths
+
+        self._D = self._prior.D()
+        self._DChanged = False
+        self._hazard = 0.01
+        self._obsnz = [0.0] * self._nfeatures
+        self._memory = np.inf
+        self._maxhyp = np.inf
 
     def hazard(self, hazard):
         if hazard >= 0 and hazard <= 1:
@@ -324,11 +395,13 @@ class DREXInstanceBuilder:
             raise ValueError("Invalid hazard! Value must be >= 0 and <= 1.")
         return self
 
-    def obsnz(self, obsnz):
-        if obsnz >= 0 and obsnz <= 1:
+    def obsnz(self,
+              obsnz: list):
+        """For each feature: observation noise"""
+        if len(obsnz) == self._nfeatures:
             self._obsnz = obsnz
         else:
-            raise ValueError("Invalid obsnz! Value must be >= 0 and <= 1.")
+            raise ValueError("Invalid obsnz! Must be list of length = {}".format(self._nfeatures))
         return self
 
     def memory(self, memory):
@@ -346,15 +419,11 @@ class DREXInstanceBuilder:
         return self
 
     def build(self):
-        if isinstance(self._prior, DREXPrior):
-            distribution = self._prior.drexDistribution.value
-            prior = self._prior.to_dict()
-            memory = "Inf" if self._memory == -1 else self._memory
-            maxhyp = "Inf" if self._maxhyp == -1 else self._maxhyp
+        distribution = self._prior.drexDistribution.value
+        memory = "Inf" if self._memory == -1 else self._memory
+        maxhyp = "Inf" if self._maxhyp == -1 else self._maxhyp
 
-            drex_input_parameters = DREXInputParameters(distribution, self._D, prior, self._hazard, self._obsnz, memory,
-                                                        maxhyp)
+        drex_input_parameters = DREXInputParameters(self._prior, self._hazard, self._obsnz, memory,
+                                                    maxhyp)
 
-            return DREXInstance(drex_input_parameters, self._model_io_paths)
-        else:
-            raise ValueError("Invalid prior! Value must be set.")
+        return DREXInstance(drex_input_parameters, self._model_io_paths)

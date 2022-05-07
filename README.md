@@ -17,6 +17,7 @@ Installed software and packages:
   * numpy
   * scipy
   * jupyter
+  * matlab-engine (provided by: MATLAB R2021b)
 * MATLAB R2021b
 * R v4.x
 
