@@ -96,8 +96,8 @@ class ModelOutputAggregator:
     def write_mat(self, filename):
         df = self.df.drop(self.df.tail(1).index)
         mat_data = {
-            "ppm_output": self._ppm_output_parameters.source_file_path,
-            "drex_output": self._drex_output_parameters.source_file_path,
+            "ppm_output": str(self._ppm_output_parameters.source_file_path),
+            "drex_output": str(self._drex_output_parameters.source_file_path),
             "df": {name: col.values for name, col in df.items()}
         }
         sio.savemat(filename,  mat_data)

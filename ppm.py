@@ -38,11 +38,11 @@ class PPMInputParameters:
         self._sequence = sequence
         return self
 
-    def with_output_parameters_file_path(self, output_parameters_file_path):
+    def with_output_parameters_file_path(self, output_parameters_file_path: Path):
         self._output_parameters_file_path = output_parameters_file_path
         return self
 
-    def write_csv(self, filename):
+    def write_csv(self, file_path: Path):
         params = {
             "alphabet_size": self._alphabet_size,
             "alphabet_levels": self._alphabet_levels,
@@ -67,12 +67,12 @@ class PPMInputParameters:
             "output_parameters_file_path": str(self._output_parameters_file_path)
         }
 
-        with open(filename, 'w') as f:
+        with open(file_path, 'w') as f:
             csvwriter = csv.DictWriter(f, fieldnames=params.keys())
             csvwriter.writeheader()
             csvwriter.writerow(params)
 
-        return filename
+        return file_path
 
     def read_csv(filename):
         return PPMInputParameters()
@@ -111,7 +111,7 @@ class PPMInstance:
         self._ppmInputParameters.with_sequence(sequence).with_output_parameters_file_path(self.output_file_path).write_csv(
             self.input_file_path)
 
-        result = self._r_script.run_ppm(self.input_file_path)
+        result = self._r_script.run_ppm(str(self.input_file_path))
         return self.output_file_path  # ToDo: return R output, which should contain the output_file_path.
 
 
@@ -134,6 +134,9 @@ class PPMInstanceBuilder:
         self._debug_smooth = False
         self._debug_decay = False
         self._alphabet_levels = []
+
+        self.input_file_path = None
+        self.output_file_path = None
 
     def alphabet_size(self, alphabet_size):
         if alphabet_size > 0:
@@ -210,7 +213,22 @@ class PPMInstanceBuilder:
         self._debug_decay = debug_decay
         return self
 
+    def with_input_file_path(self, input_file_path: Path):
+        self.input_file_path = input_file_path
+
+        return self
+
+    def with_output_file_path(self, output_file_path: Path):
+        self.output_file_path = output_file_path
+
+        return self
+
     def build(self):
+        if self.input_file_path is None:
+            raise Exception("input_file_path required!")
+        if self.output_file_path is None:
+            raise Exception("output_file_path required!")
+
         if self._alphabet_size != None and self._alphabet_size > 0:
             ppmInputParameters = PPMInputParameters(self._alphabet_size, self._order_bound, self._ltm_weight,
                                                     self._ltm_half_life, self._ltm_asymptote, self._noise,
@@ -219,6 +237,6 @@ class PPMInstanceBuilder:
                                                     self._only_learn_from_buffer, self._only_predict_from_buffer,
                                                     self._seed, self._debug_smooth, self._debug_decay,
                                                     self._alphabet_levels)
-            return PPMInstance(ppmInputParameters)
+            return PPMInstance(ppmInputParameters, self.input_file_path, self.output_file_path)
         else:
             raise ValueError("Invalid alphabet_size! Value must be > 0.")
