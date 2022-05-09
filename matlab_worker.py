@@ -17,17 +17,17 @@ class MatlabWorker:
     DREX_RUN_SCRIPT_PATH = (Path( __file__ ).parent.absolute() / "./res/wrappers/d-rex/drex_run.m").resolve()
     SUMMARY_PLOT_SCRIPT_PATH = (Path( __file__ ).parent.absolute() / "./res/wrappers/d-rex/summary_plot.m").resolve()
 
-    def estimate_prior(self, input_file_path):
+    def estimate_prior(self, input_file_path: Path):
         """Triggers the execution of the wrapper script, running D-REX's estimate_suffstat.m function."""
-        return MatlabWorker._run_func(MatlabWorker.DREX_ESTIMATE_PRIOR_SCRIPT_PATH, input_file_path)
+        return MatlabWorker._run_func(MatlabWorker.DREX_ESTIMATE_PRIOR_SCRIPT_PATH, str(input_file_path))
 
-    def run_model(self, input_file_path):
+    def run_model(self, input_file_path: Path):
         """Triggers the execution of the wrapper script, running D-REX's run_DREX_model.m function."""
-        return MatlabWorker._run_func(MatlabWorker.DREX_RUN_SCRIPT_PATH, input_file_path)
+        return MatlabWorker._run_func(MatlabWorker.DREX_RUN_SCRIPT_PATH, str(input_file_path))
 
-    def plot(self, input_file_path):
+    def plot(self, input_file_path: Path):
         """Triggers the execution of the script generating the comparison plot."""
-        return MatlabWorker._run_func(MatlabWorker.SUMMARY_PLOT_SCRIPT_PATH, input_file_path)
+        return MatlabWorker._run_func(MatlabWorker.SUMMARY_PLOT_SCRIPT_PATH, str(input_file_path))
 
     def _run_func(func_path, *func_args, **kwargs):
         MatlabWorker._autostart_matlab()
@@ -45,7 +45,7 @@ class MatlabWorker:
 
     def _start_matlab():
         if MatlabWorker._matlab_instance == None:
-            MatlabWorker._matlab_instance = pymat.Matlab(executable=Config().matlab_path(),
+            MatlabWorker._matlab_instance = pymat.Matlab(executable=str(Config().matlab_path()),
                                                          startup_options="-nodisplay -nodesktop -nosplash")
             MatlabWorker._matlab_instance.start()
             MatlabWorker._matlab_instance_running = True

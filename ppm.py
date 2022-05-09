@@ -1,7 +1,7 @@
 import os
 from .config import Config
 # R_HOME specifies the R instance to use by rpy2.
-os.environ["R_HOME"] = Config().r_home()
+os.environ["R_HOME"] = str(Config().r_home())
 
 import csv
 import pandas as pd
@@ -29,6 +29,8 @@ class PPMInputParameters:
         self._debug_smooth = debug_smooth
         self._debug_decay = debug_decay
         self._alphabet_levels = alphabet_levels
+
+        self._output_parameters_file_path = None
 
         self._sequence = None
 
@@ -62,7 +64,7 @@ class PPMInputParameters:
 
             "input_sequence": self._sequence,
             "input_time_sequence": list(range(1, len(self._sequence) + 1)),  # ToDo: remove hard-code
-            "output_parameters_file_path": self._output_parameters_file_path
+            "output_parameters_file_path": str(self._output_parameters_file_path)
         }
 
         with open(filename, 'w') as f:
@@ -92,9 +94,10 @@ class PPMOutputParameters:
 class PPMInstance:
     PPM_RUN_FILEPATH = (Path(__file__).parent.absolute() / "./res/wrappers/ppm-decay/ppm_run.R").resolve()
 
-    def __init__(self, ppmInputParameters, model_io_paths):
+    def __init__(self, ppmInputParameters, input_file_path: Path, output_file_path: Path):
         self._ppmInputParameters = ppmInputParameters
-        self._model_io_paths = model_io_paths
+        self.input_file_path = input_file_path
+        self.output_file_path = output_file_path
 
         self._r_script = PPMInstance._init_r_script()
 
@@ -105,17 +108,15 @@ class PPMInstance:
         return package
 
     def observe(self, sequence):
-        input_file_path = self._model_io_paths["input_file_path"] + ".csv"
-        output_file_path = self._model_io_paths["output_file_path"] + ".csv"
-        self._ppmInputParameters.with_sequence(sequence).with_output_parameters_file_path(output_file_path).write_csv(
-            input_file_path)
+        self._ppmInputParameters.with_sequence(sequence).with_output_parameters_file_path(self.output_file_path).write_csv(
+            self.input_file_path)
 
-        result = self._r_script.run_ppm(input_file_path)
-        return output_file_path  # ToDo: return R output, which should contain the output_file_path.
+        result = self._r_script.run_ppm(self.input_file_path)
+        return self.output_file_path  # ToDo: return R output, which should contain the output_file_path.
 
 
 class PPMInstanceBuilder:
-    def __init__(self, model_io_paths):
+    def __init__(self):
         self._alphabet_size = None
         self._order_bound = 10
         self._ltm_weight = 1
@@ -133,8 +134,6 @@ class PPMInstanceBuilder:
         self._debug_smooth = False
         self._debug_decay = False
         self._alphabet_levels = []
-
-        self._model_io_paths = model_io_paths
 
     def alphabet_size(self, alphabet_size):
         if alphabet_size > 0:
@@ -220,6 +219,6 @@ class PPMInstanceBuilder:
                                                     self._only_learn_from_buffer, self._only_predict_from_buffer,
                                                     self._seed, self._debug_smooth, self._debug_decay,
                                                     self._alphabet_levels)
-            return PPMInstance(ppmInputParameters, self._model_io_paths)
+            return PPMInstance(ppmInputParameters)
         else:
             raise ValueError("Invalid alphabet_size! Value must be > 0.")
