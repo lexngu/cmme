@@ -30,8 +30,9 @@ Notes for future work:
 
 ## Installation
 * Install MATLAB, R, Anaconda according to official guides
+* Clone this repository (or the one containing the Jupyter notebooks) and its submodules: $ git clone git@github.com:lexngu/cmme --recursive
 * Open terminal, and go to the directory containing this repository
-  * Initalize Python environment (here, using Anaconda):
+  * Initalize a new Python environment (here, using Anaconda):
     * Create: $ conda create -n cmme python=3.7 
     * Activate: $ conda activate cmme
     * Install jupyter: $ conda install jupyter
