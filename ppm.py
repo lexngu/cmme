@@ -185,7 +185,7 @@ class PPMInstance:
     def _generate_time_sequence(sequence):
         return list(range(1, len(sequence) + 1))
 
-    def observe(self, sequence, time_sequence = None):
+    def observe(self, sequence, time_sequence = None): # TODO In the original code, there are additional parameters for model_seq(); implement?
         """ If [], and sequence is a list, a list with increasing numbers is generated, i.e. [1, 2, ..., len(sequence)]"""
 
         if isinstance(self._ppmInputParameters, PPMDecayInputParameters):
