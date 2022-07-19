@@ -2,6 +2,7 @@ function out = drex_run(input_file_path)
 mfilepath=fileparts(which(mfilename));
 addpath(fullfile(mfilepath, "../../models/DREX-model/"));
 
+input_file_path = convertStringsToChars(input_file_path);
 input = load(input_file_path);
 input_sequence = input.x;
 params = input.params;
