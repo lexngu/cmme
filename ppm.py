@@ -234,23 +234,29 @@ class PPMSimpleInstanceBuilder:
 
     def order_bound(self, order_bound):
         self._order_bound = order_bound
+        return self
 
     def shortest_deterministic(self, shortest_deterministic):
         self._shortest_deterministic = shortest_deterministic
+        return self
 
     def exclusion(self, exclusion):
         self._exclusion = exclusion
+        return self
 
     def update_exclusion(self, update_exclusion):
         self._update_exclusion = update_exclusion
+        return self
 
     def escape(self, escape: PPMEscapeMethod):
         if not isinstance(escape, PPMEscapeMethod):
             raise ValueError("escape invalid! It must be member of PPMEscapeMethod enum.")
         self._escape = escape
+        return self
 
     def debug_smooth(self, debug_smooth):
         self._debug_smooth = debug_smooth
+        return self
 
     def with_input_file_path(self, input_file_path: Path):
         self.input_file_path = input_file_path
