@@ -28,7 +28,7 @@ if params.distribution == "gaussian" | params.distribution == "gmm" | params.dis
     drex_psi = post_DREX_prediction(f, drex_out, pred_pos);
 end
 
-drex_cd_threshold = 0.09;
+drex_cd_threshold = 0.09; %TODO remove this hard-coded variable
 drex_cd = post_DREX_changedecision(drex_out, drex_cd_threshold); % ToDo expose threshold to input file.
 drex_bd = post_DREX_beliefdynamics(drex_out);
 
