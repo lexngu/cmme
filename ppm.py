@@ -223,9 +223,9 @@ class PPMSimpleInstanceBuilder:
             raise ValueError("Invalid alphabet_size! Value must be > 0.")
         return self
 
-    def alphabet_levels(self, alphabet_levels: set):
-        if not isinstance(alphabet_levels, set):
-            raise ValueError("Invalid alphabet_levels! Value must be a set.")
+    def alphabet_levels(self, alphabet_levels: list):
+        if not len(alphabet_levels) == len(set(alphabet_levels)):
+            raise ValueError("Invalid alphabet_levels! Value must contain unique elements!")
 
         self._alphabet_levels = alphabet_levels
         self.alphabet_size(len(alphabet_levels))
@@ -304,9 +304,9 @@ class PPMDecayInstanceBuilder:
             raise ValueError("Invalid alphabet_size! Value must be > 0.")
         return self
 
-    def alphabet_levels(self, alphabet_levels: set):
-        if not isinstance(alphabet_levels, set):
-            raise ValueError("Invalid alphabet_levels! Value must be a set.")
+    def alphabet_levels(self, alphabet_levels: list):
+        if not len(alphabet_levels) == len(set(alphabet_levels)):
+            raise ValueError("Invalid alphabet_levels! Value must contain unique elements!")
 
         self._alphabet_levels = alphabet_levels
         self.alphabet_size(len(alphabet_levels))
