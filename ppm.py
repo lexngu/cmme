@@ -21,14 +21,13 @@ class PPMEscapeMethod(Enum):
 class PPMSimpleInputParameters:
     """This class represents all parameters of any PPM-Simple instance."""
 
-    def __init__(self, alphabet_size, order_bound, shortest_deterministic, exclusion, update_exclusion, escape: PPMEscapeMethod, debug_smooth, alphabet_levels):
+    def __init__(self, alphabet_size, order_bound, shortest_deterministic, exclusion, update_exclusion, escape: PPMEscapeMethod, alphabet_levels):
         self._alphabet_size = alphabet_size
         self._order_bound = order_bound
         self._shortest_deterministic = shortest_deterministic
         self._exclusion = exclusion
         self._update_exclusion = update_exclusion
         self._escape = escape
-        self._debug_smooth = debug_smooth
         self._alphabet_levels = alphabet_levels
 
         self._output_parameters_file_path = None
@@ -53,7 +52,6 @@ class PPMSimpleInputParameters:
             "exclusion": self._exclusion,
             "update_exclusion": self._update_exclusion,
             "escape": self._escape.value,
-            "debug_smooth": self._debug_smooth,
 
             "input_sequence": self._sequence,
             "output_parameters_file_path": str(self._output_parameters_file_path)
@@ -74,7 +72,7 @@ class PPMDecayInputParameters:
 
     def __init__(self, alphabet_size, order_bound, ltm_weight, ltm_half_life, ltm_asymptote, noise, stm_weight,
                  stm_duration, buffer_weight, buffer_length_time, buffer_length_items, only_learn_from_buffer,
-                 only_predict_from_buffer, seed, debug_smooth, debug_decay, alphabet_levels):
+                 only_predict_from_buffer, seed, alphabet_levels):
         self._alphabet_size = alphabet_size
         self._order_bound = order_bound
         self._ltm_weight = ltm_weight
@@ -89,8 +87,6 @@ class PPMDecayInputParameters:
         self._only_learn_from_buffer = only_learn_from_buffer
         self._only_predict_from_buffer = only_predict_from_buffer
         self._seed = seed
-        self._debug_smooth = debug_smooth
-        self._debug_decay = debug_decay
         self._alphabet_levels = alphabet_levels
 
         self._output_parameters_file_path = None
@@ -128,8 +124,6 @@ class PPMDecayInputParameters:
             "only_learn_from_buffer": self._only_learn_from_buffer,
             "only_predict_from_buffer": self._only_predict_from_buffer,
             "seed": self._seed,
-            "debug_smooth": self._debug_smooth,
-            "debug_decay": self._debug_decay,
 
             "input_sequence": self._sequence,
             "input_time_sequence": self._time_sequence,
@@ -213,7 +207,6 @@ class PPMSimpleInstanceBuilder:
         self._exclusion = True
         self._update_exclusion = True
         self._escape = PPMEscapeMethod.C
-        self._debug_smooth = False
         self._alphabet_levels = {}
 
     def alphabet_size(self, alphabet_size):
@@ -254,10 +247,6 @@ class PPMSimpleInstanceBuilder:
         self._escape = escape
         return self
 
-    def debug_smooth(self, debug_smooth):
-        self._debug_smooth = debug_smooth
-        return self
-
     def with_input_file_path(self, input_file_path: Path):
         self.input_file_path = input_file_path
 
@@ -276,7 +265,7 @@ class PPMSimpleInstanceBuilder:
         if self._alphabet_size is None or self._alphabet_size == 0:
             raise Exception("Invalid alphabet_size (or alphabet_levels)! Value (or count) must be > 0.")
 
-        ppmInputParameters = PPMSimpleInputParameters(self._alphabet_size, self._order_bound, self._shortest_deterministic, self._exclusion, self._update_exclusion, self._escape, self._debug_smooth, self._alphabet_levels)
+        ppmInputParameters = PPMSimpleInputParameters(self._alphabet_size, self._order_bound, self._shortest_deterministic, self._exclusion, self._update_exclusion, self._escape, self._alphabet_levels)
         return PPMInstance(ppmInputParameters, self.input_file_path, self.output_file_path)
 
 
@@ -296,8 +285,6 @@ class PPMDecayInstanceBuilder:
         self._only_learn_from_buffer = False
         self._only_predict_from_buffer = False
         self._seed = 1 # TODO make random as in original source?
-        self._debug_smooth = False
-        self._debug_decay = False
         self._alphabet_levels = {}
 
         self.input_file_path = None
@@ -371,14 +358,6 @@ class PPMDecayInstanceBuilder:
         self._seed = seed
         return self
 
-    def debug_smooth(self, debug_smooth):
-        self._debug_smooth = debug_smooth
-        return self
-
-    def debug_decay(self, debug_decay):
-        self._debug_decay = debug_decay
-        return self
-
     def with_input_file_path(self, input_file_path: Path):
         self.input_file_path = input_file_path
 
@@ -402,6 +381,6 @@ class PPMDecayInstanceBuilder:
                                                      self._stm_weight, self._stm_duration, self._buffer_weight,
                                                      self._buffer_length_time, self._buffer_length_items,
                                                      self._only_learn_from_buffer, self._only_predict_from_buffer,
-                                                     self._seed, self._debug_smooth, self._debug_decay,
+                                                     self._seed,
                                                      self._alphabet_levels)
         return PPMInstance(ppmInputParameters, self.input_file_path, self.output_file_path)

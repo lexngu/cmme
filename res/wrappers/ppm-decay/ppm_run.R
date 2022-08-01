@@ -12,13 +12,11 @@ run_ppm <- function(input_file_path) {
   if (requested_model == "DECAY") {
     params$only_learn_from_buffer <- as.logical(params$only_learn_from_buffer)
     params$only_predict_from_buffer <- as.logical(params$only_predict_from_buffer)
-    params$debug_decay <- as.logical(params$debug_decay)
   } else if (requested_model == "SIMPLE") {
     params$shortest_deterministic <- as.logical(params$shortest_deterministic)
     params$exclusion <- as.logical(params$exclusion)
     params$update_exclusion <- as.logical(params$update_exclusion)
   }
-  params$debug_smooth <- as.logical(params$debug_smooth)
 
   
   # parse alphabet_levels
@@ -53,8 +51,6 @@ run_ppm <- function(input_file_path) {
                          only_learn_from_buffer = params$only_learn_from_buffer, 
                          only_predict_from_buffer = params$only_predict_from_buffer, 
                          seed = params$seed, 
-                         debug_smooth = params$debug_smooth, 
-                         debug_decay = params$debug_decay, 
                          alphabet_levels = alphabet_levels
                          )
     res <- model_seq(mod, input_sequence, time=input_time_seq)
@@ -65,7 +61,6 @@ run_ppm <- function(input_file_path) {
                           exclusion = params$exclusion,
                           update_exclusion = params$update_exclusion,
                           escape = params$escape,
-                          debug_smooth = params$debug_smooth,
                           alphabet_levels = alphabet_levels)
     res <- model_seq(mod, input_sequence)
   }
