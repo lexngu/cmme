@@ -108,7 +108,7 @@ class ModelOutputAggregator:
         return data
 
     def write_mat(self, filename):
-        df = self.df.drop(self.df.tail(1).index)
+        df = self.df.drop(self.df.tail(1).index) # TODO generalize this
         mat_data = {
             "ppm_output": str(self._ppm_output_parameters.source_file_path),
             "drex_output": str(self._drex_output_parameters.source_file_path),
