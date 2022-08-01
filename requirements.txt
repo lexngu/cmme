@@ -1,0 +1,7 @@
+pandas
+numpy
+scipy
+rpy2
+pymatbridge
+zmq
+# matlab-engine

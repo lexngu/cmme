@@ -10,15 +10,14 @@ The Jupyter notebooks are part of another repository: https://github.com/lexngu/
 ## Actual requirements
 Installed software and packages:
 * Anaconda
-* Python 3.7, incl.
+* Python 3.7 (starting with MATLAB R2022a: 3.8 or newer), incl.
   * rpy2 v3.x
-  * pymatbridge
   * pandas
   * numpy
   * scipy
   * jupyter
-  * matlab-engine (provided by: MATLAB R2021b)
-* MATLAB R2021b
+  * matlab-engine (provided by: MATLAB)
+* MATLAB R2021b or newer
 * R v4.x
 
 Notes for future work:
@@ -36,7 +35,7 @@ Notes for future work:
     * Create: $ conda create -n cmme python=3.7 
     * Activate: $ conda activate cmme
     * Install jupyter: $ conda install jupyter
-    * Install other dependencies: $ pip install rpy2 pandas numpy scipy zmq pymatbridge
+    * Install other dependencies: $ pip install -r requirements.txt
     * Install matlab-engine within this Python environment (see: [Install MATLAB Engine API for Python](https://de.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html))
 * Open R, and run: 
   * Install dplyr, tidyr: <code>install.packages(c("tidyr", "dplyr"))</code>
