@@ -1,9 +1,9 @@
-function out = drex_run(input_file_path)
+function out = drex_run(instructions_file_path)
 mfilepath=fileparts(which(mfilename));
 addpath(fullfile(mfilepath, "../../models/DREX-model/"));
 
-input_file_path = convertStringsToChars(input_file_path);
-input = load(input_file_path);
+instructions_file_path = convertStringsToChars(instructions_file_path);
+input = load(instructions_file_path);
 input_sequence = input.x;
 params = input.params;
 
@@ -35,6 +35,6 @@ drex_bd = post_DREX_beliefdynamics(drex_out);
 drex_out.context_beliefs = drex_out.context_beliefs';
 drex_psi = drex_psi';
 
-save(input.output_file_path, "input_file_path", "input_sequence", "drex_out", "drex_psi", "drex_cd", "drex_cd_threshold", "drex_bd");
-out.output_file_path = input.output_file_path;
+save(input.results_file_path, "instructions_file_path", "input_sequence", "drex_out", "drex_psi", "drex_cd", "drex_cd_threshold", "drex_bd");
+out.results_file_path = input.results_file_path;
 end

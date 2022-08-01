@@ -171,8 +171,8 @@ class DREXPriorInputParameters:
         self._sequence = np.moveaxis(self._sequence, 0, 2)
         self._sequence = np.moveaxis(self._sequence, 0, 1)  # dim: trial x time x feature
 
-    def with_output_file_path(self, output_file_path):
-        self._output_file_path = output_file_path
+    def with_results_file_path(self, results_file_path):
+        self._results_file_path = results_file_path
         return self
 
     def write_mat(self, file_path: Path):
@@ -182,7 +182,7 @@ class DREXPriorInputParameters:
                 "distribution": self._distribution.value,
                 "D": self._D
             },
-            "output_file_path": str(self._output_file_path)
+            "results_file_path": str(self._results_file_path)
         }
         if self._distribution == DREXDistribution.GMM:
             mat_data["params"]["max_ncomp"] = self._maxNComp
@@ -222,9 +222,9 @@ class DREXPriorOutputParameters:
 class DREXPriorEstimator:
     """This class triggers the D-REX's prior calculation."""
 
-    def __init__(self, input_file_path: Path, output_file_path: Path):
-        self.input_file_path = input_file_path
-        self.output_file_path = output_file_path
+    def __init__(self, instructions_file_path: Path, results_file_path: Path):
+        self.instructions_file_path = instructions_file_path
+        self.results_file_path = results_file_path
 
         self._matlab_worker = MatlabWorker()
 
@@ -240,11 +240,11 @@ class DREXPriorEstimator:
         else:
             raise ValueError("sequence is invalid!")
 
-        DREXPriorInputParameters(distribution, input_sequence, D, maxNComp).with_output_file_path(
-            str(self.output_file_path)).write_mat(
-            self.input_file_path)
+        DREXPriorInputParameters(distribution, input_sequence, D, maxNComp).with_results_file_path(
+            str(self.results_file_path)).write_mat(
+            self.instructions_file_path)
 
-        return self._matlab_worker.estimate_prior(self.input_file_path)
+        return self._matlab_worker.estimate_prior(self.instructions_file_path)
 
 
 class DREXInputParameters:
@@ -258,14 +258,14 @@ class DREXInputParameters:
         self._maxhyp = maxhyp
         self._sequence = None
 
-        self._output_file_path = None
+        self._results_file_path = None
 
     def with_sequence(self, sequence):
         self._sequence = matlab.double(sequence)
         return self
 
-    def with_output_file_path(self, output_file_path: Path):
-        self._output_file_path = output_file_path
+    def with_results_file_path(self, results_file_path: Path):
+        self._results_file_path = results_file_path
         return self
 
     def write_mat(self, file_path: Path):
@@ -277,7 +277,7 @@ class DREXInputParameters:
 
         mat_data = {
             "x": eng.transpose(self._sequence),
-            "output_file_path": str(self._output_file_path),
+            "results_file_path": str(self._results_file_path),
             "params": {
                 "distribution": self._prior.drexDistribution.value,
                 "D": eng.double(self._prior.D()),
@@ -307,11 +307,11 @@ class DREXInputParameters:
 class DREXOutputParameters:
     """This class represents all of D-REX's output parameters."""
 
-    def __init__(self, source_file_path, input_file_path, input_sequence, psi, distribution, surprisal, joint_surprisal,
+    def __init__(self, source_file_path, instructions_file_path, input_sequence, psi, distribution, surprisal, joint_surprisal,
                  context_beliefs, change_decision_threshold, change_decision_changepoint, change_decision_probability,
                  belief_dynamics):
         self.source_file_path = source_file_path
-        self.input_file_path = input_file_path
+        self.instructions_file_path = instructions_file_path
         self.input_sequence = input_sequence
         self.psi = psi
         self.distribution = distribution
@@ -335,7 +335,7 @@ class DREXOutputParameters:
 
         drex_out = mat_data["drex_out"]
         drex_psi = mat_data["drex_psi"]
-        input_file_path = mat_data["input_file_path"].item(0)
+        instructions_file_path = mat_data["instructions_file_path"].item(0)
         input_sequence = mat_data["input_sequence"].T.tolist()[0]
 
         distribution = drex_out["distribution"].item(0).item(0)
@@ -350,7 +350,7 @@ class DREXOutputParameters:
 
         # drex_out_prediction_params = drex_out["prediction_params"]
 
-        return DREXOutputParameters(file_path, input_file_path, input_sequence, drex_psi, distribution, surprisal,
+        return DREXOutputParameters(file_path, instructions_file_path, input_sequence, drex_psi, distribution, surprisal,
                                     joint_surprisal, context_beliefs, change_decision_threshold,
                                     change_decision_changepoint, change_decision_probability, belief_dynamics)
 
@@ -358,18 +358,18 @@ class DREXOutputParameters:
 class DREXInstance:
     """This class represents one D-REX instance."""
 
-    def __init__(self, drex_input_parameters: DREXInputParameters, input_file_path: Path, output_file_path: Path):
+    def __init__(self, drex_input_parameters: DREXInputParameters, instructions_file_path: Path, results_file_path: Path):
         self._matlab_worker = MatlabWorker()
 
         self._drex_input_parameters = drex_input_parameters
-        self.input_file_path = input_file_path
-        self.output_file_path = output_file_path
+        self.instructions_file_path = instructions_file_path
+        self.results_file_path = results_file_path
 
     def observe(self, sequence: list):
-        self._drex_input_parameters.with_sequence(sequence).with_output_file_path(self.output_file_path).write_mat(
-            self.input_file_path)
+        self._drex_input_parameters.with_sequence(sequence).with_results_file_path(self.results_file_path).write_mat(
+            self.instructions_file_path)
 
-        result = self._matlab_worker.run_model(self.input_file_path)
+        result = self._matlab_worker.run_model(self.instructions_file_path)
         return result
 
 
@@ -390,8 +390,8 @@ class DREXInstanceBuilder:
         self._memory = np.inf
         self._maxhyp = np.inf
 
-        self.input_file_path = None
-        self.output_file_path = None
+        self.instructions_file_path = None
+        self.results_file_path = None
 
     def hazard(self, hazard):
         if hazard >= 0 and hazard <= 1:
@@ -423,21 +423,21 @@ class DREXInstanceBuilder:
             raise ValueError("Invalid maxhyp! Value must be >= 0, or numpy.inf (infinite).")
         return self
 
-    def with_input_file_path(self, input_file_path: Path):
-        self.input_file_path = input_file_path
+    def with_instructions_file_path(self, instructions_file_path: Path):
+        self.instructions_file_path = instructions_file_path
 
         return self
 
-    def with_output_file_path(self, output_file_path: Path):
-        self.output_file_path = output_file_path
+    def with_results_file_path(self, results_file_path: Path):
+        self.results_file_path = results_file_path
 
         return self
 
     def build(self):
-        if self.input_file_path is None:
-            raise Exception("input_file_path required!")
-        if self.output_file_path is None:
-            raise Exception("output_file_path required!")
+        if self.instructions_file_path is None:
+            raise Exception("instructions_file_path required!")
+        if self.results_file_path is None:
+            raise Exception("results_file_path required!")
 
         memory = "Inf" if self._memory == -1 else self._memory
         maxhyp = "Inf" if self._maxhyp == -1 else self._maxhyp
@@ -445,4 +445,4 @@ class DREXInstanceBuilder:
         drex_input_parameters = DREXInputParameters(self._prior, self._hazard, self._obsnz, memory,
                                                     maxhyp)
 
-        return DREXInstance(drex_input_parameters, self.input_file_path, self.output_file_path)
+        return DREXInstance(drex_input_parameters, self.instructions_file_path, self.results_file_path)
