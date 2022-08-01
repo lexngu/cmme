@@ -15,7 +15,7 @@ end
 observation_levels = unique(observations);
 
 ppm_alphabet_size = df.ppm_alphabet_size{1};
-ppm_predictions = reshape(cell2mat(df.ppm_predictions), ppm_alphabet_size, []);
+ppm_predictions = reshape(cell2mat(df.ppm_probability_distribution), ppm_alphabet_size, []);
 ppm_information_content = cell2mat(df.ppm_information_content);
 ppm_entropy = cell2mat(df.ppm_entropy);
 ppm_model_order = cell2mat(df.ppm_model_order);

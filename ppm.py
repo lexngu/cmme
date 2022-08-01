@@ -30,7 +30,7 @@ class PPMSimpleInputParameters:
         self._escape = escape
         self._alphabet_levels = alphabet_levels
 
-        self._output_parameters_file_path = None
+        self._results_file_path = None
 
         self._sequence = None
 
@@ -38,8 +38,8 @@ class PPMSimpleInputParameters:
         self._sequence = sequence
         return self
 
-    def with_output_parameters_file_path(self, output_parameters_file_path: Path):
-        self._output_parameters_file_path = output_parameters_file_path
+    def with_results_file_path(self, results_file_path: Path):
+        self._results_file_path = results_file_path
         return self
 
     def write_csv(self, file_path: Path):
@@ -54,7 +54,7 @@ class PPMSimpleInputParameters:
             "escape": self._escape.value,
 
             "input_sequence": self._sequence,
-            "output_parameters_file_path": str(self._output_parameters_file_path)
+            "results_file_path": str(self._results_file_path)
         }
 
         with open(file_path, 'w') as f:
@@ -89,7 +89,7 @@ class PPMDecayInputParameters:
         self._seed = seed
         self._alphabet_levels = alphabet_levels
 
-        self._output_parameters_file_path = None
+        self._results_file_path = None
 
         self._sequence = None
         self._time_sequence = None
@@ -102,8 +102,8 @@ class PPMDecayInputParameters:
         self._time_sequence = time_sequence
         return self
 
-    def with_output_parameters_file_path(self, output_parameters_file_path: Path):
-        self._output_parameters_file_path = output_parameters_file_path
+    def with_results_file_path(self, results_file_path: Path):
+        self._results_file_path = results_file_path
         return self
 
     def write_csv(self, file_path: Path):
@@ -127,7 +127,7 @@ class PPMDecayInputParameters:
 
             "input_sequence": self._sequence,
             "input_time_sequence": self._time_sequence,
-            "output_parameters_file_path": str(self._output_parameters_file_path)
+            "results_file_path": str(self._results_file_path)
         }
 
         with open(file_path, 'w') as f:
@@ -148,8 +148,8 @@ class PPMOutputParameters:
         self.source_file_path = source_file_path
         self.data_frame = pd.DataFrame.copy(data_frame)
 
-        self.input_sequence = self.data_frame.drop_duplicates(subset=['symbol_idx'])['observation'].tolist()
-        self.alphabet_size = len(self.data_frame['distribution_idx'].unique())
+        self.input_sequence = self.data_frame.drop_duplicates(subset=['pos'])['symbol'].tolist()
+        self.alphabet_size = len(self.data_frame['probability_distribution_value_for_alphabet_idx'].unique())
 
     def from_csv(file_path):
         """Imports PPM output (.csv file)"""
@@ -163,10 +163,10 @@ class PPMInstance:
 
     PPM_RUN_FILEPATH = (Path(__file__).parent.absolute() / "./res/wrappers/ppm-decay/ppm_run.R").resolve()
 
-    def __init__(self, ppmInputParameters, input_file_path: Path, output_file_path: Path):
+    def __init__(self, ppmInputParameters, instructions_file_path: Path, results_file_path: Path):
         self._ppmInputParameters = ppmInputParameters
-        self.input_file_path = input_file_path
-        self.output_file_path = output_file_path
+        self.instructions_file_path = instructions_file_path
+        self.results_file_path = results_file_path
 
         self._r_script = PPMInstance._init_r_script()
 
@@ -190,14 +190,14 @@ class PPMInstance:
             if len(time_sequence) != len(sequence):
                 raise ValueError("Length of sequence and time_sequence must be equal.")
 
-        self._ppmInputParameters.with_sequence(sequence).with_output_parameters_file_path(self.output_file_path)
+        self._ppmInputParameters.with_sequence(sequence).with_results_file_path(self.results_file_path)
         if isinstance(self._ppmInputParameters, PPMDecayInputParameters):
             self._ppmInputParameters.with_time_sequence(time_sequence)
-        self._ppmInputParameters.write_csv(self.input_file_path)
+        self._ppmInputParameters.write_csv(self.instructions_file_path)
 
-        result = self._r_script.run_ppm(str(self.input_file_path))
+        result = self._r_script.run_ppm(str(self.instructions_file_path))
         print(result)
-        return self.output_file_path  # ToDo: return R output, which should contain the output_file_path.
+        return self.results_file_path  # ToDo: return R output, which should contain the results_file_path.
 
 class PPMSimpleInstanceBuilder:
     def __init__(self):
@@ -247,26 +247,26 @@ class PPMSimpleInstanceBuilder:
         self._escape = escape
         return self
 
-    def with_input_file_path(self, input_file_path: Path):
-        self.input_file_path = input_file_path
+    def with_instructions_file_path(self, instructions_file_path: Path):
+        self.instructions_file_path = instructions_file_path
 
         return self
 
-    def with_output_file_path(self, output_file_path: Path):
-        self.output_file_path = output_file_path
+    def with_results_file_path(self, results_file_path: Path):
+        self.results_file_path = results_file_path
 
         return self
 
     def build(self):
-        if self.input_file_path is None:
-            raise Exception("input_file_path required!")
-        if self.output_file_path is None:
-            raise Exception("output_file_path required!")
+        if self.instructions_file_path is None:
+            raise Exception("instructions_file_path required!")
+        if self.results_file_path is None:
+            raise Exception("results_file_path required!")
         if self._alphabet_size is None or self._alphabet_size == 0:
             raise Exception("Invalid alphabet_size (or alphabet_levels)! Value (or count) must be > 0.")
 
         ppmInputParameters = PPMSimpleInputParameters(self._alphabet_size, self._order_bound, self._shortest_deterministic, self._exclusion, self._update_exclusion, self._escape, self._alphabet_levels)
-        return PPMInstance(ppmInputParameters, self.input_file_path, self.output_file_path)
+        return PPMInstance(ppmInputParameters, self.instructions_file_path, self.results_file_path)
 
 
 class PPMDecayInstanceBuilder:
@@ -287,8 +287,8 @@ class PPMDecayInstanceBuilder:
         self._seed = 1 # TODO make random as in original source?
         self._alphabet_levels = {}
 
-        self.input_file_path = None
-        self.output_file_path = None
+        self.instructions_file_path = None
+        self.results_file_path = None
 
     def alphabet_size(self, alphabet_size):
         if alphabet_size > 0:
@@ -358,21 +358,21 @@ class PPMDecayInstanceBuilder:
         self._seed = seed
         return self
 
-    def with_input_file_path(self, input_file_path: Path):
-        self.input_file_path = input_file_path
+    def with_instructions_file_path(self, instructions_file_path: Path):
+        self.instructions_file_path = instructions_file_path
 
         return self
 
-    def with_output_file_path(self, output_file_path: Path):
-        self.output_file_path = output_file_path
+    def with_results_file_path(self, results_file_path: Path):
+        self.results_file_path = results_file_path
 
         return self
 
     def build(self):
-        if self.input_file_path is None:
-            raise Exception("input_file_path required!")
-        if self.output_file_path is None:
-            raise Exception("output_file_path required!")
+        if self.instructions_file_path is None:
+            raise Exception("instructions_file_path required!")
+        if self.results_file_path is None:
+            raise Exception("results_file_path required!")
         if self._alphabet_size is None or self._alphabet_size == 0:
             raise Exception("Invalid alphabet_size (or alphabet_levels)! Value (or count) must be > 0.")
 
@@ -383,4 +383,4 @@ class PPMDecayInstanceBuilder:
                                                      self._only_learn_from_buffer, self._only_predict_from_buffer,
                                                      self._seed,
                                                      self._alphabet_levels)
-        return PPMInstance(ppmInputParameters, self.input_file_path, self.output_file_path)
+        return PPMInstance(ppmInputParameters, self.instructions_file_path, self.results_file_path)

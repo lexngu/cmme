@@ -2,13 +2,15 @@
 library(ppm)
 library(dplyr, warn.conflicts=FALSE)
 library(tidyr)
-run_ppm <- function(input_file_path) {
 
-  # read instructions
-  params <- read.csv(input_file_path)
-  requested_model <- params$model
+run_ppm <- function(instructions_file_path) {
+  # read instruction file
+  params <- read.csv(instructions_file_path)
   
-  # map logical data types
+  # Run SIMPLE or DECAY?
+  requested_model <- params$model
+
+  # map data types
   if (requested_model == "DECAY") {
     params$only_learn_from_buffer <- as.logical(params$only_learn_from_buffer)
     params$only_predict_from_buffer <- as.logical(params$only_predict_from_buffer)
@@ -18,7 +20,6 @@ run_ppm <- function(input_file_path) {
     params$update_exclusion <- as.logical(params$update_exclusion)
   }
 
-  
   # parse alphabet_levels
   alphabet_levels <- strsplit(gsub("\\[(.*?)\\]", "\\1", params$alphabet_levels), ",\\s*")[[1]]
   if (length(alphabet_levels) == 0) {
@@ -39,7 +40,7 @@ run_ppm <- function(input_file_path) {
     input_time_seq <- as.numeric(input_time_seq)
   }
   
-  ########################
+  # run model
   if (requested_model == "DECAY") {
     mod <- new_ppm_decay(params$alphabet_size, 
                          order_bound = params$order_bound, 
@@ -53,6 +54,7 @@ run_ppm <- function(input_file_path) {
                          seed = params$seed, 
                          alphabet_levels = alphabet_levels
                          )
+    # raw results
     res <- model_seq(mod, input_sequence, time=input_time_seq)
   } else if (requested_model == "SIMPLE") {
     mod <- new_ppm_simple(params$alphabet_size, 
@@ -62,17 +64,21 @@ run_ppm <- function(input_file_path) {
                           update_exclusion = params$update_exclusion,
                           escape = params$escape,
                           alphabet_levels = alphabet_levels)
+    # raw results
     res <- model_seq(mod, input_sequence)
   }
-  res <- res %>% mutate(observation = levels(input_sequence)[symbol])
-  #########################
+
+  # prepare results for storage in results file
+  ppm_res <- res %>% 
+    # expand probability distribution's values to multiple rows
+    unnest_longer(distribution, indices_to = "probability_distribution_value_for_alphabet_idx", values_to = "probability_distribution_value") %>% 
+    # add matching symbol to probability_distribution_value_for_alphabet_idx
+    rowwise() %>% mutate(probability_distribution_value_for_symbol = levels(input_sequence)[probability_distribution_value_for_alphabet_idx]) %>%
+    # change column order
+    select(pos, time, symbol, probability_distribution_value_for_alphabet_idx, probability_distribution_value_for_symbol, probability_distribution_value, everything())
   
-  ppm_res <- res %>% mutate(symbol_idx = row_number()) %>% 
-    unnest_longer(distribution, indices_to = "distribution_idx") %>% 
-    rowwise() %>% mutate(distribution_symbol = levels(input_sequence)[distribution_idx]) %>%
-    select(symbol_idx, distribution_idx, distribution_symbol, distribution, everything())
+  # write results file
+  write.csv(ppm_res, params$results_file_path)
   
-  write.csv(ppm_res, params$output_parameters_file_path)
-  
-  return(params$output_parameters_file_path)
+  return(params$results_file_path)
 }
