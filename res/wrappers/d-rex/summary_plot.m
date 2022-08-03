@@ -49,16 +49,16 @@ subplot(subplotMaxN,1,1)
 plot_sequence(observations);
 title("Input Sequence")
 xlabel("Time \rightarrow")
-ylabel("Symbol")
+ylabel("Observation")
 
 % subplots: PPM / DREX predictions
 subplot(subplotMaxN,1,2)
 [X, Y] = meshgrid(1:ntime, 1:ppm_alphabet_size);
 contourf(X,Y,ppm_predictions,30,'fill','on','linestyle','-','linecolor','none');
 set(gca,'colormap',cmap);
-title("PPM-Decay: Predictions")
+title("PPM: Predictions")
 xlabel("Time \rightarrow")
-ylabel("Alphabet Symbol")
+ylabel("Observation")
 %
 subplot(subplotMaxN,1,3)
 [X, Y] = meshgrid(1:ntime, 1:length(observation_levels));
@@ -68,7 +68,7 @@ set(gca,'colormap',cmap);
 hold off;
 title("D-REX: Predictions")
 xlabel("Time \rightarrow")
-ylabel("Symbol")
+ylabel("Observation")
 
 % subplot: PPM IC / DREX surprisal
 ylim_value = max(max(ppm_information_content, [], 'all'), max(drex_surprisal, [], 'all'));
@@ -77,7 +77,7 @@ subplot(subplotMaxN,1,4)
 plot(ppm_information_content)
 xlim([1 ntime]);
 ylim(ylim_value);
-title("PPM-Decay: Information Content")
+title("PPM: Information Content")
 xlabel("Time \rightarrow")
 ylabel("Information Content")
 %
@@ -95,7 +95,7 @@ ylim_value = max(max(ppm_entropy, [], 'all'), max(drex_entropy, [], 'all'));
 subplot(subplotMaxN,1,6)
 plot(ppm_entropy)
 xlim([1 ntime]);
-%ylim(ylim_value);
+ylim([0 inf]);
 title("PPM-Decay: Entropy")
 xlabel("Time \rightarrow")
 ylabel("Entropy")
@@ -103,7 +103,7 @@ ylabel("Entropy")
 subplot(subplotMaxN,1,7)
 plot(drex_entropy)
 xlim([1 ntime]);
-%ylim(ylim_value);
+ylim([0 inf]);
 title("D-REX: Entropy")
 xlabel("Time \rightarrow")
 ylabel("Entropy")
@@ -137,6 +137,7 @@ subplot(subplotMaxN,1,9)
 post_bd = cell2mat(df.drex_bd);
 plot(post_bd);
 xlim([1 ntime]);
+ylim([0 1]);
 title('D-REX: Belief Dynamics')
 xlabel("Time \rightarrow")
 
@@ -150,9 +151,10 @@ end
 changepoint = changepoint(1);
 plot(post_cd);
 xlim([1 ntime]);
+ylim([0 1]);
 hold all;
 if ~isnan(changepoint)
-    xline(changepoint, "-", ["Changepoint", changepoint], 'LineWidth', 3);
+    xline(changepoint, "-", ["Changepoint" num2str(changepoint)], 'LineWidth', 3);
 end
 hold off;
 title('D-REX: Change Probability')

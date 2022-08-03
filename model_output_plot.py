@@ -100,7 +100,7 @@ class ModelOutputPlot:
         x = list(range(1, ntime+1))
         y = list(range(1, ppm_alphabet_size+1))
         ax.contourf(x, y, predictions, 100)
-        ax.set_ylabel("Observation Index")
+        ax.set_ylabel("Observation")
         ax.set_xlim(xlims)
         ax.yaxis.get_major_locator().set_params(integer=True)
 
@@ -111,7 +111,7 @@ class ModelOutputPlot:
         x = list(range(1, ntime+1))
         y = list(range(1, ppm_alphabet_size+1))
         ax.contourf(x, y, predictions, 1000)
-        ax.set_ylabel("Observation Token")
+        ax.set_ylabel("Observation")
         ax.set_xlim(xlims)
         ax.yaxis.get_major_locator().set_params(integer=True)
 
@@ -136,12 +136,14 @@ class ModelOutputPlot:
         data = df_as_dict["ppm_entropy"]
         ax.plot(data)
         ax.set_xlim(xlims)
+        ax.set_ylim(bottom=0)
 
         ax = plt.subplot(maxSubplot, 1, 7)
         ax.set_title("D-REX: Entropy")
         data = df_as_dict["drex_entropy"]
         ax.plot(data)
         ax.set_xlim(xlims)
+        ax.set_ylim(bottom=0)
 
         ax = plt.subplot(maxSubplot, 1, 8)
         ax.set_title("D-REX: Context Beliefs")
