@@ -77,7 +77,7 @@ class ModelOutputPlot:
         plt.rcParams['image.cmap'] = 'viridis'
         plt.rcParams['font.family'] = 'Helvetica, Arial'
 
-        maxSubplot = 10
+        maxSubplot = 11
         xlims = (0,len(df_as_dict["observation"])-1)
 
         f = plt.figure()
@@ -108,44 +108,53 @@ class ModelOutputPlot:
         ax.set_title("D-REX: Predictions")
         data = df_as_dict["drex_predictions"]
         predictions = self._prepare_predictions(data).T
-        x = list(range(1, ntime+1))
-        y = list(range(1, ppm_alphabet_size+1))
+        x = list(range(1, ntime + 1))
+        y = list(range(1, ppm_alphabet_size + 1))
         ax.contourf(x, y, predictions, 1000)
         ax.set_ylabel("Observation")
         ax.set_xlim(xlims)
         ax.yaxis.get_major_locator().set_params(integer=True)
 
+        ax = plt.subplot(maxSubplot, 1, 4)
+        ax.set_title("PPM: Model Order")
+        x = list(range(1, ntime + 1))
+        y = df_as_dict["ppm_model_order"]
+        ax.plot(x, y)
+        ax.set_ylabel("Model Order")
+        ax.set_xlim(xlims)
+        ax.yaxis.get_major_locator().set_params(integer=True)
+
         max_ppm_drex_ic = max(np.amax(df_as_dict["ppm_information_content"]), np.amax(df_as_dict["drex_surprisal"]))
 
-        ax = plt.subplot(maxSubplot, 1, 4)
+        ax = plt.subplot(maxSubplot, 1, 5)
         ax.set_title("PPM: Information Content")
         data = df_as_dict["ppm_information_content"]
         ax.plot(data)
         ax.set_xlim(xlims)
         ax.set_ylim((0, max_ppm_drex_ic))
 
-        ax = plt.subplot(maxSubplot, 1, 5)
+        ax = plt.subplot(maxSubplot, 1, 6)
         ax.set_title("D-REX: Surprisal")
         data = df_as_dict["drex_surprisal"]
         ax.plot(data)
         ax.set_xlim(xlims)
         ax.set_ylim((0, max_ppm_drex_ic))
 
-        ax = plt.subplot(maxSubplot, 1, 6)
+        ax = plt.subplot(maxSubplot, 1, 7)
         ax.set_title("PPM: Entropy")
         data = df_as_dict["ppm_entropy"]
         ax.plot(data)
         ax.set_xlim(xlims)
         ax.set_ylim(bottom=0)
 
-        ax = plt.subplot(maxSubplot, 1, 7)
+        ax = plt.subplot(maxSubplot, 1, 8)
         ax.set_title("D-REX: Entropy")
         data = df_as_dict["drex_entropy"]
         ax.plot(data)
         ax.set_xlim(xlims)
         ax.set_ylim(bottom=0)
 
-        ax = plt.subplot(maxSubplot, 1, 8)
+        ax = plt.subplot(maxSubplot, 1, 9)
         ax.set_title("D-REX: Context Beliefs")
         data = df_as_dict["drex_context_beliefs"]
         context_beliefs = self._prepare_context_beliefs(data).T
@@ -153,14 +162,14 @@ class ModelOutputPlot:
         p = plt.pcolor(np.log10(context_beliefs))
         ax.set_xlim(xlims)
 
-        ax = plt.subplot(maxSubplot, 1, 9)
+        ax = plt.subplot(maxSubplot, 1, 10)
         ax.set_title("D-REX: Belief Dynamics")
         data = df_as_dict["drex_bd"]
         ax.plot(data)
         ax.set_xlim(xlims)
         ax.set_ylim((0, 1))
 
-        ax = plt.subplot(maxSubplot, 1, 10)
+        ax = plt.subplot(maxSubplot, 1, 11)
         ax.set_title("D-REX: Change Probability")
         data = df_as_dict["drex_cd_probability"]
         ax.plot(data)
