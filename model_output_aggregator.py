@@ -61,6 +61,7 @@ class ModelOutputAggregator:
                                               nullValue]
 
         # extract PPM's results
+        ppm_alphabet_size = int(self._ppm_output_parameters.data_frame["probability_distribution_value_for_alphabet_idx"].max())
         for idx, row in self._ppm_output_parameters.data_frame.iterrows():
             # extract
             pos = int(row["pos"])
@@ -73,7 +74,7 @@ class ModelOutputAggregator:
             # fill
             # for every row where distribution_idx == 1, fill columns
             if distribution_idx == 1:
-                data.at[pos, "ppm_alphabet_size"] = self._ppm_output_parameters.alphabet_size
+                data.at[pos, "ppm_alphabet_size"] = ppm_alphabet_size
                 data.at[pos, "ppm_information_content"] = information_content
                 data.at[pos, "ppm_model_order"] = model_order
                 data.at[pos, "ppm_entropy"] = entropy
@@ -110,8 +111,8 @@ class ModelOutputAggregator:
     def write_mat(self, filename):
         df = self.df.drop(self.df.tail(1).index) # TODO generalize this
         mat_data = {
-            "ppm_output": str(self._ppm_output_parameters.source_file_path),
-            "drex_output": str(self._drex_output_parameters.source_file_path),
+            "ppm_output": str(self._ppm_output_parameters.source_file_path), # TODO remove?
+            "drex_output": str(self._drex_output_parameters.source_file_path), # TODO remove?
             "df": {name: col.values for name, col in df.items()}
         }
         sio.savemat(filename,  mat_data)

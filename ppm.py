@@ -21,8 +21,7 @@ class PPMEscapeMethod(Enum):
 class PPMSimpleInputParameters:
     """This class represents all parameters of any PPM-Simple instance."""
 
-    def __init__(self, alphabet_size, order_bound, shortest_deterministic, exclusion, update_exclusion, escape: PPMEscapeMethod, alphabet_levels):
-        self._alphabet_size = alphabet_size
+    def __init__(self, order_bound, shortest_deterministic, exclusion, update_exclusion, escape: PPMEscapeMethod, alphabet_levels):
         self._order_bound = order_bound
         self._shortest_deterministic = shortest_deterministic
         self._exclusion = exclusion
@@ -44,16 +43,16 @@ class PPMSimpleInputParameters:
 
     def write_csv(self, file_path: Path):
         params = {
+            "model_as_string": str(self),
             "model": "SIMPLE",
             "order_bound": self._order_bound,
-            "alphabet_size": self._alphabet_size,
-            "alphabet_levels": list(self._alphabet_levels),
+            "alphabet_levels": ", ".join(map(str, self._alphabet_levels)),
             "shortest_deterministic": self._shortest_deterministic,
             "exclusion": self._exclusion,
             "update_exclusion": self._update_exclusion,
             "escape": self._escape.value,
 
-            "input_sequence": self._sequence,
+            "input_sequence": ", ".join(map(str, self._sequence)),
             "results_file_path": str(self._results_file_path)
         }
 
@@ -67,13 +66,17 @@ class PPMSimpleInputParameters:
     def read_csv(filename): # TODO implement import
         return PPMSimpleInputParameters()
 
+    def __str__(self):
+        return "PPM-Decay(model=SIMPLE, order_bound={}, shortest_deterministic={}, exclusion={}, update_exclusion={}, escape={}, alphabet_levels={})".format(
+            self._order_bound, self._shortest_deterministic, self._exclusion, self._update_exclusion, self._escape, self._alphabet_levels
+        )
+
 class PPMDecayInputParameters:
     """This class represents all parameters of any PPM-Decay instance."""
 
-    def __init__(self, alphabet_size, order_bound, ltm_weight, ltm_half_life, ltm_asymptote, noise, stm_weight,
+    def __init__(self, order_bound, ltm_weight, ltm_half_life, ltm_asymptote, noise, stm_weight,
                  stm_duration, buffer_weight, buffer_length_time, buffer_length_items, only_learn_from_buffer,
                  only_predict_from_buffer, seed, alphabet_levels):
-        self._alphabet_size = alphabet_size
         self._order_bound = order_bound
         self._ltm_weight = ltm_weight
         self._ltm_half_life = ltm_half_life
@@ -108,9 +111,9 @@ class PPMDecayInputParameters:
 
     def write_csv(self, file_path: Path):
         params = {
+            "model_as_string": str(self),
             "model": "DECAY",
-            "alphabet_size": self._alphabet_size,
-            "alphabet_levels": list(self._alphabet_levels),
+            "alphabet_levels": ", ".join(map(str, self._alphabet_levels)),
             "order_bound": self._order_bound,
             "ltm_weight": self._ltm_weight,
             "ltm_half_life": self._ltm_half_life,
@@ -125,8 +128,8 @@ class PPMDecayInputParameters:
             "only_predict_from_buffer": self._only_predict_from_buffer,
             "seed": self._seed,
 
-            "input_sequence": self._sequence,
-            "input_time_sequence": self._time_sequence,
+            "input_sequence": ", ".join(map(str, self._sequence)),
+            "input_time_sequence": ", ".join(map(str, self._time_sequence)),
             "results_file_path": str(self._results_file_path)
         }
 
@@ -140,6 +143,10 @@ class PPMDecayInputParameters:
     def read_csv(filename): # TODO implement import
         return PPMDecayInputParameters()
 
+    def __str__(self):
+        return "PPM-Decay(model=DECAY, order_bound={}, buffer_weight={}, buffer_length_time={}, buffer_length_items={}, only_learn_from_buffer={}, only_predict_from_buffer={}, stm_weight={}, stm_duration={}, ltm_weight={}, ltm_half_life={}, ltm_asymptote={}, noise={}, seed={}, alphabet_levels={})".format(
+            self._order_bound, self._buffer_weight, self._buffer_length_time, self._buffer_length_items, self._only_learn_from_buffer, self._only_predict_from_buffer, self._stm_weight, self._stm_duration, self._ltm_weight, self._ltm_half_life, self._ltm_asymptote, self._noise, self._seed, self._alphabet_levels
+        )
 
 class PPMOutputParameters:
     """This class represents an PPM output."""
@@ -149,7 +156,6 @@ class PPMOutputParameters:
         self.data_frame = pd.DataFrame.copy(data_frame)
 
         self.input_sequence = self.data_frame.drop_duplicates(subset=['pos'])['symbol'].tolist()
-        self.alphabet_size = len(self.data_frame['probability_distribution_value_for_alphabet_idx'].unique())
 
     def from_csv(file_path):
         """Imports PPM output (.csv file)"""
@@ -201,7 +207,6 @@ class PPMInstance:
 
 class PPMSimpleInstanceBuilder:
     def __init__(self):
-        self._alphabet_size = None
         self._order_bound = 10
         self._shortest_deterministic = True
         self._exclusion = True
@@ -209,19 +214,11 @@ class PPMSimpleInstanceBuilder:
         self._escape = PPMEscapeMethod.C
         self._alphabet_levels = {}
 
-    def alphabet_size(self, alphabet_size):
-        if alphabet_size > 0:
-            self._alphabet_size = alphabet_size
-        else:
-            raise ValueError("Invalid alphabet_size! Value must be > 0.")
-        return self
-
     def alphabet_levels(self, alphabet_levels: list):
         if not len(alphabet_levels) == len(set(alphabet_levels)):
             raise ValueError("Invalid alphabet_levels! Value must contain unique elements!")
 
         self._alphabet_levels = alphabet_levels
-        self.alphabet_size(len(alphabet_levels))
 
         return self
 
@@ -262,16 +259,13 @@ class PPMSimpleInstanceBuilder:
             raise Exception("instructions_file_path required!")
         if self.results_file_path is None:
             raise Exception("results_file_path required!")
-        if self._alphabet_size is None or self._alphabet_size == 0:
-            raise Exception("Invalid alphabet_size (or alphabet_levels)! Value (or count) must be > 0.")
 
-        ppmInputParameters = PPMSimpleInputParameters(self._alphabet_size, self._order_bound, self._shortest_deterministic, self._exclusion, self._update_exclusion, self._escape, self._alphabet_levels)
+        ppmInputParameters = PPMSimpleInputParameters(self._order_bound, self._shortest_deterministic, self._exclusion, self._update_exclusion, self._escape, self._alphabet_levels)
         return PPMInstance(ppmInputParameters, self.instructions_file_path, self.results_file_path)
 
 
 class PPMDecayInstanceBuilder:
     def __init__(self):
-        self._alphabet_size = None
         self._order_bound = 10
         self._ltm_weight = 1
         self._ltm_half_life = 10
@@ -290,19 +284,11 @@ class PPMDecayInstanceBuilder:
         self.instructions_file_path = None
         self.results_file_path = None
 
-    def alphabet_size(self, alphabet_size):
-        if alphabet_size > 0:
-            self._alphabet_size = alphabet_size
-        else:
-            raise ValueError("Invalid alphabet_size! Value must be > 0.")
-        return self
-
     def alphabet_levels(self, alphabet_levels: list):
         if not len(alphabet_levels) == len(set(alphabet_levels)):
             raise ValueError("Invalid alphabet_levels! Value must contain unique elements!")
 
         self._alphabet_levels = alphabet_levels
-        self.alphabet_size(len(alphabet_levels))
 
         return self
 
@@ -373,10 +359,8 @@ class PPMDecayInstanceBuilder:
             raise Exception("instructions_file_path required!")
         if self.results_file_path is None:
             raise Exception("results_file_path required!")
-        if self._alphabet_size is None or self._alphabet_size == 0:
-            raise Exception("Invalid alphabet_size (or alphabet_levels)! Value (or count) must be > 0.")
 
-        ppmInputParameters = PPMDecayInputParameters(self._alphabet_size, self._order_bound, self._ltm_weight,
+        ppmInputParameters = PPMDecayInputParameters(self._order_bound, self._ltm_weight,
                                                      self._ltm_half_life, self._ltm_asymptote, self._noise,
                                                      self._stm_weight, self._stm_duration, self._buffer_weight,
                                                      self._buffer_length_time, self._buffer_length_items,

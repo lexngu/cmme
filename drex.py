@@ -40,6 +40,9 @@ class DREXPrior(ABC):
         """Returns a dictionary representing the prior"""
         pass
 
+    def __str__(self):
+        return "{}({})".format(self.__class__.__name__, str(self.to_dict()))
+
 
 class DREXGaussianPrior(DREXPrior):
     """
@@ -260,6 +263,17 @@ class DREXInputParameters:
 
         self._results_file_path = None
 
+    def __str__(self):
+        if self._prior.drexDistribution == DREXDistribution.GMM:
+            return "D-REX(distribution={}, maxNComp={}, hazard={}, obsnz={}, memory={}, maxhyp={})".format(
+                self._prior.drexDistribution.value, self._prior.max_ncomp(), self._hazard, self._obsnz, self._memory, self._maxhyp
+            )
+        else:
+            return "D-REX(distribution={}, D={}, hazard={}, obsnz={}, memory={}, maxhyp={})".format(
+                self._prior.drexDistribution.value, self._prior.D(), self._hazard,
+                self._obsnz, self._memory, self._maxhyp
+            )
+
     def with_sequence(self, sequence):
         self._sequence = matlab.double(sequence)
         return self
@@ -276,6 +290,7 @@ class DREXInputParameters:
             eng = matlab.engine.start_matlab()
 
         mat_data = {
+            "model_as_string": str(self),
             "x": eng.transpose(self._sequence),
             "results_file_path": str(self._results_file_path),
             "params": {
@@ -353,7 +368,6 @@ class DREXOutputParameters:
         return DREXOutputParameters(file_path, instructions_file_path, input_sequence, drex_psi, distribution, surprisal,
                                     joint_surprisal, context_beliefs, change_decision_threshold,
                                     change_decision_changepoint, change_decision_probability, belief_dynamics)
-
 
 class DREXInstance:
     """This class represents one D-REX instance."""
