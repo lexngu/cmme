@@ -6,6 +6,7 @@ instructions_file_path = convertStringsToChars(instructions_file_path);
 input = load(instructions_file_path);
 input_sequence = input.x;
 params = input.params;
+model_as_string = input.model_as_string
 
 % matlab.engine cannot create n x 1-cells, only 1 x n-cells. This affects the prior, and needs to be fixed manually.
 prior_field_names = fieldnames(params.prior);
@@ -35,6 +36,6 @@ drex_bd = post_DREX_beliefdynamics(drex_out);
 drex_out.context_beliefs = drex_out.context_beliefs';
 drex_psi = drex_psi';
 
-save(input.results_file_path, "instructions_file_path", "input_sequence", "drex_out", "drex_psi", "drex_cd", "drex_cd_threshold", "drex_bd");
+save(input.results_file_path, "instructions_file_path", "model_as_string", "input_sequence", "drex_out", "drex_psi", "drex_cd", "drex_cd_threshold", "drex_bd");
 out.results_file_path = input.results_file_path;
 end

@@ -88,12 +88,14 @@ run_ppm <- function(instructions_file_path) {
   # 4.2 Meta results file
   meta_information = df <- data.frame(
     instructions_file_path=character(),
-    results_file_path=character()
+    results_file_path=character(),
+    model_as_string=character()
   )
   
   meta_information[1, ] = c(
     instructions_file_path,
-    params$results_file_path
+    params$results_file_path,
+    params$model_as_string
   )
   write.csv(meta_information, gsub("\\.csv", "-meta.csv", params$results_file_path))
   

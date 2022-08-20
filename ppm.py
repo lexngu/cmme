@@ -151,17 +151,24 @@ class PPMDecayInputParameters:
 class PPMOutputParameters:
     """This class represents an PPM output."""
 
-    def __init__(self, source_file_path: Path, data_frame: pd.DataFrame):
+    def __init__(self, source_file_path: Path, data_frame: pd.DataFrame, meta_data_frame: pd.DataFrame):
         self.source_file_path = source_file_path
         self.data_frame = pd.DataFrame.copy(data_frame)
+        self.meta_data_frame = meta_data_frame
+        self.model_as_string = meta_data_frame["model_as_string"][0]
 
         self.input_sequence = self.data_frame.drop_duplicates(subset=['pos'])['symbol'].tolist()
 
     def from_csv(file_path):
         """Imports PPM output (.csv file)"""
+        meta_file_path = file_path.replace(".csv", "-meta.csv")
+        if os.path.exists(meta_file_path):
+            meta_csv_data = pd.read_csv(meta_file_path)
+        else:
+            meta_csv_data = pd.DataFrame()
 
         csv_data = pd.read_csv(file_path)
-        return PPMOutputParameters(file_path, csv_data)
+        return PPMOutputParameters(file_path, csv_data, meta_csv_data)
 
 
 class PPMInstance:

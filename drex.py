@@ -324,7 +324,7 @@ class DREXOutputParameters:
 
     def __init__(self, source_file_path, instructions_file_path, input_sequence, psi, distribution, surprisal, joint_surprisal,
                  context_beliefs, change_decision_threshold, change_decision_changepoint, change_decision_probability,
-                 belief_dynamics):
+                 belief_dynamics, model_as_string):
         self.source_file_path = source_file_path
         self.instructions_file_path = instructions_file_path
         self.input_sequence = input_sequence
@@ -337,6 +337,7 @@ class DREXOutputParameters:
         self.change_decision_changepoint = change_decision_changepoint
         self.change_decision_probability = change_decision_probability
         self.belief_dynamics = belief_dynamics
+        self.model_as_string = model_as_string
 
     def entropy_of(self, ensemble):
         entropy = 0
@@ -363,11 +364,13 @@ class DREXOutputParameters:
         change_decision_probability = mat_data["drex_cd"]["changeprobability"].item(0).T.tolist()[0]
         belief_dynamics = mat_data["drex_bd"].T.tolist()[0]
 
+        model_as_string = mat_data["model_as_string"].item(0)
+
         # drex_out_prediction_params = drex_out["prediction_params"]
 
         return DREXOutputParameters(file_path, instructions_file_path, input_sequence, drex_psi, distribution, surprisal,
                                     joint_surprisal, context_beliefs, change_decision_threshold,
-                                    change_decision_changepoint, change_decision_probability, belief_dynamics)
+                                    change_decision_changepoint, change_decision_probability, belief_dynamics, model_as_string)
 
 class DREXInstance:
     """This class represents one D-REX instance."""
