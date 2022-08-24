@@ -1,5 +1,5 @@
 import os
-from .config import Config
+from config import Config
 import csv
 import pandas as pd
 from pathlib import Path
