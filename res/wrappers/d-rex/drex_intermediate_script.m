@@ -8,8 +8,9 @@ instructions_file_path = convertStringsToChars(instructions_file_path);
 instructions_file = load(instructions_file_path);
 
 rdm_instructions = instructions_file.run_DREX_model;
+input_sequence = rdm_instructions.x;
 
-[ntime, nfeature] = size(rdm_instructions.x);
+[ntime, nfeature] = size(input_sequence);
 
 % calculate prior (if requested)
 if isfield(instructions_file, "estimate_suffstat")
@@ -33,13 +34,13 @@ else % use provided prior parameterization
 end
 
 % invoke D-REX (run_DREX_model.m)
-run_DREX_model_results = run_DREX_model(rdm_instructions.x, rdm_instructions.params);
+run_DREX_model_results = run_DREX_model(input_sequence, rdm_instructions.params);
 
 % calculate marginal (predictive) prob. distribution (post_DREX_prediction.m)
 post_DREX_prediction_results = cell(nfeature);
 if rdm_instructions.params.distribution == "gaussian" | rdm_instructions.params.distribution == "gmm" | rdm_instructions.params.distribution == "lognormal"
     for f = 1:nfeature
-        positions = reshape(unique(rdm_instructions.x(:,f)), 1, []);
+        positions = reshape(unique(input_sequence(:,f)), 1, []);
         
         post_DREX_prediction_results{f}.positions = positions;
         post_DREX_prediction_results{f}.prediction = post_DREX_prediction(f, run_DREX_model_results, positions)';
@@ -53,6 +54,6 @@ post_DREX_beliefdynamics_results = post_DREX_beliefdynamics(run_DREX_model_resul
 pdc_instructions = instructions_file.post_DREX_changedecision;
 post_DREX_changedecision_results = post_DREX_changedecision(run_DREX_model_results, pdc_instructions.threshold);
 
-save(instructions_file.results_file_path, "instructions_file_path", "run_DREX_model_results", "post_DREX_changedecision_results", "post_DREX_prediction_results", "post_DREX_beliefdynamics_results", "post_DREX_changedecision_results");
+save(instructions_file.results_file_path, "instructions_file_path", "input_sequence", "run_DREX_model_results", "post_DREX_changedecision_results", "post_DREX_prediction_results", "post_DREX_beliefdynamics_results", "post_DREX_changedecision_results");
 out.results_file_path = instructions_file.results_file_path;
 end

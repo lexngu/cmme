@@ -178,11 +178,13 @@ def parse_results_file(file_path):
     data = mw.from_mat(file_path)
 
     instructions_file_path = data["instructions_file_path"]
+    input_sequence = data["input_sequence"]
     run_results = data["run_DREX_model_results"]
     bd_results = data["post_DREX_beliefdynamics_results"]
     cd_results = data["post_DREX_changedecision_results"]
     pred_results = data["post_DREX_prediction_results"]
 
+    input_sequence = np.array(input_sequence)
     surprisal = np.array(run_results["surprisal"])
     joint_surprisal = np.array(run_results["joint_surprisal"])
     context_beliefs = np.array(run_results["context_beliefs"])
@@ -191,7 +193,7 @@ def parse_results_file(file_path):
     change_decision_probability = np.array(cd_results["changeprobability"])
     psi = parse_post_DREX_prediction_results(pred_results)
 
-    return ResultsFile(instructions_file_path, surprisal, joint_surprisal, context_beliefs, belief_dynamics, change_decision_changepoint, change_decision_probability, psi)
+    return ResultsFile(instructions_file_path, input_sequence, surprisal, joint_surprisal, context_beliefs, belief_dynamics, change_decision_changepoint, change_decision_probability, psi)
 
 
 def parse_instructions_file(file_path):

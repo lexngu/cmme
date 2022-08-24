@@ -89,8 +89,10 @@ def parse_post_DREX_prediction_results(results):
 
 class ResultsFile:
     # TODO add prediction_params from run_DREX_model.m?
-    def __init__(self, instructions_file_path, surprisal, joint_surprisal, context_beliefs,
+    def __init__(self, instructions_file_path, input_sequence, surprisal, joint_surprisal, context_beliefs,
                  belief_dynamics, change_decision_changepoint, change_decision_probability, psi: ResultsFilePsi):
+        if len(input_sequence.shape) != 2:
+            raise ValueError("Shape of input_sequence invalid! Expected two dimensions: time, feature.")
         if len(surprisal.shape) != 2:
             raise ValueError("Shape of surprisal invalid! Expected two dimensions: time, feature.")
         if len(joint_surprisal.shape) != 2:
@@ -103,6 +105,7 @@ class ResultsFile:
         #if len(psi.shape) != 3:
         #    raise ValueError("Shape of psi invalid! Expected three dimensions: time, feature, position.")
 
+        [input_sequence_times, input_sequence_features] = input_sequence.shape
         [surprisal_times, surprisal_features] = surprisal.shape
         joint_surprisal_times = joint_surprisal.shape[0]
         [context_beliefs_times, context_beliefs_contexts] = context_beliefs.shape
@@ -110,20 +113,22 @@ class ResultsFile:
         psi_features = len(psi.features())
         psi_times = psi.time()
 
-        if not (surprisal_times == joint_surprisal_times and joint_surprisal_times == (context_beliefs_times-1) and
+        if not (input_sequence_times == surprisal_times and surprisal_times == joint_surprisal_times and joint_surprisal_times == (context_beliefs_times-1) and
                 (context_beliefs_times-1) == (belief_dynamics_times-1) and (belief_dynamics_times-1) == psi_times):
-            raise ValueError("Dimension 'time' invalid! Value must be equal for surprisal({}), joint_surprisal({}), context_beliefs({}), belief_dynamics({}), and psi({}).".format(surprisal_times, joint_surprisal_times, context_beliefs_times, belief_dynamics_times, psi_times))
-        if not (surprisal_features == psi_features):
+            raise ValueError("Dimension 'time' invalid! Value must be equal for input_sequence({}), surprisal({}), joint_surprisal({}), context_beliefs({}), belief_dynamics({}), and psi({}).".format(input_sequence_times, surprisal_times, joint_surprisal_times, context_beliefs_times, belief_dynamics_times, psi_times))
+        if not (input_sequence_features == surprisal_features and surprisal_features == psi_features):
             raise ValueError(
-                "Dimension 'feature' invalid! Value must be equal for surprisal and psi.")
+                "Dimension 'feature' invalid! Value must be equal for input_sequence, surprisal, and psi.")
 
         self.dimension_values = dict()
-        self.dimension_values["time"] = surprisal_times
-        self.dimension_values["feature"] = surprisal_features
+        self.dimension_values["time"] = input_sequence_times
+        self.dimension_values["feature"] = input_sequence_features
         self.dimension_values["context"] = context_beliefs_contexts
 
         self.instructions_file_path = instructions_file_path
         """Corresponding instructions file"""
+        self.input_sequence = input_sequence
+        """Input sequence processed: time, feature => 1"""
         self.surprisal = surprisal
         """Surprisal values: time, feature => 1"""
         self.joint_surprisal = joint_surprisal
