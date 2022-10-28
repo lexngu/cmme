@@ -149,6 +149,7 @@ xlim([1 ntime]);
 ylim([0 1]);
 title('D-REX: Belief Dynamics')
 xlabel("Time \rightarrow")
+ylabel("Belief Dynamics")
 
 % subplot: DREX cd
 subplot(subplotMaxN,1,11)
@@ -168,6 +169,7 @@ end
 hold off;
 title('D-REX: Change Probability')
 xlabel("Time \rightarrow")
+ylabel("Change Probability")
 
 out = "done";
 end
