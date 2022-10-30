@@ -42,7 +42,7 @@ f.PaperPosition = [0 0 15 30];
 
 set(groot,'defaultLineLineWidth',2.0)
 
-subplotMaxN = 11;
+subplotMaxN = 10;
 %annotation('textbox', [0, 0.2, 0, 0], 'string', append("PPM-Decay: ", ppm_file_name, " / D-REX: ", drex_file_name), 'Interpreter', 'none');
 % subplot: Observation
 subplot(subplotMaxN,1,1)
@@ -70,19 +70,10 @@ title("D-REX: Predictions")
 xlabel("Time \rightarrow")
 ylabel("Observation")
 
-% subplot: PPM model order
-subplot(subplotMaxN,1,4)
-hold all;
-plot(ppm_model_order);
-hold off;
-title("PPM: Model Order")
-xlabel("Time \rightarrow")
-ylabel("Model Order")
-
 % subplot: PPM IC / DREX surprisal
 ylim_value = max(max(ppm_information_content, [], 'all'), max(drex_surprisal, [], 'all'));
 ylim_value = [0 round(ylim_value+0.1*ylim_value)];
-subplot(subplotMaxN,1,5)
+subplot(subplotMaxN,1,4)
 plot(ppm_information_content)
 xlim([1 ntime]);
 ylim(ylim_value);
@@ -90,7 +81,7 @@ title("PPM: Information Content")
 xlabel("Time \rightarrow")
 ylabel("Information Content")
 %
-subplot(subplotMaxN,1,6)
+subplot(subplotMaxN,1,5)
 plot(drex_surprisal)
 xlim([1 ntime]);
 ylim(ylim_value);
@@ -100,19 +91,19 @@ ylabel("Surprisal")
 
 % subplots: PPM / DREX entropy
 ylim_value = max(max(ppm_entropy, [], 'all'), max(drex_entropy, [], 'all'));
-%ylim_value = [0 round(ylim_value+0.1*ylim_value)];
-subplot(subplotMaxN,1,7)
+ylim_value = [0 round(ylim_value+0.1*ylim_value)];
+subplot(subplotMaxN,1,6)
 plot(ppm_entropy)
 xlim([1 ntime]);
-ylim([0 inf]);
+ylim(ylim_value);
 title("PPM-Decay: Entropy")
 xlabel("Time \rightarrow")
 ylabel("Entropy")
 %
-subplot(subplotMaxN,1,8)
+subplot(subplotMaxN,1,7)
 plot(drex_entropy)
 xlim([1 ntime]);
-ylim([0 inf]);
+ylim(ylim_value);
 title("D-REX: Entropy")
 xlabel("Time \rightarrow")
 ylabel("Entropy")
@@ -126,7 +117,7 @@ ylabel("Entropy")
 %ylabel("Model Order")
 %xlim([1 ntime]);
 % subplot: DREX cb
-subplot(subplotMaxN,1,9)
+subplot(subplotMaxN,1,8)
 drex_context_beliefs(drex_context_beliefs==0) = nan;
 
 p = pcolor(log10(drex_context_beliefs));
@@ -142,7 +133,7 @@ set(gca,'YTick',xticks,'YTickLabel',xticklabels);
 grid on;
 
 % subplot: DREX bd
-subplot(subplotMaxN,1,10)
+subplot(subplotMaxN,1,9)
 post_bd = cell2mat(df.drex_bd);
 plot(post_bd);
 xlim([1 ntime]);
@@ -152,7 +143,7 @@ xlabel("Time \rightarrow")
 ylabel("Belief Dynamics")
 
 % subplot: DREX cd
-subplot(subplotMaxN,1,11)
+subplot(subplotMaxN,1,10)
 post_cd = cell2mat(df.drex_cd_probability);
 changepoint = df.drex_cd_changepoint;
 if iscell(changepoint)
