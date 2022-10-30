@@ -115,62 +115,60 @@ class ModelOutputPlot:
         ax.set_xlim(xlims)
         ax.yaxis.get_major_locator().set_params(integer=True)
 
-        ax = plt.subplot(maxSubplot, 1, 4)
-        ax.set_title("PPM: Model Order")
-        x = list(range(1, ntime + 1))
-        y = df_as_dict["ppm_model_order"]
-        ax.plot(x, y)
-        ax.set_ylabel("Model Order")
-        ax.set_xlim(xlims)
-        ax.yaxis.get_major_locator().set_params(integer=True)
-
         max_ppm_drex_ic = max(np.amax(df_as_dict["ppm_information_content"]), np.amax(df_as_dict["drex_surprisal"]))
 
-        ax = plt.subplot(maxSubplot, 1, 5)
+        ax = plt.subplot(maxSubplot, 1, 4)
         ax.set_title("PPM: Information Content")
+        ax.set_ylabel("Information Content")
         data = df_as_dict["ppm_information_content"]
         ax.plot(data)
         ax.set_xlim(xlims)
         ax.set_ylim((0, max_ppm_drex_ic))
 
-        ax = plt.subplot(maxSubplot, 1, 6)
+        ax = plt.subplot(maxSubplot, 1, 5)
         ax.set_title("D-REX: Surprisal")
+        ax.set_ylabel("Surprisal")
         data = df_as_dict["drex_surprisal"]
         ax.plot(data)
         ax.set_xlim(xlims)
         ax.set_ylim((0, max_ppm_drex_ic))
 
-        ax = plt.subplot(maxSubplot, 1, 7)
+        ax = plt.subplot(maxSubplot, 1, 6)
         ax.set_title("PPM: Entropy")
+        ax.set_ylabel("Entropy")
         data = df_as_dict["ppm_entropy"]
         ax.plot(data)
         ax.set_xlim(xlims)
         ax.set_ylim(bottom=0)
 
-        ax = plt.subplot(maxSubplot, 1, 8)
+        ax = plt.subplot(maxSubplot, 1, 7)
         ax.set_title("D-REX: Entropy")
+        ax.set_ylabel("Entropy")
         data = df_as_dict["drex_entropy"]
         ax.plot(data)
         ax.set_xlim(xlims)
         ax.set_ylim(bottom=0)
 
-        ax = plt.subplot(maxSubplot, 1, 9)
+        ax = plt.subplot(maxSubplot, 1, 8)
         ax.set_title("D-REX: Context Beliefs")
+        ax.set_ylabel("Context Belief")
         data = df_as_dict["drex_context_beliefs"]
         context_beliefs = self._prepare_context_beliefs(data).T
         context_beliefs[context_beliefs == 0] = np.nan
         p = plt.pcolor(np.log10(context_beliefs))
         ax.set_xlim(xlims)
 
-        ax = plt.subplot(maxSubplot, 1, 10)
+        ax = plt.subplot(maxSubplot, 1, 9)
         ax.set_title("D-REX: Belief Dynamics")
+        ax.set_ylabel("Belief Dynamics")
         data = df_as_dict["drex_bd"]
         ax.plot(data)
         ax.set_xlim(xlims)
         ax.set_ylim((0, 1))
 
-        ax = plt.subplot(maxSubplot, 1, 11)
+        ax = plt.subplot(maxSubplot, 1, 10)
         ax.set_title("D-REX: Change Probability")
+        ax.set_ylabel("Change Probability")
         data = df_as_dict["drex_cd_probability"]
         ax.plot(data)
         ax.set_xlim(xlims)
