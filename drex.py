@@ -340,8 +340,10 @@ class DREXOutputParameters:
         self.model_as_string = model_as_string
 
     def entropy_of(self, ensemble):
+        ensemble_sum = np.sum(ensemble)
         entropy = 0
         for e in ensemble:
+            e = e/ensemble_sum
             entropy += e * np.log2(e)
         entropy = -entropy
         return entropy
