@@ -52,23 +52,31 @@ xlabel("Time \rightarrow")
 ylabel("Observation")
 
 % subplots: PPM / DREX predictions
-subplot(subplotMaxN,1,2)
+ax(2) = subplot(subplotMaxN,1,2);
+pos{2} = ax(2).Position;
 [X, Y] = meshgrid(1:ntime, 1:ppm_alphabet_size);
 contourf(X,Y,ppm_predictions,30,'fill','on','linestyle','-','linecolor','none');
+caxis([0 1]);
 set(gca,'colormap',cmap);
 title("PPM: Predictions")
 xlabel("Time \rightarrow")
-ylabel("Observation")
+ylabel("Observation [obs. index]")
+colorbar()
+ax(2).Position = pos{2};
 %
-subplot(subplotMaxN,1,3)
+ax(3) = subplot(subplotMaxN,1,3);
+pos{3} = ax(3).Position;
 [X, Y] = meshgrid(1:ntime, 1:length(observation_levels));
 hold all;
 contourf(X,Y,drex_predictions,30,'fill','on','linestyle','-','linecolor','none');
+caxis([0 1]);
 set(gca,'colormap',cmap);
 hold off;
 title("D-REX: Predictions")
 xlabel("Time \rightarrow")
-ylabel("Observation")
+ylabel("Observation [obs. index]")
+colorbar()
+ax(3).Position = pos{3};
 
 % subplot: PPM IC / DREX surprisal
 ylim_value = max(max(ppm_information_content, [], 'all'), max(drex_surprisal, [], 'all'));
@@ -79,7 +87,7 @@ xlim([1 ntime]);
 ylim(ylim_value);
 title("PPM: Information Content")
 xlabel("Time \rightarrow")
-ylabel("Information Content")
+ylabel("Information Content [bits]")
 %
 subplot(subplotMaxN,1,5)
 plot(drex_surprisal)
@@ -87,7 +95,7 @@ xlim([1 ntime]);
 ylim(ylim_value);
 title("D-REX: Surprisal")
 xlabel("Time \rightarrow")
-ylabel("Surprisal")
+ylabel("Surprisal [bits]")
 
 % subplots: PPM / DREX entropy
 ylim_value = max(max(ppm_entropy, [], 'all'), max(drex_entropy, [], 'all'));
@@ -98,7 +106,7 @@ xlim([1 ntime]);
 ylim(ylim_value);
 title("PPM-Decay: Entropy")
 xlabel("Time \rightarrow")
-ylabel("Entropy")
+ylabel("Entropy [bits]")
 %
 subplot(subplotMaxN,1,7)
 plot(drex_entropy)
@@ -106,7 +114,7 @@ xlim([1 ntime]);
 ylim(ylim_value);
 title("D-REX: Entropy")
 xlabel("Time \rightarrow")
-ylabel("Entropy")
+ylabel("Entropy [bits]")
 
 % subplots: PPM / DREX interna
 % subplot: PPM model order
@@ -117,20 +125,22 @@ ylabel("Entropy")
 %ylabel("Model Order")
 %xlim([1 ntime]);
 % subplot: DREX cb
-subplot(subplotMaxN,1,8)
+ax(8) = subplot(subplotMaxN,1,8);
+pos{8} = ax(8).Position;
 drex_context_beliefs(drex_context_beliefs==0) = nan;
 
-p = pcolor(log10(drex_context_beliefs));
-set(gca,'Color',0.95*ones(1,3),'colormap',parula(10));
+p = pcolor(drex_context_beliefs);
+set(gca,'Color', ones(1,3),'colormap',parula(10),'ColorScale','log', 'CLim', [1e-4 1e0]);
 p.LineStyle = 'none';
 axis xy;
 title('D-REX: Context Belief')
 xlim([1 ntime]);
-caxis([-5 0])
 xlabel("Time \rightarrow")
-ylabel("Context Belief")
+ylabel("Context Windows")
 set(gca,'YTick',xticks,'YTickLabel',xticklabels);
 grid on;
+colorbar()
+ax(8).Position = pos{8};
 
 % subplot: DREX bd
 subplot(subplotMaxN,1,9)
@@ -140,7 +150,7 @@ xlim([1 ntime]);
 ylim([0 1]);
 title('D-REX: Belief Dynamics')
 xlabel("Time \rightarrow")
-ylabel("Belief Dynamics")
+ylabel("Divergence [bits]")
 
 % subplot: DREX cd
 subplot(subplotMaxN,1,10)
