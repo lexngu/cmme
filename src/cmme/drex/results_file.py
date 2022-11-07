@@ -21,9 +21,6 @@ class ResultsFilePsi:
             positions_length = len(positions[f])
 
             if predictions_positions != positions_length:
-                print(f)
-                print(predictions_positions)
-                print(positions_length)
                 raise ValueError("predictions and positions invalid! The number of positions must match.")
 
         # Check time for each feature
@@ -80,9 +77,9 @@ def parse_post_DREX_prediction_results(results):
 
         f_positions = results[f]["positions"]
         if isinstance(f_positions, int) or isinstance(f_positions, float): # convert
-            positions[f] = [f_positions]
+            positions[f] = np.array([f_positions])
         elif isinstance(f_positions, matlab.double):
-            positions[f] = list(np.array(f_positions))
+            positions[f] = np.array(f_positions)[0]
 
     return ResultsFilePsi(predictions, positions)
 

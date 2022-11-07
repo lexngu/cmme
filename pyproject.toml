@@ -1,0 +1,13 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cmme"
+version = "2022.10a1"
+requires-python = ">=3.7"
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
