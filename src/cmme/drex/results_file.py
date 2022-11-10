@@ -1,6 +1,8 @@
 import matlab
 import numpy as np
 
+from cmme.drex.util.matlab import MatlabWorker
+
 
 class ResultsFilePsi:
     def __init__(self, predictions, positions):
@@ -140,3 +142,24 @@ class ResultsFile:
         """Change detector's calculated change probability: time => 1"""
         self.psi = psi
         """Marginal (predictive) probability distribution"""
+
+def parse_results_file(results_file_path) -> ResultsFile:
+    data = MatlabWorker.from_mat(results_file_path)
+
+    instructions_file_path = data["instructions_file_path"]
+    input_sequence = data["input_sequence"]
+    run_results = data["run_DREX_model_results"]
+    bd_results = data["post_DREX_beliefdynamics_results"]
+    cd_results = data["post_DREX_changedecision_results"]
+    pred_results = data["post_DREX_prediction_results"]
+
+    input_sequence = np.array(input_sequence)
+    surprisal = np.array(run_results["surprisal"])
+    joint_surprisal = np.array(run_results["joint_surprisal"])
+    context_beliefs = np.array(run_results["context_beliefs"])
+    belief_dynamics = np.array(bd_results)
+    change_decision_changepoint = cd_results["changepoint"]
+    change_decision_probability = np.array(cd_results["changeprobability"])
+    psi = parse_post_DREX_prediction_results(pred_results)
+
+    return ResultsFile(instructions_file_path, input_sequence, surprisal, joint_surprisal, context_beliefs, belief_dynamics, change_decision_changepoint, change_decision_probability, psi)

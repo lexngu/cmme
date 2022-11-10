@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 class Config:
-    DEFAULT_CONFIG_FILE_PATH = (Path(__file__).parent / "cmme-comparison.ini").resolve()
+    DEFAULT_CONFIG_FILE_PATH = (Path(__file__).parent / "../../cmme-comparison.ini").resolve()
 
     # Section to use
     CONFIG_SECTION_KEY = "active"

@@ -1,8 +1,9 @@
 import csv
 from abc import ABC
+from pathlib import Path
 
-from ppmdecay.model import ModelType
-from ppmdecay.util import str_to_list
+from .model import ModelType
+from .util.util import str_to_list
 
 
 class ResultsFileData(ABC):
@@ -26,7 +27,7 @@ class PPMDecayResultsFileData(ResultsFileData):
         self._times = times
 
 
-class ResultsFile:
+class ResultsMetaFile:
     def __init__(self, model_type: ModelType, alphabet_levels, instructions_file_path, results_file_data_path):
         self._model_type = model_type
         self._alphabet_levels = alphabet_levels
@@ -91,4 +92,13 @@ class ResultsFile:
 
         return PPMDecayResultsFileData(symbols, model_orders, information_contents, entropies, distributions, positions, times)
 
+def parse_results_meta_file(results_file_meta_path : Path):
+    with open(results_file_meta_path, 'r') as f:
+        csvreader = csv.DictReader(f)
+        for row in csvreader:
+            model_type = ModelType(row["model_type"])
+            alphabet_levels = str_to_list(row["alphabet_levels"])
+            instructions_file_path = row["instructions_file_path"]
+            results_file_data_path = row["results_file_data_path"]
 
+    return ResultsMetaFile(model_type, alphabet_levels, instructions_file_path, results_file_data_path)
