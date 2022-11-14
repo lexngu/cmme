@@ -59,7 +59,7 @@ class InstructionsFile:
                 "xs": matlab.double(self.prior._prior_input_sequence),
                 "params": {
                     "distribution": self.prior._distribution.value,
-                    "D": self.prior.D_value()
+                    "D": matlab.double(self.prior.D_value())
                 }
             }
             if self.prior._distribution == DistributionType.GMM:
@@ -70,7 +70,7 @@ class InstructionsFile:
             "x": matlab.double(self.input_sequence),
             "params": {
                 "distribution": self.prior._distribution.value,
-                "D": self.prior.D_value(),
+                "D": matlab.double(self.prior.D_value()),
                 "hazard": matlab.double(self.hazard),
                 "obsnz": matlab.double(self.obsnz),
                 "memory": self.memory,

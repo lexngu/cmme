@@ -1,61 +1,74 @@
-import drex.matlab
-import ppmdecay.r
-import drex.results_file
-import ppmdecay.results_file
+import numpy as np
 import pandas as pd
-
 import scipy.io as sio
+from cmme.drex.results_file import ResultsFile
+from cmme.ppmdecay.results_file import ResultsMetaFile
+
 
 class DataFrame:
-    def __init__(self, ppm_results_file_path = None, drex_results_file_path = None):
-        self._ppm_results_file_path = ppm_results_file_path
-        self._drex_results_file_path = drex_results_file_path
-        self._ppm_results_file: ppmdecay.results_file.ResultsMetaFile = None
-        self._drex_results_file: drex.results_file.ResultsMetaFile = None
+    """Aggregates ResultsFiles into a single dataframe (if the contained input sequence is commensurable)"""
 
-        if ppm_results_file_path is not None:
-            self._ppm_results_file = ppmdecay.r.parse_results_meta_file(ppm_results_file_path)
-        if drex_results_file_path is not None:
-            self._drex_results_file = drex.matlab.parse_results_meta_file(drex_results_file_path)
+    def __init__(self, ppm_results_file: ResultsMetaFile, drex_results_file: ResultsFile, input_sequence):
+        """
+        :param ppm_results_file:
+        :param drex_results_file:
+        :param input_sequence: Input sequence to use (in D-REX: the feature index is automatically detected)
+        """
+        self.ppm_results_file = ppm_results_file
+        self.drex_results_file = drex_results_file
+        self.drex_feature_index = None
 
-        self.data_frame = self._build_data_frame()
+        self.df = self._build_data_frame()
 
-    def _build_data_frame(self):
-        prfdata = self._ppm_results_file.results_file_data
-        drf = self._drex_results_file
+    def _build_data_frame(self) -> pd.DataFrame:
+        ppm_data = self.ppm_results_file.results_file_data
+        drex_data = self.drex_results_file
 
-        ppm_input_sequence = prfdata.symbols
-        drex_feature = 0
-        drex_input_sequence = drf.input_sequence.T[drex_feature] # TODO support multi-feature
-        if len(ppm_input_sequence) != len(drex_input_sequence):
-            raise ValueError("Results files invalid! The length of their input must match")
+        ppm_input_sequence = ppm_data.symbols
+        try:
+            ppm_input_sequence_as_numbers = list(map(float, ppm_input_sequence))
+        except:
+            raise ValueError("PPM's input sequence was expected to but cannot be converted to a list of numbers.")
 
-        # Column values: Time-variant
+        drex_input_sequence = None
+        drex_input_sequences = drex_data.input_sequence
+        drex_input_sequence_feature_count = drex_data.dimension_values["feature"]
+        for feature_index in range(drex_input_sequence_feature_count):
+            drex_feature_input_sequence = drex_input_sequences[:, feature_index].tolist()
+            input_sequences_are_equal = np.array_equal(drex_feature_input_sequence, ppm_input_sequence_as_numbers)
+            if input_sequences_are_equal:
+                self.drex_feature_index = feature_index
+                drex_input_sequence = drex_feature_input_sequence
+                break
+        if drex_input_sequence is None:
+            raise ValueError("Could not find a matching input sequence in any of D-REX's feature-specific input sequences.")
+
+        # Data frame columns
         observations = drex_input_sequence
-        ppm_information_content = prfdata.information_contents
-        drex_joint_surprisal = drf.joint_surprisal
-        ppm_entropy = prfdata.entropies
-        drex_entropy = [pd.NA]*len(ppm_input_sequence) # TODO how to correctly calculate entropy?
-        ppm_predictions = prfdata.distributions
-        drex_predictions = drf.psi.prediction_by_feature(drex_feature)
-        ppm_model_order = prfdata.model_orders
-        drex_context_beliefs = drf.context_beliefs
-        drex_belief_dynamics = drf.belief_dynamics
-        drex_changedecision_probability = drf.change_decision_probability
+        ppm_information_content = ppm_data.information_contents
+        drex_joint_surprisal = drex_data.joint_surprisal
+        ppm_entropy = ppm_data.entropies
+        drex_entropy = [pd.NA] * len(ppm_input_sequence) # TODO how to correctly calculate entropy?
+        ppm_predictions = ppm_data.distributions
+        drex_predictions = drex_data.psi.prediction_by_feature(self.drex_feature_index)
+        ppm_model_order = ppm_data.model_orders
+        drex_context_beliefs = drex_data.context_beliefs
+        drex_belief_dynamics = drex_data.belief_dynamics
+        drex_changedecision_probability = drex_data.change_decision_probability
         # Constants
-        ppm_alphabet_size = len(self._ppm_results_file._alphabet_levels)
-        drex_positions = self._drex_results_file.psi.positions_by_feature(drex_feature)
-        drex_changedecision_threshold = 0 # TODO
-        drex_changedecision_changepoint = drf.change_decision_changepoint
+        ppm_alphabet_size = len(self.ppm_results_file._alphabet_levels)
+        drex_positions = self.drex_results_file.psi.positions_by_feature(self.drex_feature_index)
+        drex_changedecision_threshold = drex_data.change_decision_threshold  # TODO
+        drex_changedecision_changepoint = drex_data.change_decision_changepoint
 
         data_frame_columns = ["observation",
-                            "ppm_information_content", "drex_surprisal",
-                            "ppm_alphabet_size", "ppm_model_order", "ppm_predictions", "drex_predictions",
-                            "ppm_entropy", "drex_entropy",
-                            "drex_context_beliefs",
-                            "drex_bd",
-                            "drex_cd_probability", "drex_cd_changepoint", "drex_cd_threshold"]
-        data_frame = pd.DataFrame([], columns = data_frame_columns)
+                              "ppm_information_content", "drex_surprisal",
+                              "ppm_alphabet_size", "ppm_model_order", "ppm_predictions", "drex_predictions",
+                              "ppm_entropy", "drex_entropy",
+                              "drex_context_beliefs",
+                              "drex_bd",
+                              "drex_cd_probability", "drex_cd_changepoint", "drex_cd_threshold"]
+        data_frame = pd.DataFrame([], columns=data_frame_columns)
 
         # init data frame
         for idx, observation in enumerate(observations):
@@ -65,15 +78,17 @@ class DataFrame:
                                    ppm_entropy[idx], drex_entropy[idx],
                                    drex_context_beliefs[idx],
                                    drex_belief_dynamics[idx],
-                                   drex_changedecision_probability[idx], drex_changedecision_changepoint, drex_changedecision_threshold]
+                                   drex_changedecision_probability[idx], drex_changedecision_changepoint,
+                                   drex_changedecision_threshold]
 
         return data_frame
 
-def write_data_frame(data_frame: DataFrame, output_file_path = "data_frame.mat"):
-    data = {
-        "ppm_results_file_path": data_frame._ppm_results_file_path,
-        "drex_results_file_path": data_frame._drex_results_file_path,
-        "data_frame": {name: col.values for name, col in data_frame.data_frame.items()}
-    }
-    sio.savemat(output_file_path, data) # uses scipy.io because of easier use with np.arrays
-    return output_file_path
+
+    def write_to_mat(self, output_file_path):
+        data = {
+            "ppm_results_file_path": self.df._ppm_results_file_path,
+            "drex_results_file_path": self.df._drex_results_file_path,
+            "data_frame": {name: col.values for name, col in self.df.data_frame.items()}
+        }
+        sio.savemat(output_file_path, data) # Note: uses scipy.io because of easier use with np.arrays
+        return output_file_path
