@@ -52,8 +52,9 @@ post_DREX_beliefdynamics_results = post_DREX_beliefdynamics(run_DREX_model_resul
 
 % calculate changedecision (post_DREX_changedecision.m)
 pdc_instructions = instructions_file.post_DREX_changedecision;
-post_DREX_changedecision_results = post_DREX_changedecision(run_DREX_model_results, pdc_instructions.threshold);
+change_decision_threshold = pdc_instructions.threshold;
+post_DREX_changedecision_results = post_DREX_changedecision(run_DREX_model_results, change_decision_threshold);
 
-save(instructions_file.results_file_path, "instructions_file_path", "input_sequence", "run_DREX_model_results", "post_DREX_changedecision_results", "post_DREX_prediction_results", "post_DREX_beliefdynamics_results", "post_DREX_changedecision_results");
+save(instructions_file.results_file_path, "instructions_file_path", "input_sequence", "run_DREX_model_results", "post_DREX_changedecision_results", "post_DREX_prediction_results", "post_DREX_beliefdynamics_results", "post_DREX_changedecision_results", "change_decision_threshold");
 out.results_file_path = instructions_file.results_file_path;
 end

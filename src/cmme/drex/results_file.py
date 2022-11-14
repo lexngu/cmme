@@ -89,7 +89,7 @@ def parse_post_DREX_prediction_results(results):
 class ResultsFile:
     # TODO add prediction_params from run_DREX_model.m?
     def __init__(self, instructions_file_path, input_sequence, surprisal, joint_surprisal, context_beliefs,
-                 belief_dynamics, change_decision_changepoint, change_decision_probability, psi: ResultsFilePsi):
+                 belief_dynamics, change_decision_changepoint, change_decision_probability, change_decision_threshold, psi: ResultsFilePsi):
         if len(input_sequence.shape) != 2:
             raise ValueError("Shape of input_sequence invalid! Expected two dimensions: time, feature.")
         if len(surprisal.shape) != 2:
@@ -140,6 +140,8 @@ class ResultsFile:
         """Change detector's calculated changepoint"""
         self.change_decision_probability = change_decision_probability
         """Change detector's calculated change probability: time => 1"""
+        self.change_decision_threshold = change_decision_threshold
+        """Change detector's threshold: 1"""
         self.psi = psi
         """Marginal (predictive) probability distribution"""
 
@@ -160,6 +162,7 @@ def parse_results_file(results_file_path) -> ResultsFile:
     belief_dynamics = np.array(bd_results)
     change_decision_changepoint = cd_results["changepoint"]
     change_decision_probability = np.array(cd_results["changeprobability"])
+    change_decision_threshold = float(data["change_decision_threshold"])
     psi = parse_post_DREX_prediction_results(pred_results)
 
-    return ResultsFile(instructions_file_path, input_sequence, surprisal, joint_surprisal, context_beliefs, belief_dynamics, change_decision_changepoint, change_decision_probability, psi)
+    return ResultsFile(instructions_file_path, input_sequence, surprisal, joint_surprisal, context_beliefs, belief_dynamics, change_decision_changepoint, change_decision_probability, change_decision_threshold, psi)
