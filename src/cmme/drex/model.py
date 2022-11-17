@@ -1,9 +1,6 @@
 from pathlib import Path
-
-import numpy as np
-
 import cmme.drex.util.matlab
-from .distributions import *
+from .distribution.prior import Prior
 from .instance import DREXInstance
 from .instructions_file import InstructionsFile
 from .results_file import ResultsFile
@@ -17,7 +14,7 @@ class DREXModel:
     Using +instance+, one can hyper-parameterize D-REX.
     """
 
-    def __init__(self, prior: DrexDistributionContainer):
+    def __init__(self, prior: Prior):
         """Creates a D-REX instance with D-REX's current default values"""
         self.instance: DREXInstance = DREXInstance(prior)
 

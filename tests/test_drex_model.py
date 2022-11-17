@@ -1,3 +1,5 @@
+from cmme.drex.distribution.base import DistributionType
+from cmme.drex.distribution.prior import UnprocessedPrior
 from cmme.drex.model import *
 
 
@@ -5,7 +7,7 @@ def test_default_drex_instance_uses_original_default_values():
     prior_distribution_type = DistributionType.GAUSSIAN
     prior_input_sequence = [2, 3, 4]
     prior_D = 2
-    prior = UnprocessedDrexDistributionContainer(prior_distribution_type, prior_input_sequence, prior_D)
+    prior = UnprocessedPrior(prior_distribution_type, prior_input_sequence, prior_D)
     drex_model = DREXModel(prior)
     drex_instance = drex_model.instance
 
@@ -21,7 +23,7 @@ def test_to_instructions_file_uses_specified_values():
     prior_D = 1
     prior_max_n_comp = 9
     prior_beta = 0.02
-    prior = UnprocessedDrexDistributionContainer(prior_distribution_type, prior_input_sequence, prior_D,
+    prior = UnprocessedPrior(prior_distribution_type, prior_input_sequence, prior_D,
                                                  prior_max_n_comp, prior_beta)
     drex_model = DREXModel(prior)
     drex_instance = drex_model.instance
@@ -60,7 +62,7 @@ def test_run_succeeds():
     prior_D = 1
     prior_max_n_comp = 9
     prior_beta = 0.02
-    prior = UnprocessedDrexDistributionContainer(prior_distribution_type, prior_input_sequence, prior_D,
+    prior = UnprocessedPrior(prior_distribution_type, prior_input_sequence, prior_D,
                                                  prior_max_n_comp, prior_beta)
     drex_model = DREXModel(prior)
     drex_instance = drex_model.instance

@@ -1,30 +1,20 @@
-from enum import Enum
 from abc import ABC, abstractmethod
 import numpy as np
 import numpy.typing as npt
 
+from cmme.drex.distribution.base import DistributionType
+from cmme.drex.distribution.sufficient_statistics import UpdateableMultivariateGaussianDistribution, \
+    UpdateableGmmDistribution, UpdateablePoissonDistribution
 from cmme.drex.util.util import auto_convert_input_sequence
 
 
-class DistributionType(Enum):
-    """Implemented distribution types of D-REX"""
-    GAUSSIAN = "gaussian"
-    LOGNORMAL = "lognormal"
-    GMM = "gmm"
-    POISSON = "poisson"
-
-
-class ParameterizedDistribution(ABC):
-    """
-    Parameterized distribution (in D-REX: prior, suffstat)
-    """
+class Prior(ABC):
     def __init__(self):
         pass
 
-
-class DrexDistributionContainer(ABC):
-    def __init__(self, distribution_type: DistributionType):
-        self.distribution_type = distribution_type
+    @abstractmethod
+    def distribution_type(self):
+        pass
 
     @abstractmethod
     def feature_count(self):
@@ -35,33 +25,9 @@ class DrexDistributionContainer(ABC):
         pass
 
 
-class MultivariateGaussianDistribution(ParameterizedDistribution):
-    """
-    D-variate Gaussian distribution, with +D+ mean values, and a DxD covariance matrix.
-    If D = 1, one gets a univariate Gaussian distribution with one mean and one variance value.
-    """
-
-    def __init__(self, means, covariance):
-        super()
-
-        self.means = means
-        """Mean of each variate"""
-
-        self.covariance = covariance
-        """Covariance matrix"""
-
-
-class UpdateableMultivariateGaussianDistribution(MultivariateGaussianDistribution):
-    def __init__(self, means, covariance, n):
-        super(means, covariance)
-
-        self.n = n
-        """Number of observations summarized in the parameters so far"""
-
-
-class DrexGaussianDistributionContainer(DrexDistributionContainer):
+class GaussianPrior(Prior):
     def __init__(self, means: npt.ArrayLike , covariance: npt.ArrayLike, n: npt.ArrayLike):
-        super(DistributionType.GAUSSIAN)
+        super()
 
         # Ensure parameters to have consistent shapes
         if len(means.shape) != 2:
@@ -78,10 +44,10 @@ class DrexGaussianDistributionContainer(DrexDistributionContainer):
         if not (means_D_value == covariance_first_D_value and covariance_first_D_value == covariance_second_D_value):
             raise ValueError("Dimension 'D' invalid! Value must be equal for parameters means, and covariance.")
 
-        self.feature_count = means_feature_count
+        self._feature_count = means_feature_count
         """Number of features"""
 
-        self.D_value = means_D_value
+        self._D_value = means_D_value
         """D value (amount of temporal dependence while calculating the conditional distribution)"""
 
         self.distributions = dict()
@@ -94,15 +60,18 @@ class DrexGaussianDistributionContainer(DrexDistributionContainer):
 
             self.distributions[feature_index] = UpdateableMultivariateGaussianDistribution(_means, covariance, n)
 
+    def distribution_type(self):
+        return DistributionType.GAUSSIAN
+
     def feature_count(self):
-        return self.feature_count
+        return self._feature_count
 
     def D_value(self):
-        return self.D_value()
+        return self._D_value
 
-class DrexLognormalDistributionContainer(DrexDistributionContainer): # TODO remove redundancy, cf. DrexGaussianDistributionContainer
+class LognormalPrior(Prior): # TODO remove redundancy, cf. DrexGaussianDistributionContainer
     def __init__(self, means: npt.ArrayLike , covariance: npt.ArrayLike, n: npt.ArrayLike):
-        super(DistributionType.LOGNORMAL)
+        super()
 
         # Ensure parameters to have consistent shapes
         if len(means.shape) != 2:
@@ -119,10 +88,10 @@ class DrexLognormalDistributionContainer(DrexDistributionContainer): # TODO remo
         if not (means_D_value == covariance_first_D_value and covariance_first_D_value == covariance_second_D_value):
             raise ValueError("Dimension 'D' invalid! Value must be equal for parameters means, and covariance.")
 
-        self.feature_count = means_feature_count
+        self._feature_count = means_feature_count
         """Number of features"""
 
-        self.D_value = means_D_value
+        self._D_value = means_D_value
         """D value (amount of temporal dependence while calculating the conditional distribution)"""
 
         self.distributions = dict()
@@ -135,32 +104,10 @@ class DrexLognormalDistributionContainer(DrexDistributionContainer): # TODO remo
 
             self.distributions[feature_index] = UpdateableMultivariateGaussianDistribution(_means, covariance, n)
 
+    def distribution_type(self):
+        DistributionType.LOGNORMAL
 
-class UpdateableGmmDistribution(ParameterizedDistribution):
-    def __init__(self, means, covariance, n, pi, sp, k):
-        super()
-
-        self.k = k
-        """Number of components"""
-
-        self.components = dict()
-        """Components (Gaussian distributions)"""
-
-        for component_index in range(k):
-            component_mean = means[component_index]
-            component_covariance = covariance[component_index]
-            component_n = n[component_index]
-
-            self.components = UpdateableMultivariateGaussianDistribution(component_mean, component_covariance, component_n)
-
-        self.pi = np.array(pi, dtype=float)
-        """Components' weight"""
-
-        self.sp = np.array(sp, dtype=float)
-        """Components' likelihood"""
-
-
-class DrexGmmDistributionContainer(DrexDistributionContainer):
+class GmmPrior(Prior):
     """
     1-variate Gaussian Mixture Model, consisting of up to +k+ components.
     """
@@ -196,7 +143,7 @@ class DrexGmmDistributionContainer(DrexDistributionContainer):
                 n_component_count == pi_component_count and pi_component_count == sp_component_count):
             raise ValueError("Dimension component invalid! Value must be equal for mu, sigma, n, pi, and sp.")
 
-        self.feature_count = means_feature_count
+        self._feature_count = means_feature_count
         """Number of features"""
 
         self.distributions = dict()
@@ -212,32 +159,17 @@ class DrexGmmDistributionContainer(DrexDistributionContainer):
 
             self.distributions[feature_index] = UpdateableGmmDistribution(_means, covariance, n, pi, sp, k)
 
+    def distribution_type(self):
+        return DistributionType.GMM
+
     def feature_count(self):
-        return self.feature_count
+        return self._feature_count
 
     def D_value(self):
         return 1
 
-class PoissonDistribution(ParameterizedDistribution):
-    def __init__(self, lambd):
-        super()
 
-        self.lambd = lambd
-        """Lambda parameter"""
-
-
-class UpdateablePoissonDistribution(PoissonDistribution):
-    def __init__(self, lambd, n, D):
-        super(lambd)
-
-        self.n = n
-        """Observation count"""
-
-        self.D = D
-        """Interval size"""
-
-
-class DrexPoissonDistributionContainer(DrexDistributionContainer):
+class PoissonPrior(Prior):
     def __init__(self, lambd, n, D):
         super(DistributionType.POISSON)
 
@@ -252,7 +184,7 @@ class DrexPoissonDistributionContainer(DrexDistributionContainer):
         if not lambda_features == n_features:
             raise ValueError("Dimension 'feature' invalid! Value must be equal for lambd and n.")
 
-        self.feature_count = lambda_features
+        self._feature_count = lambda_features
 
         self.distributions = dict()
         """Feature-specific distribution"""
@@ -264,23 +196,27 @@ class DrexPoissonDistributionContainer(DrexDistributionContainer):
 
             self.distributions[feature_index] = UpdateablePoissonDistribution(_lambd, _n, _D)
 
+    def distribution_type(self):
+        return DistributionType.POISSON
+
     def feature_count(self):
-        return self.feature_count
+        return self._feature_count
 
     def D_value(self):
         pass # TODO feature specific?
 
 
-class UnprocessedDrexDistributionContainer(DrexDistributionContainer):
-    def __init__(self, distribution: DistributionType, prior_input_sequence, D = None, max_n_comp = None, beta = None):
+class UnprocessedPrior(Prior):
+    def __init__(self, distribution: DistributionType, prior_input_sequence, D = None, max_n_comp = None, beta = None): # TODO move beta to D-REX hyper parameters
         """
-        Creates an unprocessed prior which will be processed by D-REX.
+        Creates an unprocessed prior which will be processed by D-REX and used as "prior" for new context window hypotheses.
         :param distribution: DistributionType
-        :param D: positive int
         :param prior_input_sequence: np.array with shape (time, feature), or 2d-array with feature x time
-        :param max_n_comp: positive int
-        .param beta: positive float
+        :param D: amount of temporal dependence. If None, D-REX's default value will be used (Gaussian: 1, Poisson: 50), if *distribution* is GMM, D=1 is enforced.
+        :param max_n_comp: Relevant for *distribution* GMM: Maxmimum number of components in Gaussian Mixture Model.
+        :param beta: probability between [0,1]. Threshold for new GMM components (see D-REX).
         """
+
         pis = auto_convert_input_sequence(prior_input_sequence)
 
         # Check prior_input_sequence
@@ -302,9 +238,8 @@ class UnprocessedDrexDistributionContainer(DrexDistributionContainer):
             if max_n_comp < 1:
                 raise ValueError("max_n_comp invalid! Value must be greater than or equal 1.")
 
-        self.dimension_values = dict()
-        self.dimension_values["D"] = D
-        self.dimension_values["feature"] = prior_input_sequence_features
+        self._D = D
+        self._feature_count = prior_input_sequence_features
 
         # Set attributes
         self._distribution = distribution
@@ -312,8 +247,11 @@ class UnprocessedDrexDistributionContainer(DrexDistributionContainer):
         self._max_n_comp = max_n_comp
         self._beta = beta
 
+    def distribution_type(self):
+        return self._distribution
+
     def D_value(self):
-        return self.dimension_values["D"]
+        return self._D
 
     def feature_count(self):
-        return self.dimension_values["feature"]
+        return self._feature_count

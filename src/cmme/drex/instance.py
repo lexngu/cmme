@@ -1,11 +1,9 @@
-import numpy as np
-from .distributions import *
-from .instructions_file import InstructionsFile
+from .distribution.prior import *
 from .util.util import *
 
 
 class DREXInstance:
-    def __init__(self, prior: DrexDistributionContainer):
+    def __init__(self, prior: Prior):
         """
         Creates a D-REX instance with D-REX's current default values
         :param distribution: The distribution type to use (e.g., Gaussian)

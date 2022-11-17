@@ -5,13 +5,14 @@ import matlab
 import numpy.typing as npt
 import numpy as np
 
-from cmme.drex.distributions import UnprocessedDrexDistributionContainer, DistributionType, DrexDistributionContainer
-from cmme.drex.util.matlab import MatlabWorker
+from .distribution.base import DistributionType
+from .distribution.prior import Prior, UnprocessedPrior
+from .util.matlab import MatlabWorker
 
 
 class InstructionsFile:
     def __init__(self, instructions_file_path: Path, results_file_path: Path, input_sequence: npt.ArrayLike,
-                 prior: DrexDistributionContainer, hazard: Any, memory: int, maxhyp: int, obsnz: float,
+                 prior: Prior, hazard: Any, memory: int, maxhyp: int, obsnz: float,
                  change_decision_threshold : float = None):
         # Checks
         input_sequence_length = len(input_sequence)
@@ -54,7 +55,7 @@ class InstructionsFile:
         data = dict()
 
         # Add instructions for procesing an unprocessed prior using D-REX's estimate_suffstat.m
-        if isinstance(self.prior, UnprocessedDrexDistributionContainer):
+        if isinstance(self.prior, UnprocessedPrior):
             data["estimate_suffstat"] = {
                 "xs": matlab.double(self.prior._prior_input_sequence),
                 "params": {

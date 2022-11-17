@@ -1,13 +1,14 @@
 import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
-
 from matplotlib.figure import Figure
 from matplotlib import pyplot as plt
-
 from cmme.drex.util.matlab import MatlabWorker
 from cmme.visualization.data_frame import DataFrame
 import numpy as np
+
+from cmme.visualization.util.util import cmme_default_plot_output_file_path
+
 
 class Plot(ABC):
     def __init__(self, data_frame: DataFrame):
@@ -21,7 +22,7 @@ class MatlabPlot(Plot):
     def __init__(self, data_frame: DataFrame):
         super().__init__(data_frame)
 
-    def plot(self):
+    def plot(self, plot_output_file_path = cmme_default_plot_output_file_path()):
         data_frame_path = self.data_frame.write_to_mat()
         result = MatlabWorker.plot(data_frame_path)
         result_figures = result['content']['figures']
@@ -29,7 +30,7 @@ class MatlabPlot(Plot):
         for figure_path in result_figures:
             figure_name = Path(figure_path).name
             figure_destination_path = str(
-                self.plot_output_base_path.parent / (str(self.plot_output_base_path.stem) + "-" + figure_name))
+                plot_output_file_path.parent / (str(plot_output_file_path.stem) + "-" + figure_name))
             shutil.copyfile(figure_path, figure_destination_path)
             res.append(figure_destination_path)
         return res

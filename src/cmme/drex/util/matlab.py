@@ -4,41 +4,30 @@ import time
 from pathlib import Path
 
 import matlab.engine
+from pymatbridge import pymatbridge
+
+from cmme.config import Config
 
 class MatlabWorker:
-    _matlab_engine = None
-    _matlab_engine_running = False
-    _matlab_last_action = None
-    _matlab_work_in_progress = 0
+    DREX_INTERMEDIATE_SCRIPT_PATH = (Path(
+        __file__).parent.parent.parent.parent.parent.absolute() / "./res/wrappers/d-rex/drex_intermediate_script.m").resolve()
+    SUMMARY_PLOT_SCRIPT_PATH = (Path(
+        __file__).parent.parent.parent.parent.parent.absolute() / "./res/wrappers/d-rex/summary_plot.m").resolve()
 
     AUTOSTOP_WAIT_TIME = 10 # seconds
-
-    DREX_INTERMEDIATE_SCRIPT_PATH = (Path(__file__).parent.parent.parent.parent.parent.absolute() / "./res/wrappers/d-rex/drex_intermediate_script.m").resolve()
-    SUMMARY_PLOT_SCRIPT_PATH = (Path( __file__ ).parent.parent.parent.parent.parent.absolute() / "./res/wrappers/d-rex/summary_plot.m").resolve()
 
     def run_model(instructions_file_path: Path):
         """
         Triggers the execution of the wrapper script, running D-REX's run_DREX_model.m function.
         :return: dictionary with MATLAB output
         """
-        MatlabWorker._autostart_matlab()
-        MatlabWorker._matlab_work_in_progress += 1
+        MatlabEngineWorker._autostart_matlab()
+        MatlabEngineWorker._matlab_work_in_progress += 1
 
-        MatlabWorker._matlab_engine.addpath(str(MatlabWorker.DREX_INTERMEDIATE_SCRIPT_PATH.parent)) # load script
-        result = MatlabWorker._matlab_engine.drex_intermediate_script(str(instructions_file_path)) # execute script
+        MatlabEngineWorker._matlab_engine.addpath(str(MatlabWorker.DREX_INTERMEDIATE_SCRIPT_PATH.parent))  # load script
+        result = MatlabEngineWorker._matlab_engine.drex_intermediate_script(str(instructions_file_path))  # execute script
 
-        MatlabWorker._matlab_work_in_progress -= 1
-        return result
-
-    def plot(input_file_path: Path):
-        """Triggers the execution of the script generating the comparison plot."""
-        MatlabWorker._autostart_matlab()
-        MatlabWorker._matlab_work_in_progress += 1
-
-        MatlabWorker._matlab_engine.addpath(str(MatlabWorker.SUMMARY_PLOT_SCRIPT_PATH.parent)) # load script
-        result = MatlabWorker._matlab_engine.summary_plot(str(input_file_path)) # execute script
-
-        MatlabWorker._matlab_work_in_progress -= 1
+        MatlabEngineWorker._matlab_work_in_progress -= 1
         return result
 
     def to_mat(data, path):
@@ -49,63 +38,118 @@ class MatlabWorker:
         :param path:
         :return: path
         """
-        MatlabWorker._autostart_matlab()
-        MatlabWorker._matlab_work_in_progress += 1
+        MatlabEngineWorker._autostart_matlab()
+        MatlabEngineWorker._matlab_work_in_progress += 1
 
         for k, v in data.items():
-            MatlabWorker._matlab_engine.workspace[k] = v
+            MatlabEngineWorker._matlab_engine.workspace[k] = v
         keys = data.keys()
-        MatlabWorker._matlab_engine.save(str(path), *keys, nargout=0)
+        MatlabEngineWorker._matlab_engine.save(str(path), *keys, nargout=0)
 
-        MatlabWorker._matlab_work_in_progress -= 1
+        MatlabEngineWorker._matlab_work_in_progress -= 1
         return path
 
-    def from_mat(path : Path) -> dict:
+    def from_mat(path: Path) -> dict:
         """
         Parses a .mat file and returns its content as dictionary, using MATLAB.
 
         :param path:
         :return:
         """
-        MatlabWorker._autostart_matlab()
-        MatlabWorker._matlab_work_in_progress += 1
+        MatlabEngineWorker._autostart_matlab()
+        MatlabEngineWorker._matlab_work_in_progress += 1
 
         data = {}
-        MatlabWorker._matlab_engine.load(str(path), nargout=0)
-        varnames = MatlabWorker._matlab_engine.who()
+        MatlabEngineWorker._matlab_engine.load(str(path), nargout=0)
+        varnames = MatlabEngineWorker._matlab_engine.who()
         for v in varnames:
-            data[v] = MatlabWorker._matlab_engine.workspace[v]
+            data[v] = MatlabEngineWorker._matlab_engine.workspace[v]
 
-        MatlabWorker._matlab_work_in_progress -= 1
+        MatlabEngineWorker._matlab_work_in_progress -= 1
         return data
 
+    def plot(input_file_path: Path):
+        """Triggers the execution of the script generating the comparison plot."""
+        PymatbridgeMatlabWorker._autostart_matlab()
+        PymatbridgeMatlabWorker._matlab_work_in_progress += 1
+
+        PymatbridgeMatlabWorker._matlab_instance.addpath(str(MatlabWorker.SUMMARY_PLOT_SCRIPT_PATH.parent)) # load script
+        result = PymatbridgeMatlabWorker._matlab_instance.summary_plot(str(input_file_path)) # execute script
+
+        PymatbridgeMatlabWorker._matlab_work_in_progress -= 1
+        return result
+
+class MatlabEngineWorker:
+    _matlab_engine = None
+    _matlab_engine_running = False
+    _matlab_last_action = None
+    _matlab_work_in_progress = 0
+
     def _start_matlab():
-        if MatlabWorker._matlab_engine == None:
-            MatlabWorker._matlab_engine = matlab.engine.start_matlab()
-            MatlabWorker._matlab_engine_running = True
-            MatlabWorker._autostop_thread = threading.Thread(target=MatlabWorker._autostop_matlab_thread_func)
-            MatlabWorker._autostop_thread.start()
+        if MatlabEngineWorker._matlab_engine == None:
+            MatlabEngineWorker._matlab_engine = matlab.engine.start_matlab()
+            MatlabEngineWorker._matlab_engine_running = True
+            MatlabEngineWorker._autostop_thread = threading.Thread(target=MatlabEngineWorker._autostop_matlab_thread_func)
+            MatlabEngineWorker._autostop_thread.start()
 
     def _stop_matlab():
-        if MatlabWorker._matlab_engine != None:
-            MatlabWorker._matlab_engine.exit()
-            MatlabWorker._matlab_engine_running = False
-            MatlabWorker._matlab_engine = None
+        if MatlabEngineWorker._matlab_engine != None:
+            MatlabEngineWorker._matlab_engine.exit()
+            MatlabEngineWorker._matlab_engine_running = False
+            MatlabEngineWorker._matlab_engine = None
 
     def restart_matlab():
-        MatlabWorker._stop_matlab()
-        MatlabWorker._start_matlab()
+        MatlabEngineWorker._stop_matlab()
+        MatlabEngineWorker._start_matlab()
 
     def _autostart_matlab():
-        MatlabWorker._matlab_last_action = datetime.now()
-        if MatlabWorker._matlab_engine_running != True:
-            MatlabWorker._start_matlab()
+        MatlabEngineWorker._matlab_last_action = datetime.now()
+        if MatlabEngineWorker._matlab_engine_running != True:
+            MatlabEngineWorker._start_matlab()
 
     def _autostop_matlab_thread_func():
         sleep_time = max(MatlabWorker.AUTOSTOP_WAIT_TIME / 5.0, 1) # seconds until next check; once every >=1s
-        while (MatlabWorker._matlab_engine != None):
+        while (MatlabEngineWorker._matlab_engine != None):
             now = datetime.now()
-            if MatlabWorker._matlab_work_in_progress <= 0 and\
-                    (now - MatlabWorker._matlab_last_action).total_seconds() >= MatlabWorker.AUTOSTOP_WAIT_TIME:
-                MatlabWorker._stop_matlab()
+            if MatlabEngineWorker._matlab_work_in_progress <= 0 and\
+                    (now - MatlabEngineWorker._matlab_last_action).total_seconds() >= MatlabWorker.AUTOSTOP_WAIT_TIME:
+                MatlabEngineWorker._stop_matlab()
+            time.sleep(sleep_time)
+
+class PymatbridgeMatlabWorker:
+    _matlab_instance = None
+    _matlab_instance_running = False
+    _matlab_last_action = None
+    _matlab_work_in_progress = 0
+
+    def _start_matlab(matlab_executable_path = str(Config().matlab_path())):
+        if PymatbridgeMatlabWorker._matlab_instance == None:
+            PymatbridgeMatlabWorker._matlab_instance = pymatbridge.Matlab(executable=matlab_executable_path, startup_options="-nodisplay -nodesktop -nosplash")
+            PymatbridgeMatlabWorker._matlab_instance.start()
+            PymatbridgeMatlabWorker._matlab_instance_running = True
+            PymatbridgeMatlabWorker._autostop_thread = threading.Thread(target=PymatbridgeMatlabWorker._autostop_matlab_thread_func)
+            PymatbridgeMatlabWorker._autostop_thread.start()
+
+    def _stop_matlab():
+        if PymatbridgeMatlabWorker._matlab_instance != None:
+            PymatbridgeMatlabWorker._matlab_instance.exit()
+            PymatbridgeMatlabWorker._matlab_instance_running = False
+            PymatbridgeMatlabWorker._matlab_instance = None
+
+    def restart_matlab():
+        PymatbridgeMatlabWorker._stop_matlab()
+        PymatbridgeMatlabWorker._start_matlab()
+
+    def _autostart_matlab():
+        PymatbridgeMatlabWorker._matlab_last_action = datetime.now()
+        if PymatbridgeMatlabWorker._matlab_instance_running != True:
+            PymatbridgeMatlabWorker._start_matlab()
+
+    def _autostop_matlab_thread_func():
+        sleep_time = max(MatlabWorker.AUTOSTOP_WAIT_TIME / 5.0, 1) # seconds until next check; once every >=1s
+        while (PymatbridgeMatlabWorker._matlab_instance != None):
+            now = datetime.now()
+            if PymatbridgeMatlabWorker._matlab_work_in_progress <= 0 and\
+                    (now - PymatbridgeMatlabWorker._matlab_last_action).total_seconds() >= MatlabWorker.AUTOSTOP_WAIT_TIME:
+                PymatbridgeMatlabWorker._stop_matlab()
             time.sleep(sleep_time)
