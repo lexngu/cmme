@@ -88,7 +88,7 @@ def parse_post_DREX_prediction_results(results):
 
 class ResultsFile:
     # TODO add prediction_params from run_DREX_model.m?
-    def __init__(self, instructions_file_path, input_sequence, surprisal, joint_surprisal, context_beliefs,
+    def __init__(self, results_file_path, instructions_file_path, input_sequence, surprisal, joint_surprisal, context_beliefs,
                  belief_dynamics, change_decision_changepoint, change_decision_probability, change_decision_threshold, psi: ResultsFilePsi):
         if len(input_sequence.shape) != 2:
             raise ValueError("Shape of input_sequence invalid! Expected two dimensions: time, feature.")
@@ -124,6 +124,8 @@ class ResultsFile:
         self.dimension_values["feature"] = input_sequence_features
         self.dimension_values["context"] = context_beliefs_contexts
 
+        self.results_file_path = results_file_path
+        """File path to source data of this object"""
         self.instructions_file_path = instructions_file_path
         """Corresponding instructions file"""
         self.input_sequence = input_sequence
@@ -165,4 +167,4 @@ def parse_results_file(results_file_path) -> ResultsFile:
     change_decision_threshold = float(data["change_decision_threshold"])
     psi = parse_post_DREX_prediction_results(pred_results)
 
-    return ResultsFile(instructions_file_path, input_sequence, surprisal, joint_surprisal, context_beliefs, belief_dynamics, change_decision_changepoint, change_decision_probability, change_decision_threshold, psi)
+    return ResultsFile(results_file_path, instructions_file_path, input_sequence, surprisal, joint_surprisal, context_beliefs, belief_dynamics, change_decision_changepoint, change_decision_probability, change_decision_threshold, psi)

@@ -1,28 +1,21 @@
 function out = summary_plot(data_frame_file_path)
 % load data
 d = load(data_frame_file_path);
-df = d.df;
-[~,drex_file_name] = fileparts(d.drex_output);
-[~,ppm_file_name] = fileparts(d.ppm_output);
+df = d.data_frame;
 
-x = cell2mat(df.observation_idx); x = x(1:end-1);
-ntime = length(x)+1;
-if iscell(df.observation)
-    observations = cell2mat(df.observation);
-else
-    observations = df.observation;
-end
+observations = df.observation;
+ntime = length(observations);
 observation_levels = unique(observations);
 
-ppm_alphabet_size = df.ppm_alphabet_size{1};
-ppm_predictions = reshape(cell2mat(df.ppm_probability_distribution), ppm_alphabet_size, []);
-ppm_information_content = cell2mat(df.ppm_information_content);
-ppm_entropy = cell2mat(df.ppm_entropy);
-ppm_model_order = cell2mat(df.ppm_model_order);
+ppm_alphabet_size = df.ppm_alphabet_size;
+ppm_predictions = reshape(cell2mat(df.ppm_predictions), ppm_alphabet_size, []);
+ppm_information_content = df.ppm_information_content;
+ppm_entropy = df.ppm_entropy;
+ppm_model_order = df.ppm_model_order;
 
 drex_predictions = reshape(cell2mat(df.drex_predictions), length(observation_levels), []);
 drex_surprisal = cell2mat(df.drex_surprisal);
-drex_entropy = cell2mat(df.drex_entropy);
+drex_entropy = df.drex_entropy;
 drex_context_beliefs = reshape(cell2mat(df.drex_context_beliefs), length(observations)+1, []);
 
 % setup plot
@@ -43,7 +36,6 @@ f.PaperPosition = [0 0 15 30];
 set(groot,'defaultLineLineWidth',2.0)
 
 subplotMaxN = 11;
-%annotation('textbox', [0, 0.2, 0, 0], 'string', append("PPM-Decay: ", ppm_file_name, " / D-REX: ", drex_file_name), 'Interpreter', 'none');
 % subplot: Observation
 subplot(subplotMaxN,1,1)
 plot_sequence(observations);

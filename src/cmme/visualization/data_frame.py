@@ -3,6 +3,7 @@ import pandas as pd
 import scipy.io as sio
 from cmme.drex.results_file import ResultsFile
 from cmme.ppmdecay.results_file import ResultsMetaFile
+from cmme.visualization.util.util import cmme_default_plot_instructions_file_path
 
 
 class DataFrame:
@@ -48,7 +49,6 @@ class DataFrame:
         ppm_information_content = ppm_data.information_contents
         drex_joint_surprisal = drex_data.joint_surprisal
         ppm_entropy = ppm_data.entropies
-        drex_entropy = [pd.NA] * len(ppm_input_sequence) # TODO how to correctly calculate entropy?
         ppm_predictions = ppm_data.distributions
         drex_predictions = drex_data.psi.prediction_by_feature(self.drex_feature_index)
         ppm_model_order = ppm_data.model_orders
@@ -72,10 +72,11 @@ class DataFrame:
 
         # init data frame
         for idx, observation in enumerate(observations):
+            drex_entropy = calc_drex_entropy(drex_predictions[idx])
             data_frame.loc[idx] = [observation,
                                    ppm_information_content[idx], drex_joint_surprisal[idx],
                                    ppm_alphabet_size, ppm_model_order[idx], ppm_predictions[idx], drex_predictions[idx],
-                                   ppm_entropy[idx], drex_entropy[idx],
+                                   ppm_entropy[idx], drex_entropy,
                                    drex_context_beliefs[idx],
                                    drex_belief_dynamics[idx],
                                    drex_changedecision_probability[idx], drex_changedecision_changepoint,
@@ -83,12 +84,27 @@ class DataFrame:
 
         return data_frame
 
-
-    def write_to_mat(self, output_file_path):
+    def write_to_mat(self, output_file_path = cmme_default_plot_instructions_file_path()):
         data = {
-            "ppm_results_file_path": self.df._ppm_results_file_path,
-            "drex_results_file_path": self.df._drex_results_file_path,
-            "data_frame": {name: col.values for name, col in self.df.data_frame.items()}
+            "ppm_results_file_path": str(self.ppm_results_file.results_file_meta_path),
+            "drex_results_file_path": str(self.drex_results_file.results_file_path),
+            "data_frame": {name: col.values for name, col in self.df.items()}
         }
-        sio.savemat(output_file_path, data) # Note: uses scipy.io because of easier use with np.arrays
+
+        # remove duplicates
+        data["data_frame"]["ppm_alphabet_size"] = data["data_frame"]["ppm_alphabet_size"][0]
+        data["data_frame"]["drex_cd_changepoint"] = data["data_frame"]["drex_cd_changepoint"][0]
+        data["data_frame"]["drex_cd_threshold"] = data["data_frame"]["drex_cd_threshold"][0]
+
+        sio.savemat(str(output_file_path), data) # Note: uses scipy.io because of easier use with np.arrays
         return output_file_path
+
+
+def calc_drex_entropy(ensemble) -> float:
+    ensemble_sum = np.sum(ensemble)
+    entropy = 0
+    for e in ensemble:
+        e = e / ensemble_sum # normalization
+        entropy += e * np.log2(e)
+    entropy = -entropy
+    return entropy

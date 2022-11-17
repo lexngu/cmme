@@ -36,7 +36,7 @@ class MatlabWorker:
         MatlabWorker._matlab_work_in_progress += 1
 
         MatlabWorker._matlab_engine.addpath(str(MatlabWorker.SUMMARY_PLOT_SCRIPT_PATH.parent)) # load script
-        result = MatlabWorker._matlab_engine.summary_plot(input_file_path) # execute script
+        result = MatlabWorker._matlab_engine.summary_plot(str(input_file_path)) # execute script
 
         MatlabWorker._matlab_work_in_progress -= 1
         return result

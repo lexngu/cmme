@@ -1,70 +1,44 @@
-from .model_output_aggregator import *
-from .ppm import PPMOutputParameters
-from .drex import DREXOutputParameters
-from .matlab_worker import *
 import shutil
+from abc import ABC, abstractmethod
 from pathlib import Path
 
-from matplotlib import pyplot as plt 
+from matplotlib.figure import Figure
+from matplotlib import pyplot as plt
+
+from cmme.drex.util.matlab import MatlabWorker
+from cmme.visualization.data_frame import DataFrame
 import numpy as np
 
+class Plot(ABC):
+    def __init__(self, data_frame: DataFrame):
+        self.data_frame = data_frame
 
-class ModelOutputPlot:
-    """This class generates the comparison plot."""
+    @abstractmethod
+    def plot(self):
+        pass
 
-    def __init__(self, ppm_output_path: Path, drex_output_path: Path, plot_output_base_path: Path):
-        self.plot_output_base_path = plot_output_base_path
-
-        ppm_output_parameters = PPMOutputParameters.from_csv(str(ppm_output_path))
-        drex_output_parameters = DREXOutputParameters.from_mat(str(drex_output_path))
-        self._aggregator = ModelOutputAggregator(ppm_output_parameters, drex_output_parameters)
-
-        self._plot_input_file_path = str(self.plot_output_base_path) + "-input.mat"
-        self._aggregator.write_mat(self._plot_input_file_path)
-
-        self._matlab_worker = MatlabWorker()
+class MatlabPlot(Plot):
+    def __init__(self, data_frame: DataFrame):
+        super().__init__(data_frame)
 
     def plot(self):
-        result = self._matlab_worker.plot(self._plot_input_file_path)
+        data_frame_path = self.data_frame.write_to_mat()
+        result = MatlabWorker.plot(data_frame_path)
         result_figures = result['content']['figures']
         res = []
         for figure_path in result_figures:
             figure_name = Path(figure_path).name
-            figure_destination_path = str(self.plot_output_base_path.parent / (str(self.plot_output_base_path.stem) + "-" + figure_name))
+            figure_destination_path = str(
+                self.plot_output_base_path.parent / (str(self.plot_output_base_path.stem) + "-" + figure_name))
             shutil.copyfile(figure_path, figure_destination_path)
             res.append(figure_destination_path)
         return res
 
-    def _prepare_sequence(self, sequence):
-        xpos = []
-        ypos = []
-        for idx,e in enumerate(sequence):
-            xpos.extend([idx, idx+.15/.175, None])
-        for idx,e in enumerate(sequence):
-            ypos.extend([e, e, None])
+class MatplotlibPlot(Plot):
+    def __init__(self, data_frame: DataFrame):
+        super().__init__(data_frame)
 
-        return [xpos, ypos]
-
-    def _prepare_predictions(self, predictions):
-        result = np.array([])
-        size = 0
-        for e in predictions:
-            size = len(e)
-            result = np.concatenate((result, e))
-        result = result.reshape(int(len(result)/size), size)
-        return result
-
-    def _prepare_context_beliefs(self, context_beliefs):
-        result = np.array([])
-        size = 0
-        for e in context_beliefs:
-            size = len(e)
-            result = np.concatenate((result, e))
-        result = result.reshape(int(len(result)/size), size)
-        return result
-
-    def plot_matplotlib(self):
-        """Returns a matplotlib figure"""
+    def plot(self) -> Figure:
         df = self._aggregator.df
 
         # TODO remove hard coded removing of last row
@@ -78,7 +52,7 @@ class ModelOutputPlot:
         plt.rcParams['font.family'] = 'Helvetica, Arial'
 
         maxSubplot = 11
-        xlims = (0,len(df_as_dict["observation"])-1)
+        xlims = (0, len(df_as_dict["observation"]) - 1)
 
         f = plt.figure()
         f.set_figwidth(20)
@@ -97,8 +71,8 @@ class ModelOutputPlot:
         ax.set_title("PPM: Predictions")
         data = df_as_dict["ppm_probability_distribution"]
         predictions = self._prepare_predictions(data).T
-        x = list(range(1, ntime+1))
-        y = list(range(1, ppm_alphabet_size+1))
+        x = list(range(1, ntime + 1))
+        y = list(range(1, ppm_alphabet_size + 1))
         ax.contourf(x, y, predictions, 100)
         ax.set_ylabel("Observation")
         ax.set_xlim(xlims)
@@ -180,5 +154,34 @@ class ModelOutputPlot:
             changepoint = df_as_dict["drex_cd_changepoint"].any()
             ax.axvline(changepoint, color='grey')
             plt.text(changepoint, 0.5, "Changepoint " + str(changepoint), rotation=90)
-            
+
         return f
+
+    def _prepare_sequence(self, sequence):
+        xpos = []
+        ypos = []
+        for idx,e in enumerate(sequence):
+            xpos.extend([idx, idx+.15/.175, None])
+        for idx,e in enumerate(sequence):
+            ypos.extend([e, e, None])
+
+        return [xpos, ypos]
+
+    def _prepare_predictions(self, predictions):
+        result = np.array([])
+        size = 0
+        for e in predictions:
+            size = len(e)
+            result = np.concatenate((result, e))
+        result = result.reshape(int(len(result)/size), size)
+        return result
+
+    def _prepare_context_beliefs(self, context_beliefs):
+        result = np.array([])
+        size = 0
+        for e in context_beliefs:
+            size = len(e)
+            result = np.concatenate((result, e))
+        result = result.reshape(int(len(result)/size), size)
+        return result
+
