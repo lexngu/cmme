@@ -37,7 +37,7 @@ end
 run_DREX_model_results = run_DREX_model(input_sequence, rdm_instructions.params);
 
 % calculate marginal (predictive) prob. distribution (post_DREX_prediction.m)
-post_DREX_prediction_results = cell(nfeature);
+post_DREX_prediction_results = cell(nfeature,1);
 if rdm_instructions.params.distribution == "gaussian" | rdm_instructions.params.distribution == "gmm" | rdm_instructions.params.distribution == "lognormal"
     for f = 1:nfeature
         positions = reshape(unique(input_sequence(:,f)), 1, []);
