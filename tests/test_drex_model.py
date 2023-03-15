@@ -86,3 +86,16 @@ def test_run_succeeds():
 
     assert results_file.instructions_file_path == str(instructions_file_path)
     assert np.array_equal(results_file.input_sequence, input_sequence)
+
+def test_drex_instance_automatically_sets_obsnz_according_to_nfeatures():
+    prior_distribution_type = DistributionType.GAUSSIAN
+    prior_input_sequence = [[1, 1, 1], [2, 2, 2]]
+    prior_D = 1
+    prior = UnprocessedPrior(prior_distribution_type, prior_input_sequence, prior_D)
+    drex_model = DREXModel(prior)
+    drex_instance = drex_model.instance
+
+    drex_instance.with_obsnz(0)
+    drex_instance.with_input_sequence(prior_input_sequence)
+
+    assert len(drex_instance._obsnz) == 2

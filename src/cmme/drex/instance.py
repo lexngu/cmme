@@ -1,3 +1,5 @@
+import numbers
+
 from .distribution.prior import *
 from .util.util import *
 
@@ -37,6 +39,10 @@ class DREXInstance:
         if self._prior is not None:
             if self._prior.feature_count() < input_sequence_features:
                 raise ValueError("input_sequence invalid! Its number of features must be equal the prior's.")
+
+        # Automatically adjust obsnz if obsnz is scalar
+        if isinstance(self._obsnz, numbers.Number):
+            self._obsnz = [self._obsnz] * input_sequence_features
 
         self._input_sequence = iseq
 

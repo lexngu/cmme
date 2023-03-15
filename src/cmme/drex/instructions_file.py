@@ -8,6 +8,7 @@ import numpy as np
 from .distribution.base import DistributionType
 from .distribution.prior import Prior, UnprocessedPrior
 from .util.matlab import MatlabWorker
+from .util.util import transform_multifeature_singletrial_input_sequence_for_estimate_suffstat
 
 
 class InstructionsFile:
@@ -57,7 +58,7 @@ class InstructionsFile:
         # Add instructions for procesing an unprocessed prior using D-REX's estimate_suffstat.m
         if isinstance(self.prior, UnprocessedPrior):
             data["estimate_suffstat"] = {
-                "xs": matlab.double(self.prior._prior_input_sequence),
+                "xs": matlab.double(transform_multifeature_singletrial_input_sequence_for_estimate_suffstat(self.prior._prior_input_sequence)),
                 "params": {
                     "distribution": self.prior._distribution.value,
                     "D": matlab.double(self.prior.D_value())

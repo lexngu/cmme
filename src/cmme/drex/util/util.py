@@ -26,6 +26,16 @@ def auto_convert_input_sequence(input_sequence):
     else:
         raise ValueError("input_sequence invalid!")
 
+def transform_multifeature_singletrial_input_sequence_for_estimate_suffstat(input_sequence):
+    """
+    Converts an input sequence to the structure required by D-REX's estimate_suffstat.m (using double arrays, since cell arrays are not supported in Python)
+    :param input_sequence: np.array, time x feature
+    :return: time x 1 x feature
+    """
+    res = input_sequence[..., np.newaxis] # introduce third dimension
+    res = np.transpose(res, (0, 2, 1)) # format as: time x trial (=1) x feature
+    return res
+
 def drex_default_instructions_file_path(alias = None):
     instructions_file_filename = datetime.now().isoformat().replace("-", "").replace(":", "").replace(".", "")
     instructions_file_filename = instructions_file_filename + "-drex-instructionsfile"
