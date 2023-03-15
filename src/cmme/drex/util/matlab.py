@@ -2,11 +2,21 @@ import threading
 from datetime import datetime
 import time
 from pathlib import Path
+# Use scipy, since matlabengine does not support "struct"s, which are originally created by D-REX's functions.
+import scipy.io as sio
 
 import matlab.engine
 from pymatbridge import pymatbridge
 
 from cmme.config import Config
+
+def to_mat(data, file_path):
+    sio.savemat(str(file_path), data)
+    return file_path
+
+def from_mat(file_path):
+    mat_data = sio.loadmat(file_path)
+    return mat_data
 
 class MatlabWorker:
     DREX_INTERMEDIATE_SCRIPT_PATH = (Path(
@@ -29,44 +39,6 @@ class MatlabWorker:
 
         MatlabEngineWorker._matlab_work_in_progress -= 1
         return result
-
-    def to_mat(data, path):
-        """
-        Converts a data dictionary to a .mat file, using MATLAB.
-
-        :param data: dict containing matlab-compatible data
-        :param path:
-        :return: path
-        """
-        MatlabEngineWorker._autostart_matlab()
-        MatlabEngineWorker._matlab_work_in_progress += 1
-
-        for k, v in data.items():
-            MatlabEngineWorker._matlab_engine.workspace[k] = v
-        keys = data.keys()
-        MatlabEngineWorker._matlab_engine.save(str(path), *keys, nargout=0)
-
-        MatlabEngineWorker._matlab_work_in_progress -= 1
-        return path
-
-    def from_mat(path: Path) -> dict:
-        """
-        Parses a .mat file and returns its content as dictionary, using MATLAB.
-
-        :param path:
-        :return:
-        """
-        MatlabEngineWorker._autostart_matlab()
-        MatlabEngineWorker._matlab_work_in_progress += 1
-
-        data = {}
-        MatlabEngineWorker._matlab_engine.load(str(path), nargout=0)
-        varnames = MatlabEngineWorker._matlab_engine.who()
-        for v in varnames:
-            data[v] = MatlabEngineWorker._matlab_engine.workspace[v]
-
-        MatlabEngineWorker._matlab_work_in_progress -= 1
-        return data
 
     def plot(input_file_path: Path):
         """Triggers the execution of the script generating the comparison plot."""

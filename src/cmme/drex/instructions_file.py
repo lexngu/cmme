@@ -7,7 +7,7 @@ import numpy as np
 
 from .distribution.base import DistributionType
 from .distribution.prior import Prior, UnprocessedPrior
-from .util.matlab import MatlabWorker
+from .util.matlab import to_mat
 from .util.util import transform_multifeature_singletrial_input_sequence_for_estimate_suffstat
 
 
@@ -92,4 +92,4 @@ class InstructionsFile:
         data["results_file_path"] = str(self.results_file_path)
 
         # Write and return
-        return MatlabWorker.to_mat(data, str(self.instructions_file_path))
+        return to_mat(data, str(self.instructions_file_path))

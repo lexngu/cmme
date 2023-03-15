@@ -1,7 +1,7 @@
 import matlab
 import numpy as np
 
-from cmme.drex.util.matlab import MatlabWorker
+from cmme.drex.util.matlab import MatlabWorker, from_mat
 
 
 class ResultsFilePsi:
@@ -75,12 +75,12 @@ def parse_post_DREX_prediction_results(results):
     nfeature = len(results)
 
     for f in range(nfeature):
-        predictions[f] = np.array(results[f]["prediction"], dtype=float) # convert to np.array with shape (time,position)
+        predictions[f] = np.array(results[f][0]["prediction"][0][0], dtype=float) # convert to np.array with shape (time,position)
 
-        f_positions = results[f]["positions"]
+        f_positions = results[f][0]["positions"][0][0]
         if isinstance(f_positions, int) or isinstance(f_positions, float): # convert
             positions[f] = np.array([f_positions])
-        elif isinstance(f_positions, matlab.double):
+        elif isinstance(f_positions, np.ndarray):
             positions[f] = np.array(f_positions)[0]
 
     return ResultsFilePsi(predictions, positions)
@@ -114,7 +114,7 @@ class ResultsFile:
 
         if not (input_sequence_times == surprisal_times and surprisal_times == joint_surprisal_times and joint_surprisal_times == (context_beliefs_times-1) and
                 (context_beliefs_times-1) == (belief_dynamics_times-1) and (belief_dynamics_times-1) == psi_times):
-            raise ValueError("Dimension 'time' invalid! Value must be equal for input_sequence({}), surprisal({}), joint_surprisal({}), context_beliefs({}), belief_dynamics({}), and psi({}).".format(input_sequence_times, surprisal_times, joint_surprisal_times, context_beliefs_times, belief_dynamics_times, psi_times))
+            raise ValueError("Dimension 'time' invalid! Value must be equal for input_sequence({}), surprisal({}), joint_surprisal({}), context_beliefs({}), belief_dynamics({} (-1)), and psi({}).".format(input_sequence_times, surprisal_times, joint_surprisal_times, context_beliefs_times, belief_dynamics_times, psi_times))
         if not (input_sequence_features == surprisal_features and surprisal_features == psi_features):
             raise ValueError(
                 "Dimension 'feature' invalid! Value must be equal for input_sequence, surprisal, and psi.")
@@ -148,7 +148,7 @@ class ResultsFile:
         """Marginal (predictive) probability distribution"""
 
 def parse_results_file(results_file_path) -> ResultsFile:
-    data = MatlabWorker.from_mat(results_file_path)
+    data = from_mat(results_file_path)
 
     instructions_file_path = data["instructions_file_path"]
     input_sequence = data["input_sequence"]
@@ -158,12 +158,12 @@ def parse_results_file(results_file_path) -> ResultsFile:
     pred_results = data["post_DREX_prediction_results"]
 
     input_sequence = np.array(input_sequence)
-    surprisal = np.array(run_results["surprisal"])
-    joint_surprisal = np.array(run_results["joint_surprisal"])
-    context_beliefs = np.array(run_results["context_beliefs"])
+    surprisal = np.array(run_results["surprisal"][0][0])
+    joint_surprisal = np.array(run_results["joint_surprisal"][0][0])
+    context_beliefs = np.array(run_results["context_beliefs"][0][0])
     belief_dynamics = np.array(bd_results)
-    change_decision_changepoint = cd_results["changepoint"]
-    change_decision_probability = np.array(cd_results["changeprobability"])
+    change_decision_changepoint = int(cd_results["changepoint"][0][0])
+    change_decision_probability = np.array(cd_results["changeprobability"][0][0])
     change_decision_threshold = float(data["change_decision_threshold"])
     psi = parse_post_DREX_prediction_results(pred_results)
 
