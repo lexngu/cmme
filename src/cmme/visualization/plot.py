@@ -40,7 +40,7 @@ class MatplotlibPlot(Plot):
         super().__init__(data_frame)
 
     def plot(self) -> Figure:
-        df = self._aggregator.df
+        df = self.data_frame.df
 
         # TODO remove hard coded removing of last row
         df = df.drop(df.tail(1).index)
@@ -70,7 +70,7 @@ class MatplotlibPlot(Plot):
 
         ax = plt.subplot(maxSubplot, 1, 2)
         ax.set_title("PPM: Predictions")
-        data = df_as_dict["ppm_probability_distribution"]
+        data = df_as_dict["ppm_predictions"]
         predictions = self._prepare_predictions(data).T
         x = list(range(1, ntime + 1))
         y = list(range(1, ppm_alphabet_size + 1))
