@@ -1,7 +1,7 @@
 from cmme.ppmdecay.instance import ModelType, PPMSimpleInstance, PPMDecayInstance
 from cmme.ppmdecay.instructions_file import InstructionsFile, PPMSimpleInstructionsFile, PPMDecayInstructionsFile
 from cmme.ppmdecay.util.r import invoke_model
-from cmme.ppmdecay.results_file import ResultsFileData, ResultsMetaFile, parse_results_meta_file
+from cmme.ppmdecay.results_file import ResultsMetaFile, parse_results_meta_file
 from cmme.ppmdecay.util.util import ppmdecay_default_instructions_file_path, ppmdecay_default_results_file_path
 
 
@@ -14,7 +14,7 @@ class PPMModel:
         elif model_type == ModelType.DECAY:
             self.instance = PPMDecayInstance()
 
-    def to_instructions_file(self, instructions_file_path = ppmdecay_default_instructions_file_path(), results_file_path = ppmdecay_default_results_file_path()) -> InstructionsFile:
+    def to_instructions_file(self, results_file_path = ppmdecay_default_results_file_path()) -> InstructionsFile:
         if self.model_type == ModelType.SIMPLE:
             return PPMSimpleInstructionsFile(self.instance._alphabet_levels, self.instance._order_bound, self.instance._input_sequence, results_file_path,
                                              self.instance._shortest_deterministic, self.instance._exclusion, self.instance._update_exclusion, self.instance._escape_method)
@@ -26,7 +26,7 @@ class PPMModel:
                                              self.instance._noise, self.instance._seed)
 
     def run(self, instructions_file_path = ppmdecay_default_instructions_file_path(), results_file_path = ppmdecay_default_results_file_path()) -> ResultsMetaFile:
-        instructions_file = self.to_instructions_file(instructions_file_path, results_file_path)
+        instructions_file = self.to_instructions_file(results_file_path)
         instructions_file.write_instructions_file(instructions_file_path)
         model_output = invoke_model(instructions_file_path)
 
