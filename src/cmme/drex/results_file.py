@@ -75,7 +75,7 @@ def parse_post_DREX_prediction_results(results):
     nfeature = len(results)
 
     for f in range(nfeature):
-        predictions[f] = np.array(results[f][0]["prediction"][0][0], dtype=float) # convert to np.array with shape (time,position)
+        predictions[f] = np.array(results[f][0]["prediction"][0][0]) # convert to np.array with shape (time,position)
 
         f_positions = results[f][0]["positions"][0][0]
         if isinstance(f_positions, int) or isinstance(f_positions, float): # convert
@@ -94,12 +94,12 @@ class ResultsFile:
             raise ValueError("Shape of input_sequence invalid! Expected two dimensions: time, feature.")
         if len(surprisal.shape) != 2:
             raise ValueError("Shape of surprisal invalid! Expected two dimensions: time, feature.")
-        if len(joint_surprisal.shape) != 2:
-            raise ValueError("Shape of joint_surprisal invalid! Expected two dimensions: time, 1.")
-        if len(surprisal.shape) != 2:
+        if len(joint_surprisal.shape) != 1:
+            raise ValueError("Shape of joint_surprisal invalid! Expected one dimension: time.")
+        if len(context_beliefs.shape) != 2:
             raise ValueError("Shape of context_beliefs invalid! Expected two dimensions: time, context.")
-        if len(belief_dynamics.shape) != 2:
-            raise ValueError("Shape of belief_dynamics invalid! Expected one dimension: time, 1.")
+        if len(belief_dynamics.shape) != 1:
+            raise ValueError("Shape of belief_dynamics invalid! Expected one dimension: time.")
         # TODO replace
         #if len(psi.shape) != 3:
         #    raise ValueError("Shape of psi invalid! Expected three dimensions: time, feature, position.")
@@ -159,11 +159,11 @@ def parse_results_file(results_file_path) -> ResultsFile:
 
     input_sequence = np.array(input_sequence)
     surprisal = np.array(run_results["surprisal"][0][0])
-    joint_surprisal = np.array(run_results["joint_surprisal"][0][0])
+    joint_surprisal = np.array(run_results["joint_surprisal"][0][0]).flatten()
     context_beliefs = np.array(run_results["context_beliefs"][0][0])
-    belief_dynamics = np.array(bd_results)
+    belief_dynamics = np.array(bd_results).flatten()
     change_decision_changepoint = int(cd_results["changepoint"][0][0])
-    change_decision_probability = np.array(cd_results["changeprobability"][0][0])
+    change_decision_probability = np.array(cd_results["changeprobability"][0][0]).flatten()
     change_decision_threshold = float(data["change_decision_threshold"])
     psi = parse_post_DREX_prediction_results(pred_results)
 

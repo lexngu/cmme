@@ -14,9 +14,10 @@ ppm_entropy = df.ppm_entropy;
 ppm_model_order = df.ppm_model_order;
 
 drex_predictions = reshape(cell2mat(df.drex_predictions), length(observation_levels), []);
-drex_surprisal = cell2mat(df.drex_surprisal);
+drex_surprisal = df.drex_surprisal;
 drex_entropy = df.drex_entropy;
 drex_context_beliefs = reshape(cell2mat(df.drex_context_beliefs), length(observations)+1, []);
+drex_context_beliefs = drex_context_beliefs';
 
 % setup plot
 
@@ -135,7 +136,7 @@ grid on;
 
 % subplot: DREX bd
 subplot(subplotMaxN,1,10)
-post_bd = cell2mat(df.drex_bd);
+post_bd = df.drex_bd;
 plot(post_bd);
 xlim([1 ntime]);
 ylim([0 1]);
@@ -145,7 +146,7 @@ ylabel("Belief Dynamics")
 
 % subplot: DREX cd
 subplot(subplotMaxN,1,11)
-post_cd = cell2mat(df.drex_cd_probability);
+post_cd = df.drex_cd_probability;
 changepoint = df.drex_cd_changepoint;
 if iscell(changepoint)
     changepoint = cell2mat(df.drex_cd_changepoint);

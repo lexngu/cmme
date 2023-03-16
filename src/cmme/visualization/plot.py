@@ -132,7 +132,7 @@ class MatplotlibPlot(Plot):
         ax = plt.subplot(maxSubplot, 1, 9)
         ax.set_title("D-REX: Context Beliefs")
         data = df_as_dict["drex_context_beliefs"]
-        context_beliefs = self._prepare_context_beliefs(data).T
+        context_beliefs = self._prepare_context_beliefs(data)
         context_beliefs[context_beliefs == 0] = np.nan
         p = plt.pcolor(np.log10(context_beliefs))
         ax.set_xlim(xlims)
