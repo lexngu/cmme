@@ -6,3 +6,4 @@ pymatbridge
 zmq
 # matlab-engine
 matplotlib
+cl4py
