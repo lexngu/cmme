@@ -111,14 +111,6 @@ class ThreadedViewpoint(Viewpoint):
     THR_CPINT_CPINTREF_LIPH = 'thr-cpint_cpintref-liph'
     THR_CPINT_CPINTREF_FIB = 'thr-cpint_cpintref-fib'
 
-class LinkedViewpoint(Viewpoint):
-    def __init__(self, components: List[Viewpoint]):
-        """
-        A linked viewpoint consists of multiple viewpoints, e.g. [CPITCH, ONSET]
-        :param components:
-        """
-        self.components = components
-
 class IDYOMModelValue(Enum):
     STM = ':stm'
     LTM = ':ltm'
@@ -159,7 +151,9 @@ class IDYOMInstructionBuilder:
         self._dataset = dataset
         return self
 
-    def target_viewpoints(self, target_viewpoints: List[Viewpoint]):
+    def target_viewpoints(self, target_viewpoints: List[BasicViewpoint]):
+        if any(not isinstance(v, BasicViewpoint) for v in target_viewpoints):
+            raise ValueError("target_viewpoints must not contain anything but BasicViewpoint!")
         self._target_viewpoints = target_viewpoints
         return self
 
@@ -254,6 +248,25 @@ class IDYOMInstructionBuilder:
             "use_ltms_cache": use_ltms_cache
         }
 
+    def _viewpoints_list_as_lisp_string(self, viewpoints: List[Viewpoint]) -> str:
+        result = ""
+
+        if isinstance(viewpoints, Viewpoint):
+            return viewpoints.value
+        elif isinstance(viewpoints, list) or isinstance(viewpoints, tuple):
+            if len(viewpoints) == 0:
+                result += "()"
+            else:
+                result += " ("
+                for viewpoint in viewpoints:
+                    result += self._viewpoints_list_as_lisp_string(viewpoint) + " "
+                result = result[:-1] # remove last character
+                result += ")"
+        else:
+            raise ValueError("Invalid element: " + str(viewpoints))
+
+        return result.strip()
+
     def build_for_cl4py(self) -> tuple:
         result = list()
 
@@ -268,8 +281,8 @@ class IDYOMInstructionBuilder:
         if not self._select_options == {}: # if not empty
             result.append(":select")
         else:
-            source_viewpoint_names = list(map(lambda v: v.value, self._source_viewpoints))
-            result.append(('quote', '(' + " ".join(source_viewpoint_names) + ')'))
+            source_viewpoint_names = self._viewpoints_list_as_lisp_string(self._source_viewpoints)
+            result.append(('quote', source_viewpoint_names))
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> ...)
         result.append(":models")
         result.append(self._model.value)
@@ -441,8 +454,8 @@ class IDYOMInstructionBuilder:
         if not self._select_options == {}:  # if not empty
             result.append(":select")
         else:
-            source_viewpoint_names = list(map(lambda v: v.value, self._source_viewpoints))
-            result.append(("'(" + " ".join(source_viewpoint_names) + ')'))
+            source_viewpoint_names = self._viewpoints_list_as_lisp_string(self._source_viewpoints)
+            result.append("'" + source_viewpoint_names)
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> ...)
         result.append(":models")
         result.append(self._model.value)
@@ -516,7 +529,7 @@ class IDYOMInstructionBuilder:
         result.append("t" if self._caching_options["use_ltms_cache"] else "nil")
 
         result.append(")")
-        
+
         return " ".join(result)
 
 class IDYOMBinding:
