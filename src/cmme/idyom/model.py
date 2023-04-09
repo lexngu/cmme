@@ -428,7 +428,96 @@ class IDYOMInstructionBuilder:
         return tuple(result)
 
     def build_for_lisp(self) -> str:
-        return ""
+        result = list()
+
+        # (idyom:idyom ...)
+        result.append("(idyom:idyom")
+        # (idyom:idyom <dataset-id> ...)
+        result.append(str(self._dataset.id))
+        # (idyom:idyom <dataset-id> <target-viewpoints> ...)
+        target_viewpoint_names = list(map(lambda v: v.value, self._target_viewpoints))
+        result.append(("'(" + " ".join(target_viewpoint_names) + ')'))
+        # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> ...)
+        if not self._select_options == {}:  # if not empty
+            result.append(":select")
+        else:
+            source_viewpoint_names = list(map(lambda v: v.value, self._source_viewpoints))
+            result.append(("'(" + " ".join(source_viewpoint_names) + ')'))
+        # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> ...)
+        result.append(":models")
+        result.append(self._model.value)
+        # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] ...)
+        if self._stm_options:
+            result.append(":stmo")
+            order_bound = str(self._stm_options["order_bound"]) if self._stm_options["order_bound"] else "nil"
+            mixtures = "t" if self._stm_options["mixtures"] else "nil"
+            update_exclusion = "t" if self._stm_options["update_exclusion"] else "nil"
+            escape = self._stm_options["escape"].value
+            result.append("'(:order-bound " + order_bound + " :mixtures " + mixtures + " :update-exclusion " + update_exclusion + " :escape " + escape + ")")
+        # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...] ...)
+        if self._ltm_options:
+            result.append(":ltmo")
+            order_bound = str(self._stm_options["order_bound"]) if self._stm_options["order_bound"] else "nil"
+            mixtures = "t" if self._stm_options["mixtures"] else "nil"
+            update_exclusion = "t" if self._stm_options["update_exclusion"] else "nil"
+            escape = self._stm_options["escape"].value
+            result.append(("'(:order-bound " + order_bound + " :mixtures " + mixtures + " :update-exclusion " + update_exclusion + " :escape " + escape + ")"))
+        # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...]
+        # [:pretraining-ids ... :k ... :resampling-indices ...] ...)
+        if self._training_options:
+            pretraining_ids = list(map(str, self._training_options["pretraining_dataset_ids"]))
+            result.append(":pretraining-ids")
+            result.append(("quote", "(" + " ".join(pretraining_ids) + ")"))
+
+            result.append(":k")
+            result.append(self._training_options["k"])
+
+            if self._training_options["exclusively_to_be_used_resampling_fold_indices"]:
+                result.append(":resampling-indices")
+                indices = list(map(str, self._training_options["exclusively_to_be_used_resampling_fold_indices"]))
+                result.append(("quote", " ".join(indices)))
+        # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...]
+        # [:pretraining-ids ... :k ... :resampling-indices ...] [:basis ... :dp ... :max-links ... :min-links ... :viewpoint-selection-output ...] ...)
+        if self._select_options:
+            result.append(":basis")
+            basis = self._select_options["basis"]
+            if isinstance(basis, IDYOMViewpointSelectionBasis):
+                result.append(basis.value)
+            elif isinstance(basis, list):
+                result.append(("'(" + " ".join(basis) + ")"))
+            else:
+                print("ERROR")
+            result.append(":dp")
+            dp = str(self._select_options["dp"]) if self._select_options["dp"] else "nil"
+            result.append(str(dp))
+            result.append(":max-links")
+            result.append(self._select_options["max_links"])
+            result.append(":min-links")
+            result.append(self._select_options["min_links"])
+            result.append(":viewpoint-selection-output")
+            result.append('"' + self._select_options["viewpoint_selection_output"] + '"')
+        # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...]
+        # [:pretraining-ids ... :k ... :resampling-indices ...] [:basis ... :dp ... :max-links ... :min-links ... :viewpoint-selection-output ...]
+        # [:output-path ... :detail ... :overwrite ... :separator ...] ...)
+        result.append(":output-path")
+        result.append('"' + self._output_options["output_path"] + '"' if self._output_options["output_path"] else "nil")
+        result.append(":detail")
+        result.append(str(self._output_options["detail"]))
+        result.append(":overwrite")
+        result.append("t" if self._output_options["overwrite"] else "nil")
+        result.append(":separator")
+        result.append('"' + self._output_options["separator"] + '"')
+        # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...]
+        # [:pretraining-ids ... :k ... :resampling-indices ...] [:basis ... :dp ... :max-links ... :min-links ... :viewpoint-selection-output ...]
+        # [:output-path ... :detail ... :overwrite ... :separator ...] [:use-resampling-set-cache? ... :use-ltms-cache? ...])
+        result.append(":use-resampling-set-cache?")
+        result.append("t" if self._caching_options["use_resampling_set_cache"] else "nil")
+        result.append(":use-ltms-cache?")
+        result.append("t" if self._caching_options["use_ltms_cache"] else "nil")
+
+        result.append(")")
+        
+        return " ".join(result)
 
 class IDYOMBinding:
     def __init__(self, idyom_root_path, idyom_sqlite_database_path):
@@ -503,9 +592,6 @@ class IDYOMBinding:
 
     def run_idyom(self, instruction_builder: IDYOMInstructionBuilder) -> IDYOMResultsFile:
         result = self._lisp_eval( instruction_builder.build_for_cl4py() )
-        # if output is a single number:         mean IC (of dataset)
-        # if output contains two elements:      [mean_IC_dataset, list(mean_IC_composition_1, _2, ...)]
-        # if output contains three elements:    [mean_IC_dataset, list(mean_IC_composition_1, _2, ...), list(list(mean_IC_composition_1_event_1, _event_2, ...), list(mean_IC_composition_2_event_1, ...), ...)]
 
         return parse_idyom_results(self.infer_output_file_path(instruction_builder))
 
