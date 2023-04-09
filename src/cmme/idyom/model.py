@@ -1,3 +1,4 @@
+import dataclasses
 import tempfile
 from enum import Enum
 from pathlib import Path
@@ -14,7 +15,11 @@ def path_with_trailing_slash(path) -> Path:
         path = Path(path)
     return os.path.join(path, '')
 
+@dataclasses.dataclass
 class Dataset:
+    id: int
+    description: str
+
     def __init__(self, id, description):
         self.id = id
         self.description = description
@@ -564,7 +569,7 @@ class IDYOMBinding:
 
         for line in last_msg.split("\n"):
             id, description = re.split("\s+", line, maxsplit=1)
-            result.append(Dataset(id=id, description=description))
+            result.append(Dataset(id=int(id), description=description.strip()))
 
         return result
 
@@ -617,6 +622,35 @@ class IDYOMBinding:
 class IDYOMModel:
     def __init__(self):
         self.idyom_binding = IDYOMBinding("/Users/alexander/idyom", "/Users/alexander/idyom/db/database.sqlite")
+
+    def import_midi(self, midi_files_directory_path: str, description: str, dataset_id: int = None) -> Dataset:
+        """
+
+        :param midi_files_directory_path:
+        :param description:
+        :param dataset_id: If None, a valid value will be determined automatically
+        :return:
+        """
+        if dataset_id is None:
+            dataset_id = self.idyom_binding.next_free_dataset_id()
+
+        return self.idyom_binding.import_midi(midi_files_directory_path, description, dataset_id)
+
+    def import_kern(self, krn_files_directory_path: str, description: str, dataset_id: int = None) -> Dataset:
+        """
+
+        :param krn_files_directory_path:
+        :param description:
+        :param dataset_id: If None, a valid value will be determined automatically
+        :return:
+        """
+        if dataset_id is None:
+            dataset_id = self.idyom_binding.next_free_dataset_id()
+
+        return self.idyom_binding.import_kern(krn_files_directory_path, description, dataset_id)
+
+    def all_datasets(self) -> List[Dataset]:
+        return self.idyom_binding.all_datasets()
 
     def run(self, instruction_builder: IDYOMInstructionBuilder) -> IDYOMResultsFile:
         return self.idyom_binding.run_idyom(instruction_builder)
