@@ -5,14 +5,7 @@ from .util.util import *
 
 
 class DREXInstance:
-    def __init__(self, prior: Prior):
-        """
-        Creates a D-REX instance with D-REX's current default values
-        :param distribution: The distribution type to use (e.g., Gaussian)
-        """
-
-        self._prior = prior
-
+    def __init__(self):
         # Use original default values
         self._input_sequence = auto_convert_input_sequence([])
         self._hazard = 0.01
@@ -21,6 +14,11 @@ class DREXInstance:
         # self._D = 1 # implicitly specified by prior
         self._change_decision_threshold = 0.01
         self._obsnz = 0
+
+        self._prior = None
+
+    def with_prior(self, prior):
+        self._prior = prior
 
     def with_input_sequence(self, input_sequence):
         """

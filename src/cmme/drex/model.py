@@ -14,9 +14,9 @@ class DREXModel:
     Using +instance+, one can hyper-parameterize D-REX.
     """
 
-    def __init__(self, prior: Prior):
+    def __init__(self, instance: DREXInstance):
         """Creates a D-REX instance with D-REX's current default values"""
-        self.instance: DREXInstance = DREXInstance(prior)
+        self.instance = instance
 
     def to_instructions_file(self, instructions_file_path = drex_default_instructions_file_path(), results_file_path = drex_default_results_file_path()) -> InstructionsFile:
         """

@@ -1,4 +1,4 @@
-from cmme.ppmdecay.instance import ModelType, PPMSimpleInstance, PPMDecayInstance
+from cmme.ppmdecay.instance import ModelType, PPMSimpleInstance, PPMDecayInstance, PPMInstance
 from cmme.ppmdecay.instructions_file import InstructionsFile, PPMSimpleInstructionsFile, PPMDecayInstructionsFile
 from cmme.ppmdecay.util.r import invoke_model
 from cmme.ppmdecay.results_file import ResultsMetaFile, parse_results_meta_file
@@ -6,13 +6,9 @@ from cmme.ppmdecay.util.util import ppmdecay_default_instructions_file_path, ppm
 
 
 class PPMModel:
-    def __init__(self, model_type: ModelType):
-        self.model_type = model_type
-
-        if model_type == ModelType.SIMPLE:
-            self.instance = PPMSimpleInstance()
-        elif model_type == ModelType.DECAY:
-            self.instance = PPMDecayInstance()
+    def __init__(self, instance: PPMInstance):
+        self.instance = instance
+        self.model_type = instance._model_type
 
     def to_instructions_file(self, results_file_path = ppmdecay_default_results_file_path()) -> InstructionsFile:
         if self.model_type == ModelType.SIMPLE:
