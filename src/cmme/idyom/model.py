@@ -24,6 +24,17 @@ class Dataset:
         self.id = id
         self.description = description
 
+@dataclasses.dataclass
+class Composition:
+    dataset_id: int
+    id: int
+    description: str
+
+    def __init__(self, dataset_id, id, description):
+        self.dataset_id = dataset_id
+        self.id = id
+        self.description = description
+
 class Viewpoint(Enum):
     pass
 
@@ -136,6 +147,25 @@ class IDYOMViewpointSelectionBasis(Enum):
     PITCH_SHORT = ':pitch-short'
     BIOI = ':bioi'
     ONSET = ':onset'
+
+def viewpoints_list_as_lisp_string(viewpoints: List[Viewpoint]) -> str:
+    result = ""
+
+    if isinstance(viewpoints, Viewpoint):
+        return viewpoints.value
+    elif isinstance(viewpoints, list) or isinstance(viewpoints, tuple):
+        if len(viewpoints) == 0:
+            result += "()"
+        else:
+            result += " ("
+            for viewpoint in viewpoints:
+                result += viewpoints_list_as_lisp_string(viewpoint) + " "
+            result = result[:-1] # remove last character
+            result += ")"
+    else:
+        raise ValueError("Invalid element: " + str(viewpoints))
+
+    return result.strip()
 
 class IDYOMInstructionBuilder:
     def __init__(self):
@@ -253,25 +283,6 @@ class IDYOMInstructionBuilder:
             "use_ltms_cache": use_ltms_cache
         }
 
-    def _viewpoints_list_as_lisp_string(self, viewpoints: List[Viewpoint]) -> str:
-        result = ""
-
-        if isinstance(viewpoints, Viewpoint):
-            return viewpoints.value
-        elif isinstance(viewpoints, list) or isinstance(viewpoints, tuple):
-            if len(viewpoints) == 0:
-                result += "()"
-            else:
-                result += " ("
-                for viewpoint in viewpoints:
-                    result += self._viewpoints_list_as_lisp_string(viewpoint) + " "
-                result = result[:-1] # remove last character
-                result += ")"
-        else:
-            raise ValueError("Invalid element: " + str(viewpoints))
-
-        return result.strip()
-
     def build_for_cl4py(self) -> tuple:
         result = list()
 
@@ -286,7 +297,7 @@ class IDYOMInstructionBuilder:
         if not self._select_options == {}: # if not empty
             result.append(":select")
         else:
-            source_viewpoint_names = self._viewpoints_list_as_lisp_string(self._source_viewpoints)
+            source_viewpoint_names = viewpoints_list_as_lisp_string(self._source_viewpoints)
             result.append(('quote', source_viewpoint_names))
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> ...)
         result.append(":models")
@@ -459,7 +470,7 @@ class IDYOMInstructionBuilder:
         if not self._select_options == {}:  # if not empty
             result.append(":select")
         else:
-            source_viewpoint_names = self._viewpoints_list_as_lisp_string(self._source_viewpoints)
+            source_viewpoint_names = viewpoints_list_as_lisp_string(self._source_viewpoints)
             result.append("'" + source_viewpoint_names)
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> ...)
         result.append(":models")
@@ -548,7 +559,7 @@ class IDYOMBinding:
     def _lisp_eval(self, cmd):
         print("> " + str(cmd))
         result = self.lisp.eval(cmd)
-        print(str(result))
+        #print(str(result))
         return result
 
     def _setup_lisp(self):
@@ -605,9 +616,6 @@ class IDYOMBinding:
 
         return Dataset(id=dataset_id, description=description)
 
-    def derive_viewpoint_sequence(self, dataset_id: int, composition_id: int, viewpoint_spec: List[Viewpoint]) -> List[str]:
-        pass
-
     def run_idyom(self, instruction_builder: IDYOMInstructionBuilder) -> IDYOMResultsFile:
         result = self._lisp_eval( instruction_builder.build_for_cl4py() )
 
@@ -618,10 +626,32 @@ class IDYOMBinding:
 
         return os.path.join(instruction_builder._output_options["output_path"], filename)
 
+    def all_compositions(self, dataset: Dataset) -> List[Composition]:
+        descriptions = self._lisp_eval( ("mapcar", ("function", "idyom-db::composition-description"), ("idyom-db:get-compositions", dataset.id)) )
+        result = list()
+        for idx, description in enumerate(descriptions): # assuming that idx always coincides with the composition's id within the dataset
+            result.append(Composition(dataset_id=dataset.id, id=idx, description=description))
+
+        return result
+
+    def derive_viewpoint_sequence(self, composition: Composition, viewpoints: List[Viewpoint]) -> List:
+        viewpoint_sequence = self._lisp_eval( ("viewpoints:viewpoint-sequence", ("viewpoints:get-viewpoint", ("quote", viewpoints_list_as_lisp_string(viewpoints))), ("md:get-event-sequence", composition.dataset_id, composition.id)) )
+        viewpoint_sequence = list(map(lambda x: x, viewpoint_sequence)) # convert Cons to list
+        return viewpoint_sequence
+
+    def get_alphabet(self, datasets, viewpoint: BasicViewpoint) -> List:
+        if isinstance(datasets, Dataset):
+            dataset_ids = [str(datasets.id)]
+        elif isinstance(datasets, list):
+            dataset_ids = list(map(lambda o: str(o.id), datasets))
+
+        alphabet = self._lisp_eval( ("idyom-db::get-alphabet", ("quote", viewpoint.value), " ".join(dataset_ids)) )
+        alphabet = list(map(lambda x: x, alphabet))  # convert Cons to list
+        return alphabet
 
 class IDYOMModel:
-    def __init__(self):
-        self.idyom_binding = IDYOMBinding("/Users/alexander/idyom", "/Users/alexander/idyom/db/database.sqlite")
+    def __init__(self, idyom_root_path: Path, idyom_database_path: Path):
+        self.idyom_binding = IDYOMBinding(str(idyom_root_path.resolve()), str(idyom_database_path.resolve()))
 
     def import_midi(self, midi_files_directory_path: str, description: str, dataset_id: int = None) -> Dataset:
         """
