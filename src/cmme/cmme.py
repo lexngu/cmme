@@ -1,39 +1,19 @@
 from typing import List
 
 from cmme.config import Config
-from cmme.drex.distribution.base import DistributionType
-from cmme.drex.distribution.prior import UnprocessedPrior
-from cmme.drex.instance import DREXInstance
-from cmme.drex.model import DREXModel
-from cmme.drex.results_file import ResultsFile
-from cmme.idyom.model import IDYOMModel, Composition, IDYOMInstructionBuilder, BasicViewpoint, Dataset, IDYOMBinding
-from cmme.idyom.results_file import IDYOMResultsFile
-from cmme.ppmdecay.instance import ModelType, PPMInstance, PPMDecayInstance, PPMSimpleInstance
-from cmme.ppmdecay.model import PPMModel
-from cmme.ppmdecay.results_file import PPMDecayResultsFileData, ResultsMetaFile
+from cmme.drex.base import DistributionType, UnprocessedPrior
+from cmme.drex.binding import ResultsFile
+from cmme.drex.model import DREXInstructionBuilder, DREXModel
+from cmme.idyom.base import Dataset, BasicViewpoint, IDYOMResultsFile
+from cmme.idyom.binding import IDYOMBinding
+from cmme.idyom.model import IDYOMInstructionBuilder, IDYOMModel
+from cmme.ppmdecay.base import ModelType
+from cmme.ppmdecay.binding import ResultsMetaFile
+from cmme.ppmdecay.model import PPMInstance, PPMModel, PPMSimpleInstance, PPMDecayInstance
 
 
 def midi_to_equal_tempered_fundamental_frequency(midi_note_number: int, standard_concert_A_pitch: int = 440, precision_dp: int = 2) -> float:
     return round(2**((midi_note_number-69)/12)*standard_concert_A_pitch, precision_dp)
-
-def flatten_list(obj: List) -> List:
-    """
-    Returns a list with all elements of +obj+. If an element is a list, this element gets unpacked though.
-    :param obj:
-    :return:
-    """
-    if obj is None or obj == []:
-        return []
-    if not isinstance(obj, list):
-        return [obj]
-
-    result = []
-    for o in obj:
-        if isinstance(o, list):
-            result = [*result, *o]
-        else:
-            result.append(o)
-    return result
 
 class CMMETestAndPretrainingDataContainer:
     def __init__(self, target_dataset: Dataset, target_viewpoint: BasicViewpoint, pretraining_datasets: List[Dataset], idyom_binding: IDYOMBinding):
@@ -98,7 +78,7 @@ class CMME:
     def __init__(self):
         self._idyom_instruction_builder = IDYOMInstructionBuilder()
         self._ppm_instruction_builder: PPMInstance = None
-        self._drex_instruction_builder = DREXInstance()
+        self._drex_instruction_builder = DREXInstructionBuilder()
 
         self._idyom_runner: IDYOMModel = None
         self._ppmdecay_runner: PPMModel = None
@@ -115,7 +95,7 @@ class CMME:
 
         return self._ppm_instruction_builder
 
-    def drex(self) -> DREXInstance:
+    def drex(self) -> DREXInstructionBuilder:
         return self._drex_instruction_builder
 
     def run(self, dc: CMMETestAndPretrainingDataContainer) -> CMMEResultsContainer:
@@ -137,7 +117,7 @@ class CMME:
         # TODO PPM without pre-training so far...
 
         drex_input_sequence = flatten_list(dc.target_dataset_as_fundamental_frequency_sequence())
-        self._drex_instruction_builder.with_input_sequence(drex_input_sequence)
+        self._drex_instruction_builder.input_sequence(drex_input_sequence)
         prior_distribution_type = DistributionType.GAUSSIAN
         if dc.pretraining_datasets is None or (isinstance(dc.pretraining_datasets, list) and len(dc.pretraining_datasets) == 0):
             prior_input_sequence = drex_input_sequence
@@ -146,7 +126,7 @@ class CMME:
             prior_input_sequence = flatten_list(dc.pretraining_datasets_as_fundamental_frequency_sequence())
         prior_D = 4
         print(prior_input_sequence)
-        self._drex_instruction_builder.with_prior(UnprocessedPrior(prior_distribution_type, prior_input_sequence, prior_D))
+        self._drex_instruction_builder.prior(UnprocessedPrior(prior_distribution_type, prior_input_sequence, prior_D))
 
         print("Run IDyOM...")
         idyom_result = self._idyom_runner.run(self._idyom_instruction_builder)

@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import scipy.io as sio
-from cmme.drex.results_file import ResultsFile
-from cmme.ppmdecay.results_file import ResultsMetaFile
+from cmme.drex.binding import ResultsFile
+from cmme.ppmdecay.binding import ResultsMetaFile
 from cmme.visualization.util.util import cmme_default_plot_instructions_file_path
 
 

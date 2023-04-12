@@ -1,178 +1,17 @@
-import dataclasses
 import tempfile
-from enum import Enum
 from pathlib import Path
-import os
-from typing import List
-import re
-import cl4py
 
-from cmme.idyom.results_file import IDYOMResultsFile, parse_idyom_results
+from cmme.idyom.base import *
+from cmme.idyom.binding import IDYOMBinding
+from cmme.util import flatten_list
 
-
-def path_with_trailing_slash(path) -> Path:
-    if not isinstance(path, Path):
-        path = Path(path)
-    return os.path.join(path, '')
-
-@dataclasses.dataclass
-class Dataset:
-    id: int
-    description: str
-
-    def __init__(self, id, description):
-        self.id = id
-        self.description = description
-
-@dataclasses.dataclass
-class Composition:
-    dataset_id: int
-    id: int
-    description: str
-
-    def __init__(self, dataset_id, id, description):
-        self.dataset_id = dataset_id
-        self.id = id
-        self.description = description
-
-class Viewpoint(Enum):
-    pass
-
-class BasicViewpoint(Viewpoint):
-    ONSET = 'onset'
-    CPITCH = 'cpitch'
-    DUR = 'dur'
-    KEYSIG = 'keysig'
-    MODE = 'mode'
-    TEMPO = 'tempo'
-    PULSES = 'pulses'
-    BARLENGTH = 'barlength'
-    DELTAST = 'deltast'
-    BIOI = 'bioi'
-    PHRASE = 'phrase'
-
-    MPITCH = 'mpitch'
-    ACCIDENTAL = 'accidental'
-    DYN = 'dyn'
-    VOICE = 'voice'
-    ORNAMENT = 'ornament'
-    COMMA = 'comma'
-    ARTICULATION = 'articulation'
-
-class DerivedViewpoint(Viewpoint):
-    # based on onset:
-    IOI = 'ioi'
-    POSINBAR = 'posinbar'
-    # based on dur:
-    DUR_RATIO = 'dur-ratio'
-    # based on keysig:
-    REFERENT = 'referent'
-    # based on cpitch:
-    CPINT = 'cpint'
-    CONTOUR = 'contour'
-    CPITCH_CLASS = 'cpitch-class'
-    CPCINT = 'cpcint'
-    CPINTREF = 'cpintref'
-    CPINTFIP = 'cpintfip'
-    CPINTFIPH = 'cpintfiph'
-    CPINTFIB = 'cpintfib'
-    INSCALE = 'inscale'
-
-    # based on onset:
-    IOI_RATIO = 'ioi-ratio'
-    IOI_CONTOUR = 'ioi-contour'
-    METACCENT = 'metaccent'
-    # based on bioi:
-    BIOI_RATIO = 'bioi-ratio'
-    BIOI_CONTOUR = 'bioi-contour'
-    # based on phrase:
-    LPHRASE = 'lphrase'
-    # based on cpitch:
-    CPINT_SIZE = 'cpint-size'
-    NEWCONTOUR = 'newcontour'
-    CPCINT_SIZE = 'cpcint-size'
-    CPCINT_2 = 'cpcint-2'
-    CPCINT_3 = 'cpcint-3'
-    CPCINT_4 = 'cpcint-4'
-    CPCINT_5 = 'cpcint-5'
-    CPCINT_6 = 'cpcint-6'
-    OCTAVE = 'octave'
-    TESSITURA = 'tessitura'
-    # based on mpitch:
-    MPITCH_CLASS = 'mpitch-class'
-
-    # based on cpitch:
-    REGISTRAL_DIRECTION = 'registral-direction'
-    INTERVALLIC_DIFFERENCE = 'intervallic-difference'
-    REGISTRAL_RETURN = 'registral-return'
-    PROXIMITY = 'proximity'
-    CLOSURE = 'closure'
-
-class TestViewpoint(Viewpoint):
-    FIB = 'fib'
-    CROTCHET = 'crotchet'
-    TACTUS = 'tactus'
-    FIPH = 'fiph'
-    LIPH = 'liph'
-
-class ThreadedViewpoint(Viewpoint):
-    # based on cpitch and onset:
-    THR_CPINT_FIB = 'thr-cpint-fib'
-    THR_CPINT_FIPH = 'thr-cpint-fiph'
-    THR_CPINT_LIPH = 'thr-cpint-liph'
-    THR_CPINT_CROTCHET = 'thr-cpint-crotchet'
-    THR_CPINT_TACTUS = 'thr-cpint-tactus'
-    THR_CPINTREF_LIPH = 'thr-cpintref-liph'
-    THR_CPINTREF_FIB = 'thr-cpintref-fib'
-    THR_CPINT_CPINTREF_LIPH = 'thr-cpint_cpintref-liph'
-    THR_CPINT_CPINTREF_FIB = 'thr-cpint_cpintref-fib'
-
-class IDYOMModelValue(Enum):
-    STM = ':stm'
-    LTM = ':ltm'
-    LTM_PLUS = ':ltm+'
-    BOTH = ':both'
-    BOTH_PLUS = ':both+'
-
-class IDYOMEscape(Enum):
-    A = ':a'
-    B = ':b'
-    C = ':c'
-    D = ':d'
-    X = ':x'
-
-class IDYOMViewpointSelectionBasis(Enum):
-    AUTO = ':auto'
-    PITCH_FULL = ':pitch-full'
-    PITCH_SHORT = ':pitch-short'
-    BIOI = ':bioi'
-    ONSET = ':onset'
-
-def viewpoints_list_as_lisp_string(viewpoints: List[Viewpoint]) -> str:
-    result = ""
-
-    if isinstance(viewpoints, Viewpoint):
-        return viewpoints.value
-    elif isinstance(viewpoints, list) or isinstance(viewpoints, tuple):
-        if len(viewpoints) == 0:
-            result += "()"
-        else:
-            result += " ("
-            for viewpoint in viewpoints:
-                result += viewpoints_list_as_lisp_string(viewpoint) + " "
-            result = result[:-1] # remove last character
-            result += ")"
-    else:
-        raise ValueError("Invalid element: " + str(viewpoints))
-
-    return result.strip()
 
 class IDYOMInstructionBuilder:
     def __init__(self):
         self._dataset: Dataset = None
         self._target_viewpoints: List[Viewpoint] = []
         self._source_viewpoints: List[Viewpoint] = []
-        self._model: IDYOMModelValue = None
+        self._model: IDYOMModelValue = IDYOMModelValue.BOTH_PLUS
 
         self.stm_options()
         self.ltm_options()
@@ -183,6 +22,8 @@ class IDYOMInstructionBuilder:
 
 
     def dataset(self, dataset: Dataset):
+        if not isinstance(dataset, Dataset):
+            raise ValueError("dataset must be an instance of Dataset!")
         self._dataset = dataset
         return self
 
@@ -198,6 +39,8 @@ class IDYOMInstructionBuilder:
         :param source_viewpoints:
         :return:
         """
+        if any(not isinstance(v, Viewpoint) or isinstance(v, List) for v in flatten_list(source_viewpoints, True)):
+            raise ValueError("source_viewpoints must not contain anything but (potentially nested) Viewpoints!")
         self._source_viewpoints = source_viewpoints
         return self
 
@@ -205,7 +48,7 @@ class IDYOMInstructionBuilder:
         self._model = model
         return self
 
-    def stm_options(self, order_bound=None, mixtures=True, update_exclusion=True, escape=IDYOMEscape.X): # original default values
+    def stm_options(self, order_bound: int =None, mixtures=True, update_exclusion=True, escape=IDYOMEscape.X): # original default values
         self._stm_options = {
             "order_bound": order_bound,
             "mixtures": mixtures,
@@ -233,7 +76,7 @@ class IDYOMInstructionBuilder:
         :param exclusively_to_be_used_resampling_fold_indices: If None, IDyOM will use all folds
         :return:
         """
-        if pretraining_dataset_ids == None:
+        if pretraining_dataset_ids is None:
             self._training_options = {}
         else:
             self._training_options = {
@@ -283,7 +126,36 @@ class IDYOMInstructionBuilder:
             "use_ltms_cache": use_ltms_cache
         }
 
+    def _is_valid(self) -> tuple:
+        """
+        Checks the instruction builder for validity.
+        :return: (is_valid: bool, error_msgs: list)
+        """
+        msgs = []
+        is_valid = True
+
+        if self._dataset == None:
+            msgs.append("dataset must not be None!")
+            is_valid = False
+        if len(self._target_viewpoints) == 0:
+            msgs.append("There must be at least one element in target_viewpoints!")
+            is_valid = False
+        if len(self._source_viewpoints) == 0:
+            msgs.append("There must be at least one element in source_viewpoints!")
+            is_valid = False
+        if not isinstance(self._model, IDYOMModelValue):
+            msgs.append("model must be any value of IDYOMModelValue!")
+
+        return (is_valid, msgs)
+
+    def assert_is_valid(self):
+        builder_is_valid, builder_error_msgs = self.is_valid()
+        if not builder_is_valid:
+            raise ValueError()
+        return
+
     def build_for_cl4py(self) -> tuple:
+        self.assert_is_valid()
         result = list()
 
         # (idyom:idyom ...)
@@ -374,6 +246,7 @@ class IDYOMInstructionBuilder:
         return tuple(result)
 
     def build_for_cl4py_filename_inference(self) -> tuple:
+        self.assert_is_valid()
         result = list()
 
         # (apps:dataset-modelling-filename ...)
@@ -457,6 +330,7 @@ class IDYOMInstructionBuilder:
         return tuple(result)
 
     def build_for_lisp(self) -> str:
+        self.assert_is_valid()
         result = list()
 
         # (idyom:idyom ...)
@@ -547,107 +421,6 @@ class IDYOMInstructionBuilder:
         result.append(")")
 
         return " ".join(result)
-
-class IDYOMBinding:
-    def __init__(self, idyom_root_path, idyom_sqlite_database_path):
-        self.lisp = cl4py.Lisp(quicklisp=True)
-        self.idyom_root_path = path_with_trailing_slash(idyom_root_path)
-        self.idyom_sqlite_database_path: Path = path_with_trailing_slash(idyom_sqlite_database_path)
-
-        self._setup_lisp()
-
-    def _lisp_eval(self, cmd):
-        print("> " + str(cmd))
-        result = self.lisp.eval(cmd)
-        #print(str(result))
-        return result
-
-    def _setup_lisp(self):
-        self._lisp_eval( ('defvar', 'common-lisp-user::*idyom-root*', '"'+self.idyom_root_path+'"') )
-        self._lisp_eval( ('ql:quickload', '"idyom"') )
-        self._lisp_eval( ('clsql:connect', ('list', '"'+self.idyom_sqlite_database_path+'"'), ':if-exists', ':old',
-                   ':database-type', ':sqlite3') )
-
-    def all_datasets(self) -> List[Dataset]:
-        """
-        Calls (idyom-db:describe-database)
-        :return: A list of Dataset objects
-        """
-        result = list()
-
-        self._lisp_eval( ('idyom-db:describe-database', ) )
-        last_msg = self.lisp.msg # Requires the patched version of cl4py
-
-        for line in last_msg.split("\n"):
-            id, description = re.split("\s+", line, maxsplit=1)
-            result.append(Dataset(id=int(id), description=description.strip()))
-
-        return result
-
-    def next_free_dataset_id(self) -> int:
-        result = self._lisp_eval( ('idyom-db:get-next-free-id',) )
-        return int(result)
-
-    def import_midi(self, midi_files_directory_path: str, description: str, dataset_id: int) -> Dataset:
-        """
-        Calls (idyom-db:import-data :mid <midi_file_directory_path> <description> <dataset_id>)
-
-        :param midi_files_directory_path: Path to directory containing midi files to import
-        :param description: A string as description of the dataset
-        :param dataset_id: Target dataset id. Note that if there already is a dataset with the provided id, IDyOM will fail.
-        :return:
-        """
-        self._lisp_eval(('idyom-db:import-data', ':mid', '"' + path_with_trailing_slash(midi_files_directory_path) + '"', '"'+description+'"', dataset_id))
-        dataset_id = int(re.findall("Inserting data into database: dataset (\d+)", self.lisp.msg)[0])
-
-        return Dataset(id=dataset_id, description=description)
-
-    def import_kern(self, krn_files_directory_path: str, description: str, dataset_id: int) -> Dataset:
-        """
-        Calls (idyom-db:import-data :mid <krn_files_directory_path> <description> <dataset_id>)
-
-        :param krn_files_directory_path: Path to directory containing **kern files to import
-        :param description: A string as description of the dataset
-        :param dataset_id: Target dataset id. Note that if there already is a dataset with the provided id, IDyOM will fail.
-        :return:
-        """
-        self._lisp_eval(('idyom-db:import-data', ':krn', '"'+path_with_trailing_slash(krn_files_directory_path)+'"', '"'+description+'"', dataset_id))
-        dataset_id = int(re.findall("Inserting data into database: dataset (\d+)", self.lisp.msg)[0])
-
-        return Dataset(id=dataset_id, description=description)
-
-    def run_idyom(self, instruction_builder: IDYOMInstructionBuilder) -> IDYOMResultsFile:
-        result = self._lisp_eval( instruction_builder.build_for_cl4py() )
-
-        return parse_idyom_results(self.infer_output_file_path(instruction_builder))
-
-    def infer_output_file_path(self, instruction_builder: IDYOMInstructionBuilder) -> Path:
-        filename = self._lisp_eval(instruction_builder.build_for_cl4py_filename_inference())
-
-        return os.path.join(instruction_builder._output_options["output_path"], filename)
-
-    def all_compositions(self, dataset: Dataset) -> List[Composition]:
-        descriptions = self._lisp_eval( ("mapcar", ("function", "idyom-db::composition-description"), ("idyom-db:get-compositions", dataset.id)) )
-        result = list()
-        for idx, description in enumerate(descriptions): # assuming that idx always coincides with the composition's id within the dataset
-            result.append(Composition(dataset_id=dataset.id, id=idx, description=description))
-
-        return result
-
-    def derive_viewpoint_sequence(self, composition: Composition, viewpoints: List[Viewpoint]) -> List:
-        viewpoint_sequence = self._lisp_eval( ("viewpoints:viewpoint-sequence", ("viewpoints:get-viewpoint", ("quote", viewpoints_list_as_lisp_string(viewpoints))), ("md:get-event-sequence", composition.dataset_id, composition.id)) )
-        viewpoint_sequence = list(map(lambda x: x, viewpoint_sequence)) # convert Cons to list
-        return viewpoint_sequence
-
-    def get_alphabet(self, datasets, viewpoint: BasicViewpoint) -> List:
-        if isinstance(datasets, Dataset):
-            dataset_ids = [str(datasets.id)]
-        elif isinstance(datasets, list):
-            dataset_ids = list(map(lambda o: str(o.id), datasets))
-
-        alphabet = self._lisp_eval( ("idyom-db::get-alphabet", ("quote", viewpoint.value), " ".join(dataset_ids)) )
-        alphabet = list(map(lambda x: x, alphabet))  # convert Cons to list
-        return alphabet
 
 class IDYOMModel:
     def __init__(self, idyom_root_path: Path, idyom_database_path: Path):

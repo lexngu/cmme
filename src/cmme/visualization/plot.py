@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from matplotlib.figure import Figure
 from matplotlib import pyplot as plt
-from cmme.drex.util.matlab import MatlabWorker
+from cmme.drex.binding import MatlabWorker
 from cmme.visualization.data_frame import DataFrame
 import numpy as np
 
