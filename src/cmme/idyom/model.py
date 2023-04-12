@@ -148,9 +148,9 @@ class IDYOMInstructionBuilder:
         return (is_valid, msgs)
 
     def assert_is_valid(self):
-        builder_is_valid, builder_error_msgs = self.is_valid()
+        builder_is_valid, builder_error_msgs = self._is_valid()
         if not builder_is_valid:
-            raise ValueError()
+            raise ValueError(" ".join(builder_error_msgs))
         return
 
     def build_for_cl4py(self) -> tuple:

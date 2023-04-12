@@ -10,6 +10,7 @@ from cmme.idyom.model import IDYOMInstructionBuilder, IDYOMModel
 from cmme.ppmdecay.base import ModelType
 from cmme.ppmdecay.binding import ResultsMetaFile
 from cmme.ppmdecay.model import PPMInstance, PPMModel, PPMSimpleInstance, PPMDecayInstance
+from cmme.util import flatten_list
 
 
 def midi_to_equal_tempered_fundamental_frequency(midi_note_number: int, standard_concert_A_pitch: int = 440, precision_dp: int = 2) -> float:

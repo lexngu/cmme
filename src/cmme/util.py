@@ -1,7 +1,7 @@
-from res.packages.cl4py.cl4py import List
+from typing import List
 
 
-def flatten_list(obj: List(), recursive = False) -> List:
+def flatten_list(obj: List, recursive = False) -> List:
     """
     Returns a list with all elements of +obj+. If an element is a list, this element gets unpacked though.
     :param obj:
@@ -18,7 +18,7 @@ def flatten_list(obj: List(), recursive = False) -> List:
             if recursive:
                 result = [*result, *flatten_list(o)]
             else:
-                result = [*result, o]
+                result = [*result, *o]
         else:
             result.append(o)
     return result
