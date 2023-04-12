@@ -1,12 +1,10 @@
 import os
-from pathlib import Path
-from typing import List, re
+from typing import List, re, Any, Tuple
 
 import cl4py
 
-from cmme.idyom.base import *
-from cmme.idyom.model import IDYOMInstructionBuilder
-from cmme.idyom.util import path_with_trailing_slash
+from .base import *
+from .util import path_with_trailing_slash
 
 
 class IDYOMBinding:
@@ -77,15 +75,10 @@ class IDYOMBinding:
 
         return Dataset(id=dataset_id, description=description)
 
-    def run_idyom(self, instruction_builder: IDYOMInstructionBuilder) -> IDYOMResultsFile:
-        result = self._lisp_eval( instruction_builder.build_for_cl4py() )
+    def eval(self, cl4py_instruction: Tuple) -> Any:
+        result = self._lisp_eval( cl4py_instruction )
 
-        return parse_idyom_results(self.infer_output_file_path(instruction_builder))
-
-    def infer_output_file_path(self, instruction_builder: IDYOMInstructionBuilder) -> Path:
-        filename = self._lisp_eval(instruction_builder.build_for_cl4py_filename_inference())
-
-        return os.path.join(instruction_builder._output_options["output_path"], filename)
+        return result
 
     def all_compositions(self, dataset: Dataset) -> List[Composition]:
         descriptions = self._lisp_eval( ("mapcar", ("function", "idyom-db::composition-description"), ("idyom-db:get-compositions", dataset.id)) )

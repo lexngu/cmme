@@ -1,8 +1,7 @@
 import tempfile
-from pathlib import Path
-
-from cmme.idyom.base import *
-from cmme.idyom.binding import IDYOMBinding
+import os
+from .base import *
+from .binding import IDYOMBinding
 from cmme.util import flatten_list
 
 
@@ -456,4 +455,9 @@ class IDYOMModel:
         return self.idyom_binding.all_datasets()
 
     def run(self, instruction_builder: IDYOMInstructionBuilder) -> IDYOMResultsFile:
-        return self.idyom_binding.run_idyom(instruction_builder)
+        self.idyom_binding.eval( instruction_builder.build_for_cl4py() )
+
+        filename = os.path.join(instruction_builder._output_options["output_path"], self.idyom_binding.eval( instruction_builder.build_for_cl4py_filename_inference() ))
+        results = parse_idyom_results(filename)
+
+        return results
