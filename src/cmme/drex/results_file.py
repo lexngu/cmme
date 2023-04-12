@@ -107,14 +107,13 @@ class ResultsFile:
         [input_sequence_times, input_sequence_features] = input_sequence.shape
         [surprisal_times, surprisal_features] = surprisal.shape
         joint_surprisal_times = joint_surprisal.shape[0]
-        [context_beliefs_times, context_beliefs_contexts] = context_beliefs.shape
+        [context_beliefs_memory, context_beliefs_contexts] = context_beliefs.shape
         belief_dynamics_times = belief_dynamics.shape[0]
         psi_features = len(psi.features())
         psi_times = psi.time()
 
-        if not (input_sequence_times == surprisal_times and surprisal_times == joint_surprisal_times and joint_surprisal_times == (context_beliefs_times-1) and
-                (context_beliefs_times-1) == (belief_dynamics_times-1) and (belief_dynamics_times-1) == psi_times):
-            raise ValueError("Dimension 'time' invalid! Value must be equal for input_sequence({}), surprisal({}), joint_surprisal({}), context_beliefs({}), belief_dynamics({} (-1)), and psi({}).".format(input_sequence_times, surprisal_times, joint_surprisal_times, context_beliefs_times, belief_dynamics_times, psi_times))
+        if not (input_sequence_times == surprisal_times and surprisal_times == joint_surprisal_times and joint_surprisal_times == (belief_dynamics_times-1) and (belief_dynamics_times-1) == psi_times):
+            raise ValueError("Dimension 'time' invalid! Value must be equal for input_sequence({}), surprisal({}), joint_surprisal({}), belief_dynamics({} (-1)), and psi({}).".format(input_sequence_times, surprisal_times, joint_surprisal_times, belief_dynamics_times, psi_times))
         if not (input_sequence_features == surprisal_features and surprisal_features == psi_features):
             raise ValueError(
                 "Dimension 'feature' invalid! Value must be equal for input_sequence, surprisal, and psi.")
@@ -135,7 +134,7 @@ class ResultsFile:
         self.joint_surprisal = joint_surprisal
         """Joint surprisal values: time => 1"""
         self.context_beliefs = context_beliefs
-        """Context belief distribution: time, context => 1"""
+        """Context belief distribution: memory, context => 1"""
         self.belief_dynamics = belief_dynamics
         """Belief dynamics: time => 1"""
         self.change_decision_changepoint = change_decision_changepoint
