@@ -3,6 +3,7 @@ import os
 from .base import *
 from .binding import IDYOMBinding
 from cmme.util import flatten_list
+from ..config import Config
 
 
 class IDYOMInstructionBuilder:
@@ -422,7 +423,7 @@ class IDYOMInstructionBuilder:
         return " ".join(result)
 
 class IDYOMModel:
-    def __init__(self, idyom_root_path: Path, idyom_database_path: Path):
+    def __init__(self, idyom_root_path: Path = Config().idyom_root_path(), idyom_database_path: Path = Config().idyom_database_path()):
         self.idyom_binding = IDYOMBinding(str(idyom_root_path.resolve()), str(idyom_database_path.resolve()))
 
     def import_midi(self, midi_files_directory_path: str, description: str, dataset_id: int = None) -> Dataset:
