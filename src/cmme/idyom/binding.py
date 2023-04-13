@@ -45,7 +45,7 @@ def install_idyom(idyom_root_path, force_reset = False) -> Path:
 class IDYOMBinding:
     def __init__(self, idyom_root_path, idyom_sqlite_database_path):
         self.lisp = cl4py.Lisp(quicklisp=True)
-        self.idyom_root_path = path_with_trailing_slash(idyom_root_path)
+        self.idyom_root_path: Path = path_with_trailing_slash(idyom_root_path)
         self.idyom_sqlite_database_path: Path = path_with_trailing_slash(idyom_sqlite_database_path)
 
         self._setup_lisp()
@@ -57,9 +57,9 @@ class IDYOMBinding:
         return result
 
     def _setup_lisp(self):
-        self._lisp_eval( ('defvar', 'common-lisp-user::*idyom-root*', '"'+self.idyom_root_path+'"') )
+        self._lisp_eval( ('defvar', 'common-lisp-user::*idyom-root*', '"'+str(self.idyom_root_path)+'"') )
         self._lisp_eval( ('ql:quickload', '"idyom"') )
-        self._lisp_eval( ('clsql:connect', ('list', '"'+self.idyom_sqlite_database_path+'"'), ':if-exists', ':old',
+        self._lisp_eval( ('clsql:connect', ('list', '"'+str(self.idyom_sqlite_database_path)+'"'), ':if-exists', ':old',
                    ':database-type', ':sqlite3') )
 
     def all_datasets(self) -> List[Dataset]:
@@ -91,7 +91,7 @@ class IDYOMBinding:
         :param dataset_id: Target dataset id. Note that if there already is a dataset with the provided id, IDyOM will fail.
         :return:
         """
-        self._lisp_eval(('idyom-db:import-data', ':mid', '"' + path_with_trailing_slash(midi_files_directory_path) + '"', '"'+description+'"', dataset_id))
+        self._lisp_eval(('idyom-db:import-data', ':mid', '"' + str(path_with_trailing_slash(midi_files_directory_path)) + '"', '"'+description+'"', dataset_id))
         dataset_id = int(re.findall("Inserting data into database: dataset (\d+)", self.lisp.msg)[0])
 
         return Dataset(id=dataset_id, description=description)
@@ -105,7 +105,7 @@ class IDYOMBinding:
         :param dataset_id: Target dataset id. Note that if there already is a dataset with the provided id, IDyOM will fail.
         :return:
         """
-        self._lisp_eval(('idyom-db:import-data', ':krn', '"'+path_with_trailing_slash(krn_files_directory_path)+'"', '"'+description+'"', dataset_id))
+        self._lisp_eval(('idyom-db:import-data', ':krn', '"'+str(path_with_trailing_slash(krn_files_directory_path))+'"', '"'+description+'"', dataset_id))
         dataset_id = int(re.findall("Inserting data into database: dataset (\d+)", self.lisp.msg)[0])
 
         return Dataset(id=dataset_id, description=description)
