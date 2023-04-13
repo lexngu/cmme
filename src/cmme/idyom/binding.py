@@ -7,13 +7,21 @@ from .base import *
 from .util import path_with_trailing_slash
 
 
-def install_idyom_database(idyom_root_path, force_reset = False) -> Path:
+def install_idyom(idyom_root_path, force_reset = False) -> Path:
     """
-
+    Installs idyom as quicklisp project, and initializes the database
     :param idyom_root_path:
     :param force_reset:
     :return: Path to idyom database
     """
+    idyom_repository_path = (Path(__file__) / Path("../../../../res/models/idyom/")).resolve()
+    quicklisp_local_package_path = Path("~/quicklisp/local-projects/").expanduser().resolve()
+    idyom_repository_symlink_target_path = (quicklisp_local_package_path / "idyom/")
+    if not quicklisp_local_package_path.exists():
+        quicklisp_local_package_path.mkdir(parents=True)
+    if not idyom_repository_symlink_target_path.exists():
+        idyom_repository_symlink_target_path.symlink_to(idyom_repository_path)
+
     lisp = cl4py.Lisp(quicklisp=True)
 
     idyom_root_path = path_with_trailing_slash(idyom_root_path)

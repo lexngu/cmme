@@ -4,3 +4,6 @@
 [submodule "res/packages/cl4py"]
 	path = res/packages/cl4py
 	url = https://github.com/lexngu/cmme-cl4py.git
+[submodule "res/models/idyom"]
+	path = res/models/idyom
+	url = https://github.com/mtpearce/idyom
