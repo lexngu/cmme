@@ -38,7 +38,7 @@ For the comparison environment:
   * Install dplyr, tidyr: `install.packages(c("tidyr", "dplyr"))`
   * Install PPM-Decay model: `if (!require("devtools")) install.packages("devtools"); 
 devtools::install_github("pmcharrison/ppm")`
-* Run `$ python`, then: `import cmme.idyom.binding; cmme.idyom.binding.install_idyom_database(IDYOM_ROOT_PATH)` (replace IDYOM_ROOT_PATH with the desired value, e.g. `/Users/alexander/idyom/`)
+* Run `$ python`, then: `import cmme.idyom.binding; cmme.idyom.binding.install_idyom(IDYOM_ROOT_PATH)` (replace IDYOM_ROOT_PATH with the desired value, e.g. `/Users/alexander/idyom/`)
 * Update `cmme/cmme-comparison.ini`, if needed.
 
 ## Examples

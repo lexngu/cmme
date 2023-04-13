@@ -30,7 +30,8 @@ def install_idyom(idyom_root_path, force_reset = False) -> Path:
     if idyom_db_path.exists() and not force_reset:
         raise ValueError("Database at {} already exists. Use force_reset, if you want to reset the database.".format(idyom_db_path))
 
-    idyom_db_path.parent.mkdir(parents=True)
+    if not idyom_db_path.parent.exists():
+        idyom_db_path.parent.mkdir(parents=True)
 
     lisp.eval(('defvar', 'common-lisp-user::*idyom-root*', '"' + str(idyom_root_path.resolve()) + '"'))
     lisp.eval(('ql:quickload', '"idyom"'))
