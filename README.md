@@ -25,19 +25,21 @@ For the comparison environment:
 ## Installation
 * Install MATLAB, R, SBCL, Anaconda according to official guides (Note: On macOS, you may want to install SBCL via Brew or MacPorts though)
 * Clone the cmme-jupyter repository and its submodules: `$ git clone git@github.com:lexngu/cmme-jupyter --recursive`
-* Open the terminal, and go to the directory containing the cloned repository.
+* Change settings in `cmme/cmme-comparison.ini`, if needed.
+* Open the terminal, and go to the directory containing the cloned repository (`$ cd path_to_cmme`).
   * Initalize a new Python environment (here, using Anaconda):
-    * Create: `$ conda create -n cmme python=3.7` (or perhaps python=3.8, see above)
+    * Create: `$ conda create -n cmme python=VERSION` (VERSION must match the requirements of MATLAB (e.g., for 2022a: 3.8-3.10))
     * Activate: `$ conda activate cmme`
-    * Install jupyter: `$ conda install jupyter`
+    * Install jupyter: `$ pip install jupyter`
     * Install cmme's dependencies: `$ pip install -r requirements.txt`
     * Install matlab-engine within this Python environment (see: [Install MATLAB Engine API for Python](https://de.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html))
     * Install cmme and cl4py: `$ pip install -e . res/packages/cl4py` (Note: this is a preliminary solution during development of CMME) 
 * Open R, and run: 
-  * Install dplyr, tidyr: `<code>`install.packages(c("tidyr", "dplyr"))`
-  * Install PPM-Decay model: `if (!require("devtools")) install.packages("devtools") 
+  * Install dplyr, tidyr: `install.packages(c("tidyr", "dplyr"))`
+  * Install PPM-Decay model: `if (!require("devtools")) install.packages("devtools"); 
 devtools::install_github("pmcharrison/ppm")`
-* Change settings in cmme-comparison.ini, if needed.
+* Run `$ python`, then: `import cmme.idyom.binding; cmme.idyom.binding.install_idyom_database(IDYOM_ROOT_PATH)` (replace IDYOM_ROOT_PATH with the desired value, e.g. `/Users/alexander/idyom/`)
+* Update `cmme/cmme-comparison.ini`, if needed.
 
 ## Examples
 See Jupyter notebooks.

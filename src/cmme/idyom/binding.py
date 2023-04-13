@@ -7,6 +7,32 @@ from .base import *
 from .util import path_with_trailing_slash
 
 
+def install_idyom_database(idyom_root_path, force_reset = False) -> Path:
+    """
+
+    :param idyom_root_path:
+    :param force_reset:
+    :return: Path to idyom database
+    """
+    lisp = cl4py.Lisp(quicklisp=True)
+
+    idyom_root_path = path_with_trailing_slash(idyom_root_path)
+    idyom_db_path = (idyom_root_path / "db/database.sqlite").resolve()
+
+    if idyom_db_path.exists() and not force_reset:
+        raise ValueError("Database at {} already exists. Use force_reset, if you want to reset the database.".format(idyom_db_path))
+
+    idyom_db_path.parent.mkdir(parents=True)
+
+    lisp.eval(('defvar', 'common-lisp-user::*idyom-root*', '"' + str(idyom_root_path.resolve()) + '"'))
+    lisp.eval(('ql:quickload', '"idyom"'))
+    lisp.eval(('clsql:connect', (
+    'list', '"' + str(idyom_db_path) + '"'), ':if-exists', ':old', ':database-type', ':sqlite3'))
+    lisp.eval(('idyom-db:initialise-database',))
+
+    return idyom_db_path
+
+
 class IDYOMBinding:
     def __init__(self, idyom_root_path, idyom_sqlite_database_path):
         self.lisp = cl4py.Lisp(quicklisp=True)

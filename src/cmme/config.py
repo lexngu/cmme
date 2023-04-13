@@ -17,7 +17,7 @@ class Config:
 
     def __init__(self, config_file_path: Path = DEFAULT_CONFIG_FILE_PATH):
         if not config_file_path.exists():
-            raise Exception("Config file doesn't exist! path = " + config_file_path)
+            raise Exception("Config file doesn't exist! path = " + str(config_file_path))
 
         self.config_file_path = config_file_path
         self.config_parser = configparser.ConfigParser()

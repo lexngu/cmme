@@ -9,4 +9,4 @@ def path_with_trailing_slash(path) -> Path:
     """
     if not isinstance(path, Path):
         path = Path(path)
-    return os.path.join(path, '')
+    return Path(os.path.join(path, ''))

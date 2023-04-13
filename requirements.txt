@@ -2,8 +2,8 @@ pandas
 numpy
 scipy
 rpy2
-pymatbridge
-zmq
+pyzmq
 # matlab-engine
 matplotlib
+pymatbridge
 cl4py
