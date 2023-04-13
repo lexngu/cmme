@@ -1,3 +1,3 @@
 [submodule "res/models/DREX-model"]
 	path = res/models/DREX-model
-	url = git@github.com:lexngu/cmme-DREX-model.git
+	url = https://github.com/lexngu/cmme-DREX-model.git
