@@ -3,4 +3,4 @@
 	url = https://github.com/lexngu/cmme-DREX-model.git
 [submodule "res/packages/cl4py"]
 	path = res/packages/cl4py
-	url = https://github.com/marcoheisig/cl4py
+	url = https://github.com/lexngu/cmme-cl4py.git
