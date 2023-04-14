@@ -69,13 +69,15 @@ class IDYOMBinding:
         """
         result = list()
 
-        self._lisp_eval( ('idyom-db:describe-database', ) )
-        last_msg = self.lisp.msg # Requires the patched version of cl4py
+        try:
+            self._lisp_eval( ('idyom-db:describe-database', ) )
+            last_msg = self.lisp.msg # Requires the patched version of cl4py
 
-        for line in last_msg.split("\n"):
-            id, description = re.split("\s+", line, maxsplit=1)
-            result.append(Dataset(id=int(id), description=description.strip()))
-
+            for line in last_msg.split("\n"):
+                id, description = re.split("\s+", line, maxsplit=1)
+                result.append(Dataset(id=int(id), description=description.strip()))
+        except: # If there is no dataset in the database (or any other error)
+            pass
         return result
 
     def next_free_dataset_id(self) -> int:
