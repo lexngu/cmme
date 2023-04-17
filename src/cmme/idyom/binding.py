@@ -46,7 +46,7 @@ class IDYOMBinding:
     def __init__(self, idyom_root_path, idyom_sqlite_database_path):
         self.lisp = cl4py.Lisp(quicklisp=True)
         self.idyom_root_path: str = path_as_string_with_trailing_slash(idyom_root_path)
-        self.idyom_sqlite_database_path: str = path_as_string_with_trailing_slash(idyom_sqlite_database_path)
+        self.idyom_sqlite_database_path: str = str(idyom_sqlite_database_path)
 
         self._setup_lisp()
 
