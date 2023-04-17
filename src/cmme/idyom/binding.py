@@ -36,7 +36,7 @@ def install_idyom(idyom_root_path, force_reset = False) -> Path:
     lisp.eval(('defvar', 'common-lisp-user::*idyom-root*', '"' + idyom_root_path + '"'))
     lisp.eval(('ql:quickload', '"idyom"'))
     lisp.eval(('clsql:connect', (
-    'list', '"' + idyom_db_path + '"'), ':if-exists', ':old', ':database-type', ':sqlite3'))
+    'list', '"' + str(idyom_db_path) + '"'), ':if-exists', ':old', ':database-type', ':sqlite3'))
     lisp.eval(('idyom-db:initialise-database',))
 
     return idyom_db_path
