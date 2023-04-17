@@ -1,5 +1,5 @@
 from typing import Any, Tuple
-
+import os
 import cl4py
 import re
 
@@ -25,18 +25,18 @@ def install_idyom(idyom_root_path, force_reset = False) -> Path:
     lisp = cl4py.Lisp(quicklisp=True)
 
     idyom_root_path = path_as_string_with_trailing_slash(idyom_root_path)
-    idyom_db_path = Path(idyom_root_path / "db/database.sqlite").resolve()
+    idyom_db_path = Path(os.path.join(idyom_root_path, "db/database.sqlite"))
 
     if idyom_db_path.exists() and not force_reset:
         raise ValueError("Database at {} already exists. Use force_reset, if you want to reset the database.".format(idyom_db_path))
 
     if not idyom_db_path.parent.exists():
-        idyom_db_path.parent.mkdir(parents=True)
+        Path(idyom_db_path).parent.mkdir(parents=True)
 
     lisp.eval(('defvar', 'common-lisp-user::*idyom-root*', '"' + idyom_root_path + '"'))
     lisp.eval(('ql:quickload', '"idyom"'))
     lisp.eval(('clsql:connect', (
-    'list', '"' + str(idyom_db_path) + '"'), ':if-exists', ':old', ':database-type', ':sqlite3'))
+    'list', '"' + idyom_db_path + '"'), ':if-exists', ':old', ':database-type', ':sqlite3'))
     lisp.eval(('idyom-db:initialise-database',))
 
     return idyom_db_path
