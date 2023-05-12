@@ -5,6 +5,7 @@ import re
 
 from .base import *
 from cmme.util import path_as_string_with_trailing_slash
+from .util import cl4py_cons_to_list
 
 
 def install_idyom(idyom_root_path, force_reset = False) -> Path:
@@ -51,7 +52,7 @@ class IDYOMBinding:
         self._setup_lisp()
 
     def _lisp_eval(self, cmd):
-        print("> " + str(cmd))
+        #print("> " + str(cmd))
         result = self.lisp.eval(cmd)
         #print(str(result))
         return result
@@ -126,8 +127,10 @@ class IDYOMBinding:
         return result
 
     def derive_viewpoint_sequence(self, composition: Composition, viewpoints: List[Viewpoint]) -> List:
-        viewpoint_sequence = self._lisp_eval( ("viewpoints:viewpoint-sequence", ("viewpoints:get-viewpoint", ("quote", viewpoints_list_as_lisp_string(viewpoints))), ("md:get-event-sequence", composition.dataset_id, composition.id)) )
-        viewpoint_sequence = list(map(lambda x: x, viewpoint_sequence)) # convert Cons to list
+        viewpoint_sequence = self._lisp_eval(("viewpoints:viewpoint-sequence", (
+        "viewpoints:get-viewpoint", ("quote", tuple(viewpoints_list_to_string_list(viewpoints)))),
+                                              ("md:get-event-sequence", composition.dataset_id, composition.id)))
+        viewpoint_sequence = cl4py_cons_to_list(viewpoint_sequence)
         return viewpoint_sequence
 
     def get_alphabet(self, datasets, viewpoint: BasicViewpoint) -> List:

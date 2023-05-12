@@ -112,7 +112,7 @@ class CMME:
             .training_options(dc.pretraining_datasets)
 
         alphabet_levels = dc.pretraining_datasets_alphabet() if dc.pretraining_datasets != None else dc.target_dataset_alphabet()
-        print("AL >", alphabet_levels)
+
         self._ppm_instruction_builder.input_sequence(flatten_list(dc.target_dataset_as_target_viewpoint_sequence()))\
             .alphabet_levels(alphabet_levels)
         # TODO PPM without pre-training so far...
@@ -125,8 +125,8 @@ class CMME:
             print("Warning! Prior's input sequence was set to input sequence due to lack of additional pretraining data.")
         else:
             prior_input_sequence = flatten_list(dc.pretraining_datasets_as_fundamental_frequency_sequence())
-        prior_D = 4
-        print(prior_input_sequence)
+        prior_D = 4 # TODO remove hard coded value
+
         self._drex_instruction_builder.prior(UnprocessedPrior(prior_distribution_type, prior_input_sequence, prior_D))
 
         print("Run IDyOM...")
@@ -137,7 +137,6 @@ class CMME:
         drex_result = self._drex_runner.run()
 
         return CMMEResultsContainer(idyom_result, ppmdecay_result, drex_result)
-        return CMMEResultsContainer()
 
     def _init_runners(self):
         if self._idyom_runner is None:

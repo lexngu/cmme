@@ -1,5 +1,9 @@
 from enum import Enum
 
+from cl4py import Cons
+
+from cmme.util import flatten_list
+
 
 class LispExpressionBuilderMode(Enum):
     CL4PY = "cl4py",
@@ -17,7 +21,8 @@ class LispExpressionBuilder:
         return self
 
     def add(self, value):
-        self.components.append(str(value))
+        value = str(value) if not isinstance(value, LispExpressionBuilder) else value.build()
+        self.components.append(value)
         return self
 
     def add_string(self, value):
@@ -63,3 +68,24 @@ class LispExpressionBuilder:
 
     def __str__(self):
         return "(" + " ".join(self.components) + ")"
+
+
+def cl4py_cons_to_list(cons):
+    """
+    Transforms cl4py's "Cons" to a Python list.
+    List(1) => [1]
+    List(List(1, 2), List(3, 4)) => [[1, 2], [3, 4]]
+    :param cons:
+    :return:
+    """
+    result = []
+    if isinstance(cons, Cons):
+        for e in cons:
+            recursion_result = cl4py_cons_to_list(e)
+            if isinstance(recursion_result, list) and len(recursion_result) == 1:
+                result.append(recursion_result[0])
+            else:
+                result.append(recursion_result)
+    else:
+        result = cons
+    return result
