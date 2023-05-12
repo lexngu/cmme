@@ -28,7 +28,7 @@ def install_idyom(idyom_root_path, force_reset = False) -> Path:
     idyom_db_path = Path(os.path.join(idyom_root_path, "db/database.sqlite"))
 
     if idyom_db_path.exists() and not force_reset:
-        raise ValueError("Database at {} already exists. Use force_reset, if you want to reset the database.".format(idyom_db_path))
+        print("Database at {} already exists. Use force_reset, if you want to reset the database.".format(idyom_db_path))
 
     if not idyom_db_path.parent.exists():
         Path(idyom_db_path).parent.mkdir(parents=True)

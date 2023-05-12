@@ -20,11 +20,13 @@ class IDYOMInstructionBuilder:
         self.output_options()
         self.caching_options()
 
-
-    def dataset(self, dataset: Dataset):
-        if not isinstance(dataset, Dataset):
-            raise ValueError("dataset must be an instance of Dataset!")
-        self._dataset = dataset
+    def dataset(self, dataset_or_id):
+        if isinstance(dataset_or_id, Dataset):
+            self._dataset = dataset_or_id
+        elif isinstance(dataset_or_id, int):
+            self._dataset = Dataset(id=dataset_or_id, description="(Unchecked) id value")
+        else:
+            raise ValueError("Dataset invalid! Provide an id value or Dataset instance.")
         return self
 
     def target_viewpoints(self, target_viewpoints: List[BasicViewpoint]):
@@ -48,7 +50,7 @@ class IDYOMInstructionBuilder:
         self._model = model
         return self
 
-    def stm_options(self, order_bound: int =None, mixtures=True, update_exclusion=True, escape=IDYOMEscape.X): # original default values
+    def stm_options(self, order_bound: int = None, mixtures=True, update_exclusion=True, escape=IDYOMEscape.X): # original default values
         self._stm_options = {
             "order_bound": order_bound,
             "mixtures": mixtures,
@@ -66,13 +68,13 @@ class IDYOMInstructionBuilder:
         }
         return self
 
-    def training_options(self, pretraining_dataset_ids = None, resampling_folds_count = 10, exclusively_to_be_used_resampling_fold_indices = None):
+    def training_options(self, pretraining_dataset_ids = None, resampling_folds_count_k = 10, exclusively_to_be_used_resampling_fold_indices = None):
         """
         Training options affect all model configurations (STM, LTM, LTM+, BOTH, BOTH+).
         If STM, there is no training, however, the pretraining datasets provide the "viewpoint domain" (i.e. PPM's "alphabet") for the STM model.
         For all the remaining configurations (LTM, ...), this pre-training happens before IDyOM's resampling procedure.
         :param pretraining_dataset_ids: If None, training options are reset.
-        :param resampling_folds_count:
+        :param resampling_folds_count_k:
         :param exclusively_to_be_used_resampling_fold_indices: If None, IDyOM will use all folds
         :return:
         """
@@ -81,7 +83,7 @@ class IDYOMInstructionBuilder:
         else:
             self._training_options = {
                 "pretraining_dataset_ids": pretraining_dataset_ids,
-                "resampling_folds_count": resampling_folds_count,
+                "resampling_folds_count_k": resampling_folds_count_k,
                 "exclusively_to_be_used_resampling_fold_indices": exclusively_to_be_used_resampling_fold_indices
             }
         return self
@@ -109,7 +111,7 @@ class IDYOMInstructionBuilder:
         return self
 
     def output_options(self, output_path = tempfile.gettempdir(), detail = 3, overwrite = False, separator =" "):
-        if output_path == None:
+        if output_path is None:
             raise ValueError("None is not an allowed value for output_path!")
 
         self._output_options = {
@@ -134,7 +136,7 @@ class IDYOMInstructionBuilder:
         msgs = []
         is_valid = True
 
-        if self._dataset == None:
+        if self._dataset is None:
             msgs.append("dataset must not be None!")
             is_valid = False
         if len(self._target_viewpoints) == 0:
@@ -175,20 +177,20 @@ class IDYOMInstructionBuilder:
         result.append(":models")
         result.append(self._model.value)
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] ...)
-        if self._stm_options:
+        if self._model == IDYOMModelValue.STM or self._model == IDYOMModelValue.BOTH or self._model == IDYOMModelValue.BOTH_PLUS:
             result.append(":stmo")
-            order_bound = self._stm_options["order_bound"] if self._stm_options["order_bound"] else "nil"
+            order_bound = str(self._stm_options["order_bound"]) if self._stm_options["order_bound"] is not None else "nil"
             mixtures = "t" if self._stm_options["mixtures"] else "nil"
             update_exclusion = "t" if self._stm_options["update_exclusion"] else "nil"
             escape = self._stm_options["escape"].value
             result.append(("quote", "(:order-bound "+order_bound+" :mixtures "+mixtures+" :update-exclusion "+update_exclusion+" :escape "+escape+")"))
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...] ...)
-        if self._ltm_options:
+        if self._model == IDYOMModelValue.LTM or self._model == IDYOMModelValue.BOTH or self._model == IDYOMModelValue.BOTH_PLUS:
             result.append(":ltmo")
-            order_bound = str(self._stm_options["order_bound"]) if self._stm_options["order_bound"] else "nil"
-            mixtures = "t" if self._stm_options["mixtures"] else "nil"
-            update_exclusion = "t" if self._stm_options["update_exclusion"] else "nil"
-            escape = self._stm_options["escape"].value
+            order_bound = str(self._ltm_options["order_bound"]) if self._ltm_options["order_bound"] is not None else "nil"
+            mixtures = "t" if self._ltm_options["mixtures"] else "nil"
+            update_exclusion = "t" if self._ltm_options["update_exclusion"] else "nil"
+            escape = self._ltm_options["escape"].value
             result.append(("quote", "(:order-bound " + order_bound + " :mixtures " + mixtures + " :update-exclusion " + update_exclusion + " :escape " + escape + ")"))
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...]
         # [:pretraining-ids ... :k ... :resampling-indices ...] ...)
@@ -198,7 +200,7 @@ class IDYOMInstructionBuilder:
             result.append(("quote", "("+" ".join(pretraining_ids)+")"))
 
             result.append(":k")
-            result.append(self._training_options["k"])
+            result.append(str(self._training_options["resampling_folds_count_k"]))
 
             if self._training_options["exclusively_to_be_used_resampling_fold_indices"]:
                 result.append(":resampling-indices")
@@ -216,7 +218,7 @@ class IDYOMInstructionBuilder:
             else:
                 print("ERROR")
             result.append(":dp")
-            dp = str(self._select_options["dp"]) if self._select_options["dp"] else "nil"
+            dp = str(self._select_options["dp"]) if self._select_options["dp"] is not None else "nil"
             result.append(dp)
             result.append(":max-links")
             result.append(self._select_options["max_links"])
@@ -266,21 +268,21 @@ class IDYOMInstructionBuilder:
         result.append(":models")
         result.append(self._model.value)
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] ...)
-        if self._stm_options:
+        if self._model == IDYOMModelValue.STM or self._model == IDYOMModelValue.BOTH or self._model == IDYOMModelValue.BOTH_PLUS:
             result.append(":stmo")
-            order_bound = self._stm_options["order_bound"] if self._stm_options["order_bound"] else "nil"
+            order_bound = str(self._stm_options["order_bound"]) if self._stm_options["order_bound"] is not None else "nil"
             mixtures = "t" if self._stm_options["mixtures"] else "nil"
             update_exclusion = "t" if self._stm_options["update_exclusion"] else "nil"
             escape = self._stm_options["escape"].value
             result.append(("quote",
                            "(:order-bound " + order_bound + " :mixtures " + mixtures + " :update-exclusion " + update_exclusion + " :escape " + escape + ")"))
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...] ...)
-        if self._ltm_options:
+        if self._model == IDYOMModelValue.LTM or self._model == IDYOMModelValue.BOTH or self._model == IDYOMModelValue.BOTH_PLUS:
             result.append(":ltmo")
-            order_bound = str(self._stm_options["order_bound"]) if self._stm_options["order_bound"] else "nil"
-            mixtures = "t" if self._stm_options["mixtures"] else "nil"
-            update_exclusion = "t" if self._stm_options["update_exclusion"] else "nil"
-            escape = self._stm_options["escape"].value
+            order_bound = str(self._ltm_options["order_bound"]) if self._ltm_options["order_bound"] is not None else "nil"
+            mixtures = "t" if self._ltm_options["mixtures"] else "nil"
+            update_exclusion = "t" if self._ltm_options["update_exclusion"] else "nil"
+            escape = self._ltm_options["escape"].value
             result.append(("quote",
                            "(:order-bound " + order_bound + " :mixtures " + mixtures + " :update-exclusion " + update_exclusion + " :escape " + escape + ")"))
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...]
@@ -291,7 +293,7 @@ class IDYOMInstructionBuilder:
             result.append(("quote", "(" + " ".join(pretraining_ids) + ")"))
 
             result.append(":k")
-            result.append(self._training_options["k"])
+            result.append(self._training_options["resampling_folds_count_k"])
 
             if self._training_options["exclusively_to_be_used_resampling_fold_indices"]:
                 result.append(":resampling-indices")
@@ -350,7 +352,7 @@ class IDYOMInstructionBuilder:
         result.append(":models")
         result.append(self._model.value)
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] ...)
-        if self._stm_options:
+        if self._model == IDYOMModelValue.STM or self._model == IDYOMModelValue.BOTH or self._model == IDYOMModelValue.BOTH_PLUS:
             result.append(":stmo")
             order_bound = str(self._stm_options["order_bound"]) if self._stm_options["order_bound"] else "nil"
             mixtures = "t" if self._stm_options["mixtures"] else "nil"
@@ -358,7 +360,7 @@ class IDYOMInstructionBuilder:
             escape = self._stm_options["escape"].value
             result.append("'(:order-bound " + order_bound + " :mixtures " + mixtures + " :update-exclusion " + update_exclusion + " :escape " + escape + ")")
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...] ...)
-        if self._ltm_options:
+        if self._model == IDYOMModelValue.LTM or self._model == IDYOMModelValue.BOTH or self._model == IDYOMModelValue.BOTH_PLUS:
             result.append(":ltmo")
             order_bound = str(self._stm_options["order_bound"]) if self._stm_options["order_bound"] else "nil"
             mixtures = "t" if self._stm_options["mixtures"] else "nil"
@@ -370,10 +372,10 @@ class IDYOMInstructionBuilder:
         if self._training_options:
             pretraining_ids = list(map(str, self._training_options["pretraining_dataset_ids"]))
             result.append(":pretraining-ids")
-            result.append(("quote", "(" + " ".join(pretraining_ids) + ")"))
+            result.append("'(" + " ".join(pretraining_ids) + ")")
 
             result.append(":k")
-            result.append(self._training_options["k"])
+            result.append(str(self._training_options["resampling_folds_count_k"]))
 
             if self._training_options["exclusively_to_be_used_resampling_fold_indices"]:
                 result.append(":resampling-indices")
@@ -421,6 +423,7 @@ class IDYOMInstructionBuilder:
         result.append(")")
 
         return " ".join(result)
+
 
 class IDYOMModel:
     def __init__(self, idyom_root_path: Path = Config().idyom_root_path(), idyom_database_path: Path = Config().idyom_database_path()):
