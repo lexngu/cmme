@@ -138,24 +138,23 @@ class IDYOMViewpointSelectionBasis(Enum):
     BIOI = ':bioi'
     ONSET = ':onset'
 
-def viewpoints_list_as_lisp_string(viewpoints: List[Viewpoint]) -> str:
-    result = ""
+
+def viewpoints_list_to_string_list(viewpoints: List[Viewpoint]) -> List[str]:
+    result = []
 
     if isinstance(viewpoints, Viewpoint):
-        return viewpoints.value
+        result.append(viewpoints.value)
     elif isinstance(viewpoints, list) or isinstance(viewpoints, tuple):
-        if len(viewpoints) == 0:
-            result += "()"
-        else:
-            result += " ("
-            for viewpoint in viewpoints:
-                result += viewpoints_list_as_lisp_string(viewpoint) + " "
-            result = result[:-1] # remove last character
-            result += ")"
+        for viewpoint in viewpoints:
+            recursion_result = viewpoints_list_to_string_list(viewpoint)
+            if len(recursion_result) == 1:
+                result.append(recursion_result[0])
+            else:
+                result.append(recursion_result)
     else:
         raise ValueError("Invalid element: " + str(viewpoints))
 
-    return result.strip()
+    return result
 
 def infer_target_viewpoints_target_viewpoint_values_and_used_source_viewpoints(fieldnames): # "used", because each target viewpoint may use only a subset of all provided source viewpoints
     unrelatedFieldnames = ['dataset.id', 'melody.id', 'note.id', 'melody.name', 'vertint12', 'articulation', 'comma',

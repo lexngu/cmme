@@ -4,7 +4,7 @@ from .base import *
 from .binding import IDYOMBinding
 from cmme.util import flatten_list
 from ..config import Config
-
+from .util import *
 
 class IDYOMInstructionBuilder:
     def __init__(self):
@@ -156,274 +156,165 @@ class IDYOMInstructionBuilder:
             raise ValueError(" ".join(builder_error_msgs))
         return
 
-    def build_for_cl4py(self) -> tuple:
-        self.assert_is_valid()
-        result = list()
+    def _build_idyomidyom_lispexpression(self, mode: LispExpressionBuilderMode) -> LispExpressionBuilder:
+        leb = LispExpressionBuilder(mode)
 
         # (idyom:idyom ...)
-        result.append("idyom:idyom")
+        leb.add("idyom:idyom")
         # (idyom:idyom <dataset-id> ...)
-        result.append(self._dataset.id)
+        leb.add(self._dataset.id)
         # (idyom:idyom <dataset-id> <target-viewpoints> ...)
         target_viewpoint_names = list(map(lambda v: v.value, self._target_viewpoints))
-        result.append(('quote', '('+" ".join(target_viewpoint_names)+')'))
+        leb.add_list(target_viewpoint_names)
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> ...)
-        if not self._select_options == {}: # if not empty
-            result.append(":select")
+        if not self._select_options == {}:  # if not empty
+            leb.add(":select")
         else:
-            source_viewpoint_names = viewpoints_list_as_lisp_string(self._source_viewpoints)
-            result.append(('quote', source_viewpoint_names))
+            source_viewpoint_names = viewpoints_list_to_string_list(self._source_viewpoints)
+            leb.add_list(source_viewpoint_names)
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> ...)
-        result.append(":models")
-        result.append(self._model.value)
+        leb.add(":models").add(self._model.value)
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] ...)
         if self._model == IDYOMModelValue.STM or self._model == IDYOMModelValue.BOTH or self._model == IDYOMModelValue.BOTH_PLUS:
-            result.append(":stmo")
-            order_bound = str(self._stm_options["order_bound"]) if self._stm_options["order_bound"] is not None else "nil"
+            order_bound = str(self._stm_options["order_bound"]) if self._stm_options[
+                                                                       "order_bound"] is not None else "nil"
             mixtures = "t" if self._stm_options["mixtures"] else "nil"
             update_exclusion = "t" if self._stm_options["update_exclusion"] else "nil"
             escape = self._stm_options["escape"].value
-            result.append(("quote", "(:order-bound "+order_bound+" :mixtures "+mixtures+" :update-exclusion "+update_exclusion+" :escape "+escape+")"))
+            leb.add(":stmo").add_list(
+                [":order-bound", order_bound, ":mixtures", mixtures, ":update-exclusion", update_exclusion, ":escape",
+                 escape])
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...] ...)
         if self._model == IDYOMModelValue.LTM or self._model == IDYOMModelValue.BOTH or self._model == IDYOMModelValue.BOTH_PLUS:
-            result.append(":ltmo")
-            order_bound = str(self._ltm_options["order_bound"]) if self._ltm_options["order_bound"] is not None else "nil"
+            order_bound = str(self._ltm_options["order_bound"]) if self._ltm_options[
+                                                                       "order_bound"] is not None else "nil"
             mixtures = "t" if self._ltm_options["mixtures"] else "nil"
             update_exclusion = "t" if self._ltm_options["update_exclusion"] else "nil"
             escape = self._ltm_options["escape"].value
-            result.append(("quote", "(:order-bound " + order_bound + " :mixtures " + mixtures + " :update-exclusion " + update_exclusion + " :escape " + escape + ")"))
+            leb.add(":ltmo").add_list(
+                [":order-bound", order_bound, ":mixtures", mixtures, ":update-exclusion", update_exclusion, ":escape",
+                 escape])
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...]
         # [:pretraining-ids ... :k ... :resampling-indices ...] ...)
         if self._training_options:
             pretraining_ids = list(map(str, self._training_options["pretraining_dataset_ids"]))
-            result.append(":pretraining-ids")
-            result.append(("quote", "("+" ".join(pretraining_ids)+")"))
-
-            result.append(":k")
-            result.append(str(self._training_options["resampling_folds_count_k"]))
-
+            leb.add(":pretraining-ids").add_list(pretraining_ids)
+            leb.add(":k").add(str(self._training_options["resampling_folds_count_k"]))
             if self._training_options["exclusively_to_be_used_resampling_fold_indices"]:
-                result.append(":resampling-indices")
                 indices = list(map(str, self._training_options["exclusively_to_be_used_resampling_fold_indices"]))
-                result.append(("quote", " ".join(indices)))
+                leb.add(":resampling-indices").add_list(indices)
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...]
         # [:pretraining-ids ... :k ... :resampling-indices ...] [:basis ... :dp ... :max-links ... :min-links ... :viewpoint-selection-output ...] ...)
         if self._select_options:
-            result.append(":basis")
             basis = self._select_options["basis"]
             if isinstance(basis, IDYOMViewpointSelectionBasis):
-                result.append(basis.value)
+                leb.add(":basis").add(basis.value)
             elif isinstance(basis, list):
-                result.append(("quote", "("+" ".join(basis)+")"))
+                leb.add(":basis").add_list(basis)
             else:
                 print("ERROR")
-            result.append(":dp")
             dp = str(self._select_options["dp"]) if self._select_options["dp"] is not None else "nil"
-            result.append(dp)
-            result.append(":max-links")
-            result.append(self._select_options["max_links"])
-            result.append(":min-links")
-            result.append(self._select_options["min_links"])
-            result.append(":viewpoint-selection-output")
-            result.append('"'+self._select_options["viewpoint_selection_output"]+'"')
+            leb.add(":dp").add(dp)
+            leb.add(":max-links").add(self._select_options["max_links"])
+            leb.add(":min-links").add(self._select_options["min_links"])
+            leb.add(":viewpoint-selection-output").add_string(self._select_options["viewpoint_selection_output"])
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...]
         # [:pretraining-ids ... :k ... :resampling-indices ...] [:basis ... :dp ... :max-links ... :min-links ... :viewpoint-selection-output ...]
         # [:output-path ... :detail ... :overwrite ... :separator ...] ...)
-        result.append(":output-path")
-        result.append('"'+self._output_options["output_path"]+'"' if self._output_options["output_path"] else "nil")
-        result.append(":detail")
-        result.append(self._output_options["detail"])
-        result.append(":overwrite")
-        result.append("t" if self._output_options["overwrite"] else "nil")
-        result.append(":separator")
-        result.append('"'+self._output_options["separator"]+'"')
+        if self._output_options["output_path"]:
+            leb.add(":output-path").add_string(self._output_options["output_path"])
+        else:
+            leb.add(":output-path").add("nil")
+        leb.add(":detail").add(self._output_options["detail"])
+        leb.add(":overwrite").add("t" if self._output_options["overwrite"] else "nil")
+        leb.add(":separator").add_string(self._output_options["separator"])
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...]
         # [:pretraining-ids ... :k ... :resampling-indices ...] [:basis ... :dp ... :max-links ... :min-links ... :viewpoint-selection-output ...]
         # [:output-path ... :detail ... :overwrite ... :separator ...] [:use-resampling-set-cache? ... :use-ltms-cache? ...])
-        result.append(":use-resampling-set-cache?")
-        result.append("t" if self._caching_options["use_resampling_set_cache"] else "nil")
-        result.append(":use-ltms-cache?")
-        result.append("t" if self._caching_options["use_ltms_cache"] else "nil")
+        leb.add(":use-resampling-set-cache?").add("t" if self._caching_options["use_resampling_set_cache"] else "nil")
+        leb.add(":use-ltms-cache?").add("t" if self._caching_options["use_ltms_cache"] else "nil")
 
-        return tuple(result)
+        return leb.build()
 
-    def build_for_cl4py_filename_inference(self) -> tuple:
+    def build_for_cl4py(self) -> tuple:
         self.assert_is_valid()
-        result = list()
-
-        # (apps:dataset-modelling-filename ...)
-        result.append("apps:dataset-modelling-filename")
-        # (idyom:idyom <dataset-id> ...)
-        result.append(self._dataset.id)
-        # (idyom:idyom <dataset-id> <target-viewpoints> ...)
-        target_viewpoint_names = list(map(lambda v: v.value, self._target_viewpoints))
-        result.append(('quote', '(' + " ".join(target_viewpoint_names) + ')'))
-        # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> ...)
-        if not self._select_options == {}:  # if not empty
-            result.append(":select")
-        else:
-            source_viewpoint_names = list(map(lambda v: v.value, self._source_viewpoints))
-            result.append(('quote', '(' + " ".join(source_viewpoint_names) + ')'))
-        # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> ...)
-        result.append(":models")
-        result.append(self._model.value)
-        # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] ...)
-        if self._model == IDYOMModelValue.STM or self._model == IDYOMModelValue.BOTH or self._model == IDYOMModelValue.BOTH_PLUS:
-            result.append(":stmo")
-            order_bound = str(self._stm_options["order_bound"]) if self._stm_options["order_bound"] is not None else "nil"
-            mixtures = "t" if self._stm_options["mixtures"] else "nil"
-            update_exclusion = "t" if self._stm_options["update_exclusion"] else "nil"
-            escape = self._stm_options["escape"].value
-            result.append(("quote",
-                           "(:order-bound " + order_bound + " :mixtures " + mixtures + " :update-exclusion " + update_exclusion + " :escape " + escape + ")"))
-        # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...] ...)
-        if self._model == IDYOMModelValue.LTM or self._model == IDYOMModelValue.BOTH or self._model == IDYOMModelValue.BOTH_PLUS:
-            result.append(":ltmo")
-            order_bound = str(self._ltm_options["order_bound"]) if self._ltm_options["order_bound"] is not None else "nil"
-            mixtures = "t" if self._ltm_options["mixtures"] else "nil"
-            update_exclusion = "t" if self._ltm_options["update_exclusion"] else "nil"
-            escape = self._ltm_options["escape"].value
-            result.append(("quote",
-                           "(:order-bound " + order_bound + " :mixtures " + mixtures + " :update-exclusion " + update_exclusion + " :escape " + escape + ")"))
-        # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...]
-        # [:pretraining-ids ... :k ... :resampling-indices ...] ...)
-        if self._training_options:
-            pretraining_ids = list(map(str, self._training_options["pretraining_dataset_ids"]))
-            result.append(":pretraining-ids")
-            result.append(("quote", "(" + " ".join(pretraining_ids) + ")"))
-
-            result.append(":k")
-            result.append(self._training_options["resampling_folds_count_k"])
-
-            if self._training_options["exclusively_to_be_used_resampling_fold_indices"]:
-                result.append(":resampling-indices")
-                indices = list(map(str, self._training_options["exclusively_to_be_used_resampling_fold_indices"]))
-                result.append(("quote", " ".join(indices)))
-        # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...]
-        # [:pretraining-ids ... :k ... :resampling-indices ...] [:basis ... :dp ... :max-links ... :min-links ... :viewpoint-selection-output ...] ...)
-        if self._select_options:
-            result.append(":basis")
-            basis = self._select_options["basis"]
-            if isinstance(basis, IDYOMViewpointSelectionBasis):
-                result.append(basis.value)
-            elif isinstance(basis, list):
-                result.append(("quote", "(" + " ".join(basis) + ")"))
-            else:
-                print("ERROR")
-            result.append(":dp")
-            dp = str(self._select_options["dp"]) if self._select_options["dp"] else "nil"
-            result.append(dp)
-            result.append(":max-links")
-            result.append(self._select_options["max_links"])
-            result.append(":min-links")
-            result.append(self._select_options["min_links"])
-            result.append(":viewpoint-selection-output")
-            result.append('"' + self._select_options["viewpoint_selection_output"] + '"')
-        # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...]
-        # [:pretraining-ids ... :k ... :resampling-indices ...] [:basis ... :dp ... :max-links ... :min-links ... :viewpoint-selection-output ...]
-        # [:output-path ... :detail ... :overwrite ... :separator ...] ...)
-        result.append(":detail")
-        result.append(self._output_options["detail"])
-
-        # extension
-        result.append(":extension")
-        result.append('".dat"')
-
-        return tuple(result)
+        return self._build_idyomidyom_lispexpression(LispExpressionBuilderMode.CL4PY)
 
     def build_for_lisp(self) -> str:
         self.assert_is_valid()
-        result = list()
+        return self._build_idyomidyom_lispexpression(LispExpressionBuilderMode.LISP)
 
-        # (idyom:idyom ...)
-        result.append("(idyom:idyom")
+    def build_for_cl4py_filename_inference(self) -> tuple:
+        self.assert_is_valid()
+        leb = LispExpressionBuilder(LispExpressionBuilderMode.CL4PY)
+
+        # (apps:dataset-modelling-filename ...)
+        leb.add("apps:dataset-modelling-filename")
         # (idyom:idyom <dataset-id> ...)
-        result.append(str(self._dataset.id))
+        leb.add(self._dataset.id)
         # (idyom:idyom <dataset-id> <target-viewpoints> ...)
         target_viewpoint_names = list(map(lambda v: v.value, self._target_viewpoints))
-        result.append(("'(" + " ".join(target_viewpoint_names) + ')'))
+        leb.add_list(target_viewpoint_names)
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> ...)
         if not self._select_options == {}:  # if not empty
-            result.append(":select")
+            leb.add(":select")
         else:
-            source_viewpoint_names = viewpoints_list_as_lisp_string(self._source_viewpoints)
-            result.append("'" + source_viewpoint_names)
+            source_viewpoint_names = list(map(lambda v: v.value, self._source_viewpoints))
+            leb.add_list(source_viewpoint_names)
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> ...)
-        result.append(":models")
-        result.append(self._model.value)
+        leb.add(":models").add(self._model.value)
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] ...)
         if self._model == IDYOMModelValue.STM or self._model == IDYOMModelValue.BOTH or self._model == IDYOMModelValue.BOTH_PLUS:
-            result.append(":stmo")
-            order_bound = str(self._stm_options["order_bound"]) if self._stm_options["order_bound"] else "nil"
+            order_bound = str(self._stm_options["order_bound"]) if self._stm_options["order_bound"] is not None else "nil"
             mixtures = "t" if self._stm_options["mixtures"] else "nil"
             update_exclusion = "t" if self._stm_options["update_exclusion"] else "nil"
             escape = self._stm_options["escape"].value
-            result.append("'(:order-bound " + order_bound + " :mixtures " + mixtures + " :update-exclusion " + update_exclusion + " :escape " + escape + ")")
+            leb.add(":stmo").add_list(
+                [":order-bound", order_bound, ":mixtures", mixtures, ":update-exclusion", update_exclusion, ":escape",
+                 escape])
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...] ...)
         if self._model == IDYOMModelValue.LTM or self._model == IDYOMModelValue.BOTH or self._model == IDYOMModelValue.BOTH_PLUS:
-            result.append(":ltmo")
-            order_bound = str(self._stm_options["order_bound"]) if self._stm_options["order_bound"] else "nil"
-            mixtures = "t" if self._stm_options["mixtures"] else "nil"
-            update_exclusion = "t" if self._stm_options["update_exclusion"] else "nil"
-            escape = self._stm_options["escape"].value
-            result.append(("'(:order-bound " + order_bound + " :mixtures " + mixtures + " :update-exclusion " + update_exclusion + " :escape " + escape + ")"))
+            order_bound = str(self._ltm_options["order_bound"]) if self._ltm_options["order_bound"] is not None else "nil"
+            mixtures = "t" if self._ltm_options["mixtures"] else "nil"
+            update_exclusion = "t" if self._ltm_options["update_exclusion"] else "nil"
+            escape = self._ltm_options["escape"].value
+            leb.add(":ltmo").add_list(
+                [":order-bound", order_bound, ":mixtures", mixtures, ":update-exclusion", update_exclusion, ":escape",
+                 escape])
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...]
         # [:pretraining-ids ... :k ... :resampling-indices ...] ...)
         if self._training_options:
             pretraining_ids = list(map(str, self._training_options["pretraining_dataset_ids"]))
-            result.append(":pretraining-ids")
-            result.append("'(" + " ".join(pretraining_ids) + ")")
-
-            result.append(":k")
-            result.append(str(self._training_options["resampling_folds_count_k"]))
-
+            leb.add(":pretraining-ids").add_list(pretraining_ids)
+            leb.add(":k").add(self._training_options["resampling_folds_count_k"])
             if self._training_options["exclusively_to_be_used_resampling_fold_indices"]:
-                result.append(":resampling-indices")
                 indices = list(map(str, self._training_options["exclusively_to_be_used_resampling_fold_indices"]))
-                result.append(("quote", " ".join(indices)))
+                leb.add(":resampling-indices").add_list(indices)
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...]
         # [:pretraining-ids ... :k ... :resampling-indices ...] [:basis ... :dp ... :max-links ... :min-links ... :viewpoint-selection-output ...] ...)
         if self._select_options:
-            result.append(":basis")
             basis = self._select_options["basis"]
             if isinstance(basis, IDYOMViewpointSelectionBasis):
-                result.append(basis.value)
+                leb.add(":basis").add(basis.value)
             elif isinstance(basis, list):
-                result.append(("'(" + " ".join(basis) + ")"))
+                leb.add(":basis").add_list(basis)
             else:
                 print("ERROR")
-            result.append(":dp")
+
             dp = str(self._select_options["dp"]) if self._select_options["dp"] else "nil"
-            result.append(str(dp))
-            result.append(":max-links")
-            result.append(self._select_options["max_links"])
-            result.append(":min-links")
-            result.append(self._select_options["min_links"])
-            result.append(":viewpoint-selection-output")
-            result.append('"' + self._select_options["viewpoint_selection_output"] + '"')
+            leb.add(":dp").add(dp)
+            leb.add(":max-links").add(self._select_options["max_links"])
+            leb.add(":min-links").add(self._select_options["min_links"])
+            leb.add(":viewpoint-selection-output").add_string(self._select_options["viewpoint_selection_output"])
         # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...]
         # [:pretraining-ids ... :k ... :resampling-indices ...] [:basis ... :dp ... :max-links ... :min-links ... :viewpoint-selection-output ...]
         # [:output-path ... :detail ... :overwrite ... :separator ...] ...)
-        result.append(":output-path")
-        result.append('"' + self._output_options["output_path"] + '"' if self._output_options["output_path"] else "nil")
-        result.append(":detail")
-        result.append(str(self._output_options["detail"]))
-        result.append(":overwrite")
-        result.append("t" if self._output_options["overwrite"] else "nil")
-        result.append(":separator")
-        result.append('"' + self._output_options["separator"] + '"')
-        # (idyom:idyom <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...]
-        # [:pretraining-ids ... :k ... :resampling-indices ...] [:basis ... :dp ... :max-links ... :min-links ... :viewpoint-selection-output ...]
-        # [:output-path ... :detail ... :overwrite ... :separator ...] [:use-resampling-set-cache? ... :use-ltms-cache? ...])
-        result.append(":use-resampling-set-cache?")
-        result.append("t" if self._caching_options["use_resampling_set_cache"] else "nil")
-        result.append(":use-ltms-cache?")
-        result.append("t" if self._caching_options["use_ltms_cache"] else "nil")
+        leb.add(":detail").add(self._output_options["detail"])
 
-        result.append(")")
+        # extension
+        leb.add(":extension").add_string('.dat')
 
-        return " ".join(result)
-
+        return leb.build()
 
 class IDYOMModel:
     def __init__(self, idyom_root_path: Path = Config().idyom_root_path(), idyom_database_path: Path = Config().idyom_database_path()):
