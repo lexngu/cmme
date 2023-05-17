@@ -1,9 +1,58 @@
 import numbers
 from pathlib import Path
-from .base import Prior
-from .binding import MatlabWorker, InstructionsFile, ResultsFile, parse_results_file
+from .base import Prior, GaussianPrior, DistributionType
+from .binding import MatlabWorker, InstructionsFile, ResultsFile, parse_results_file, PriorInstructionsFile
 from .util import auto_convert_input_sequence, drex_default_instructions_file_path, drex_default_results_file_path
 import numpy as np
+
+
+class DREXPriorBuilder:
+    def __init__(self):
+        # default values according to estimate_suffstat.m
+        self._input_sequence = auto_convert_input_sequence([])
+        self._distribution_type = DistributionType.GAUSSIAN
+        self._D = 1
+        self._max_ncomp = 10
+
+    def input_sequence(self, input_sequence):
+        """
+        Sets the input sequence to process
+        :param input_sequence: np.array of shape (time, feature)
+        :return: self
+        """
+        iseq = auto_convert_input_sequence(input_sequence)
+
+        # Check shape
+        if len(iseq.shape) != 2:
+            raise ValueError("Shape of input_sequence invalid! Expected two dimensions: time, feature.")
+        [input_sequence_times, input_sequence_features] = iseq.shape
+
+        self._input_sequence = iseq
+        return self
+
+    def distribution_type(self, distribution_type: DistributionType):
+        self._distribution_type = distribution_type
+        return self
+
+    def d(self, d):
+        if not d >= 1 or not isinstance(d, int):
+            raise ValueError("D invalid! Value must be an integer and greater than or equal 1.")
+        self._D = d
+        return self
+
+    def max_ncomp(self, max_ncomp):
+        if not max_ncomp >= 1 or not isinstance(max_ncomp, int):
+            raise ValueError("max_ncomp invalid! Value must be an integer and greater than or equal 1.")
+        self._max_ncomp = max_ncomp
+        return self
+
+    def assert_is_valid(self):
+        if not len(self._input_sequence) > 0:
+            raise ValueError("input sequence invalid! Value must not be an empty list.")
+        if not len(self._input_sequence) >= self._D:
+            raise ValueError("input sequence and D invalid! Length of input sequence must be greater than or equal D.")
+
+
 
 class DREXInstructionBuilder:
     def __init__(self):
@@ -121,6 +170,19 @@ class DREXModel:
     def __init__(self, instance: DREXInstructionBuilder):
         """Creates a D-REX instance with D-REX's current default values"""
         self.instance = instance
+
+    def calculate_prior(self, drex_prior_builder: DREXPriorBuilder,
+                        instructions_file_path = drex_default_instructions_file_path("prior"),
+                        results_file_path = drex_default_results_file_path("prior")) -> Prior:
+        drex_prior_builder.assert_is_valid()
+        instructions_file = PriorInstructionsFile(instructions_file_path, results_file_path,
+                                                  drex_prior_builder._input_sequence, drex_prior_builder._distribution_type,
+                                                  drex_prior_builder._D, drex_prior_builder._max_ncomp)
+        instructions_file.write_to_mat()
+        results = MatlabWorker.run_model(instructions_file_path)
+        prior = parse_results_file(results['results_file_path'])
+        return prior
+
 
     def to_instructions_file(self, instructions_file_path = drex_default_instructions_file_path(), results_file_path = drex_default_results_file_path()) -> InstructionsFile:
         """

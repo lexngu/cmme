@@ -31,9 +31,7 @@ class Prior(ABC):
 
 
 class GaussianPrior(Prior):
-    def __init__(self, means: npt.ArrayLike , covariance: npt.ArrayLike, n: npt.ArrayLike):
-        super()
-
+    def __init__(self, means: npt.ArrayLike, covariance: npt.ArrayLike, n: npt.ArrayLike):
         # Ensure parameters to have consistent shapes
         if len(means.shape) != 2:
             raise ValueError("Shape of means invalid! Expected two dimensions: feature, D.")
@@ -60,10 +58,10 @@ class GaussianPrior(Prior):
 
         for feature_index in range(len(means)):
             _means = np.array(means[feature_index], dtype=float)
-            covariance = np.array(covariance[feature_index], dtype=float)
-            n = int(n[feature_index])
+            _covariance = np.array(covariance[feature_index], dtype=float)
+            _n = int(n[feature_index])
 
-            self.distributions[feature_index] = UpdateableMultivariateGaussianDistribution(_means, covariance, n)
+            self.distributions[feature_index] = GaussianDistribution(_means, _covariance, _n)
 
     def distribution_type(self):
         return DistributionType.GAUSSIAN
@@ -76,8 +74,6 @@ class GaussianPrior(Prior):
 
 class LognormalPrior(Prior): # TODO remove redundancy, cf. DrexGaussianDistributionContainer
     def __init__(self, means: npt.ArrayLike , covariance: npt.ArrayLike, n: npt.ArrayLike):
-        super()
-
         # Ensure parameters to have consistent shapes
         if len(means.shape) != 2:
             raise ValueError("Shape of means invalid! Expected two dimensions: feature, D.")
@@ -107,7 +103,7 @@ class LognormalPrior(Prior): # TODO remove redundancy, cf. DrexGaussianDistribut
             covariance = np.array(covariance[feature_index], dtype=float)
             n = int(n[feature_index])
 
-            self.distributions[feature_index] = UpdateableMultivariateGaussianDistribution(_means, covariance, n)
+            self.distributions[feature_index] = GaussianDistribution(_means, covariance, n)
 
     def distribution_type(self):
         DistributionType.LOGNORMAL
@@ -117,21 +113,19 @@ class GmmPrior(Prior):
     1-variate Gaussian Mixture Model, consisting of up to +k+ components.
     """
     def __init__(self, means, covariance, n, pi, sp, k):
-        super(DistributionType.GMM)
-
         # Check shapes
         if len(means.shape) != 2:
             raise ValueError("Shape of means invalid! Expected two dimensions: feature, component.")
         if len(covariance.shape) != 2:
-            raise ValueError("Shape of ss invalid! Expected three dimensions: feature, component")
+            raise ValueError("Shape of ss invalid! Expected two dimensions: feature, component")
         if len(n.shape) != 2:
-            raise ValueError("Shape of n invalid! Expected one dimension: feature, component.")
+            raise ValueError("Shape of n invalid! Expected two dimensions: feature, component.")
         if len(pi.shape) != 2:
-            raise ValueError("Shape of pi invalid! Expected one dimension: feature, component.")
+            raise ValueError("Shape of pi invalid! Expected two dimensions: feature, component.")
         if len(sp.shape) != 2:
-            raise ValueError("Shape of sp invalid! Expected one dimension: feature, component.")
-        if len(k.shape) != 2:
-            raise ValueError("Shape of k invalid! Expected one dimension: feature, component.")
+            raise ValueError("Shape of sp invalid! Expected two dimensions: feature, component.")
+        if len(k.shape) != 1:
+            raise ValueError("Shape of k invalid! Expected one dimension: feature.")
 
         # Check for dimension equality
         [means_feature_count, means_component_count] = means.shape
@@ -146,7 +140,7 @@ class GmmPrior(Prior):
             raise ValueError("Dimension feature invalid! Value must be equal for means, covariance, n, pi, sp, and k.")
         if not (means_component_count == covariance_component_count and covariance_component_count == n_component_count and
                 n_component_count == pi_component_count and pi_component_count == sp_component_count):
-            raise ValueError("Dimension component invalid! Value must be equal for mu, sigma, n, pi, and sp.")
+            raise ValueError("Dimension component invalid! Value must be equal for means, covariance, n, pi, and sp.")
 
         self._feature_count = means_feature_count
         """Number of features"""
@@ -154,15 +148,15 @@ class GmmPrior(Prior):
         self.distributions = dict()
         """Feature-specific distribution"""
 
-        for feature_index in range(len(means)):
+        for feature_index in range(self._feature_count):
             _means = np.array(means[feature_index], dtype=float)
-            covariance = np.array(covariance[feature_index], dtype=float)
-            n = int(n[feature_index])
-            pi = pi[feature_index]
-            sp = sp[feature_index]
-            k = sp[feature_index]
+            _covariance = np.array(covariance[feature_index], dtype=float)
+            _n = n[feature_index]
+            _pi = pi[feature_index]
+            _sp = sp[feature_index]
+            _k = k[feature_index]
 
-            self.distributions[feature_index] = UpdateableGmmDistribution(_means, covariance, n, pi, sp, k)
+            self.distributions[feature_index] = MultivariateGaussianDistribution(_means, _covariance, _n, _pi, _sp, _k)
 
     def distribution_type(self):
         return DistributionType.GMM
@@ -175,12 +169,10 @@ class GmmPrior(Prior):
 
 
 class PoissonPrior(Prior):
-    def __init__(self, lambd, n, D):
-        super(DistributionType.POISSON)
-
-        if len(lambd) != 1:
+    def __init__(self, lambd, n):
+        if len(lambd.shape) != 1:
             raise ValueError("Shape of lambd invalid! Expected one dimension: feature.")
-        if len(n) != 1:
+        if len(n.shape) != 1:
             raise ValueError("Shape of n invalid! Expected one dimension: feature.")
 
         # Check for dimension equality
@@ -197,9 +189,8 @@ class PoissonPrior(Prior):
         for feature_index in range(len(lambd)):
             _lambd = np.array(lambd[feature_index], dtype=float)
             _n = int(n[feature_index])
-            _D = int(D[feature_index])
 
-            self.distributions[feature_index] = UpdateablePoissonDistribution(_lambd, _n, _D)
+            self.distributions[feature_index] = PoissonDistribution(_lambd, _n)
 
     def distribution_type(self):
         return DistributionType.POISSON
@@ -268,6 +259,22 @@ class ParameterizedDistribution(ABC):
     def __init__(self):
         pass
 
+class GaussianDistribution(ParameterizedDistribution):
+    """
+        Univariate Gaussian distribution, with one mean value, and one covariance value.
+        If D = 1, one gets a univariate Gaussian distribution with one mean and one variance value.
+        """
+
+    def __init__(self, mean, covariance, n):
+        self.mean = mean
+        """Mean value"""
+
+        self.covariance = covariance
+        """Covariance value"""
+
+        self.n = n
+        """Number of observations summarized in the parameters so far"""
+
 
 class MultivariateGaussianDistribution(ParameterizedDistribution):
     """
@@ -275,7 +282,7 @@ class MultivariateGaussianDistribution(ParameterizedDistribution):
     If D = 1, one gets a univariate Gaussian distribution with one mean and one variance value.
     """
 
-    def __init__(self, means, covariance):
+    def __init__(self, means, covariance, n, pi, sp, k):
         super()
 
         self.means = means
@@ -284,23 +291,13 @@ class MultivariateGaussianDistribution(ParameterizedDistribution):
         self.covariance = covariance
         """Covariance matrix"""
 
-
-class UpdateableMultivariateGaussianDistribution(MultivariateGaussianDistribution):
-    def __init__(self, means, covariance, n):
-        super(means, covariance)
-
         self.n = n
         """Number of observations summarized in the parameters so far"""
-
-
-class UpdateableGmmDistribution(ParameterizedDistribution):
-    def __init__(self, means, covariance, n, pi, sp, k):
-        super()
 
         self.k = k
         """Number of components"""
 
-        self.components = dict()
+        self.components = list()
         """Components (Gaussian distributions)"""
 
         for component_index in range(k):
@@ -308,7 +305,7 @@ class UpdateableGmmDistribution(ParameterizedDistribution):
             component_covariance = covariance[component_index]
             component_n = n[component_index]
 
-            self.components = UpdateableMultivariateGaussianDistribution(component_mean, component_covariance, component_n)
+            self.components.append(GaussianDistribution(component_mean, component_covariance, component_n))
 
         self.pi = np.array(pi, dtype=float)
         """Components' weight"""
@@ -318,19 +315,9 @@ class UpdateableGmmDistribution(ParameterizedDistribution):
 
 
 class PoissonDistribution(ParameterizedDistribution):
-    def __init__(self, lambd):
-        super()
-
+    def __init__(self, lambd, n):
         self.lambd = lambd
         """Lambda parameter"""
 
-
-class UpdateablePoissonDistribution(PoissonDistribution):
-    def __init__(self, lambd, n, D):
-        super(lambd)
-
         self.n = n
         """Observation count"""
-
-        self.D = D
-        """Interval size"""

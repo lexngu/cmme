@@ -10,7 +10,7 @@ import numpy as np
 import scipy.io as sio
 from pymatbridge import pymatbridge
 
-from .base import DistributionType, Prior, UnprocessedPrior
+from .base import DistributionType, Prior, UnprocessedPrior, GaussianPrior, LognormalPrior, GmmPrior, PoissonPrior
 from .util import transform_multifeature_singletrial_input_sequence_for_estimate_suffstat
 from ..config import Config
 
@@ -22,6 +22,39 @@ def to_mat(data, file_path):
 def from_mat(file_path):
     mat_data = sio.loadmat(file_path)
     return mat_data
+
+class PriorInstructionsFile:
+    def __init__(self, instructions_file_path: Path, results_file_path: Path, input_sequence: npt.ArrayLike, distribution_type: DistributionType, D: int, max_ncomp: int):
+        self.instructions_file_path = instructions_file_path
+        self.results_file_path = results_file_path
+        self.input_sequence = input_sequence
+        self.distribution_type = distribution_type
+        self.D = D
+        self.max_ncomp = max_ncomp
+
+    def write_to_mat(self) -> Path:
+        """
+        Writes the instructions file to disk.
+        :return: Path to instructions file
+        """
+        data = dict()
+
+        data["estimate_suffstat"] = {
+            "xs": matlab.double(transform_multifeature_singletrial_input_sequence_for_estimate_suffstat(
+                self.input_sequence)),
+            "params": {
+                "distribution": self.distribution_type.value,
+                "D": matlab.double(self.D)
+            }
+        }
+        if self.distribution_type == DistributionType.GMM:
+            data["estimate_suffstat"]["params"]["max_ncomp"] = self.max_ncomp
+
+        # Add results_file_path
+        data["results_file_path"] = str(self.results_file_path)
+
+        # Write and return
+        return to_mat(data, str(self.instructions_file_path))
 
 class InstructionsFile:
     def __init__(self, instructions_file_path: Path, results_file_path: Path, input_sequence: npt.ArrayLike,
@@ -251,6 +284,10 @@ class ResultsFile:
 def parse_results_file(results_file_path) -> ResultsFile:
     data = from_mat(results_file_path)
 
+    prior = parse_results_file_estimate_suffstat(data)
+    if not "run_DREX_model_results" in data:
+        return prior
+
     instructions_file_path = data["instructions_file_path"]
     input_sequence = data["input_sequence"]
     run_results = data["run_DREX_model_results"]
@@ -269,6 +306,94 @@ def parse_results_file(results_file_path) -> ResultsFile:
     psi = parse_post_DREX_prediction_results(pred_results)
 
     return ResultsFile(results_file_path, instructions_file_path, input_sequence, surprisal, joint_surprisal, context_beliefs, belief_dynamics, change_decision_changepoint, change_decision_probability, change_decision_threshold, psi)
+
+def parse_results_file_estimate_suffstat(data) -> Prior:
+    if not "estimate_suffstat_results" in data:
+        raise ValueError("Missing dictionary key 'estimate_suffstat_results'!")
+    if not "distribution" in data:
+        raise ValueError("Missing dictionary key 'distribution'!")
+    distribution = data["distribution"]
+    es_data = data["estimate_suffstat_results"]
+
+    if distribution == DistributionType.GAUSSIAN.value:
+        data_means = es_data["mu"][0][0]
+        data_covariance = es_data["ss"][0][0]
+        data_n = es_data["n"][0][0]
+
+        if data_means.shape[0] != data_covariance.shape[0] or data_covariance.shape[0] != data_n.shape[0]:
+            raise ValueError("estimate_suffstat_results invalid! The number of features between mu, ss, and/or n is not identical.")
+        feature_count = data_means.shape[0]
+
+        means = []
+        covariance = []
+        n = []
+        for f_idx in range(feature_count):
+            means.append(data_means[f_idx][0].flatten()) # 1d
+            covariance.append(data_covariance[f_idx][0]) # 2d
+            n.append(data_n[f_idx][0].flatten()[0]) # int
+
+        return GaussianPrior(np.array(means), np.array(covariance), np.array(n))
+    elif distribution == DistributionType.LOGNORMAL.value:
+        data_means = es_data["mu"][0][0]
+        data_covariance = es_data["ss"][0][0]
+        data_n = es_data["n"][0][0]
+
+        if data_means.shape[0] != data_covariance.shape[0] or data_covariance.shape[0] != data_n.shape[0]:
+            raise ValueError(
+                "estimate_suffstat_results invalid! The number of features between mu, ss, and/or n is not identical.")
+        feature_count = data_means.shape[0]
+
+        means = []
+        covariance = []
+        n = []
+        for f_idx in range(feature_count):
+            means.append(data_means[f_idx][0].flatten())  # 1d
+            covariance.append(data_covariance[f_idx][0])  # 2d
+            n.append(data_n[f_idx][0].flatten()[0])  # int
+
+        return LognormalPrior(np.array(means), np.array(covariance), np.array(n))
+    elif distribution == DistributionType.GMM.value: # estimate_suffstat calculates a GMM with one single component
+        data_means = es_data["mu"][0][0]
+        data_covariance = es_data["sigma"][0][0]
+        data_n = es_data["n"][0][0]
+        data_pi = es_data["pi"][0][0].T
+        data_sp = es_data["sp"][0][0].T
+        data_k = es_data["k"][0][0].T
+
+        if data_means.shape[0] != data_covariance.shape[0] or data_covariance.shape[0] != data_n.shape[0]:
+            raise ValueError(
+                "estimate_suffstat_results invalid! The number of features between mu, ss, and/or n is not identical.")
+        feature_count = data_means.shape[0]
+
+        means = []
+        covariance = []
+        n = []
+        pi = []
+        sp = []
+        k = []
+        for f_idx in range(feature_count):
+            means.append(data_means[f_idx][0].flatten())  # 1d
+            covariance.append(data_covariance[f_idx][0][0])  # 1d
+            n.append(data_n[f_idx][0].flatten())  # 1d
+            pi.append(data_pi[f_idx][0].flatten()) # 1d
+            sp.append(data_sp[f_idx][0].flatten())  # 1d
+            k.append(data_k[f_idx][0].flatten()[0])  # int
+
+        return GmmPrior(np.array(means), np.array(covariance), np.array(n), np.array(pi), np.array(sp), np.array(k))
+    elif distribution == DistributionType.POISSON.value:
+        data_lambda = es_data["lambda"][0][0]
+        data_n = es_data["n"][0][0]
+
+        feature_count = data_lambda.shape[0]
+
+        _lambd = []
+        _n = []
+        for f_idx in range(feature_count):
+            _lambd.append(data_lambda[f_idx][0][0][0])
+            _n.append(data_n[f_idx][0][0][0])
+
+        return PoissonPrior(np.array(_lambd), np.array(_n))
+
 
 class MatlabWorker:
     DREX_INTERMEDIATE_SCRIPT_PATH = (Path(
