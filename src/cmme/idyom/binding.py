@@ -120,17 +120,23 @@ class IDYOMBinding:
 
     def all_compositions(self, dataset: Dataset) -> List[Composition]:
         descriptions = self._lisp_eval( ("mapcar", ("function", "idyom-db::composition-description"), ("idyom-db:get-compositions", dataset.id)) )
+        composition_ids = self._lisp_eval( ("mapcan", ("function", ("lambda", ("x",), ("cdr", ("idyom-db:get-id", "x")))), ("idyom-db:get-compositions", dataset.id)) )
         result = list()
         for idx, description in enumerate(descriptions): # assuming that idx always coincides with the composition's id within the dataset
-            result.append(Composition(dataset_id=dataset.id, id=idx, description=description))
+            result.append(Composition(dataset_id=dataset.id, id=composition_ids[idx], description=description))
 
         return result
 
     def derive_viewpoint_sequence(self, composition: Composition, viewpoints: List[Viewpoint]) -> List:
-        viewpoint_sequence = self._lisp_eval(("viewpoints:viewpoint-sequence", (
+        cmd = ("viewpoints:viewpoint-sequence", (
         "viewpoints:get-viewpoint", ("quote", tuple(viewpoints_list_to_string_list(viewpoints)))),
-                                              ("md:get-event-sequence", composition.dataset_id, composition.id)))
-        viewpoint_sequence = cl4py_cons_to_list(viewpoint_sequence)
+                                              ("md:get-event-sequence", composition.dataset_id, composition.id))
+        try:
+            viewpoint_sequence = self._lisp_eval(cmd)
+            viewpoint_sequence = cl4py_cons_to_list(viewpoint_sequence)
+        except:
+            print("Warning! Error while executing", cmd)
+            viewpoint_sequence = []
         return viewpoint_sequence
 
     def get_alphabet(self, datasets, viewpoint: BasicViewpoint) -> List:
@@ -139,6 +145,7 @@ class IDYOMBinding:
         elif isinstance(datasets, list):
             dataset_ids = list(map(lambda o: str(o.id), datasets))
 
-        alphabet = self._lisp_eval( ("idyom-db::get-alphabet", ("quote", viewpoint.value), " ".join(dataset_ids)) )
+        cmd = ["idyom-db::get-alphabet", ("quote", viewpoint.value), *dataset_ids]
+        alphabet = self._lisp_eval( tuple(cmd) )
         alphabet = list(map(lambda x: x, alphabet))  # convert Cons to list
         return alphabet

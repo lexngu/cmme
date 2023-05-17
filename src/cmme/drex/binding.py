@@ -40,8 +40,8 @@ class PriorInstructionsFile:
         data = dict()
 
         data["estimate_suffstat"] = {
-            "xs": matlab.double(transform_multifeature_singletrial_input_sequence_for_estimate_suffstat(
-                self.input_sequence)),
+            "xs": transform_multifeature_singletrial_input_sequence_for_estimate_suffstat(
+                self.input_sequence),
             "params": {
                 "distribution": self.distribution_type.value,
                 "D": matlab.double(self.D)
@@ -103,7 +103,7 @@ class InstructionsFile:
         # Add instructions for procesing an unprocessed prior using D-REX's estimate_suffstat.m
         if isinstance(self.prior, UnprocessedPrior):
             data["estimate_suffstat"] = {
-                "xs": matlab.double(transform_multifeature_singletrial_input_sequence_for_estimate_suffstat(self.prior._prior_input_sequence)),
+                "xs": transform_multifeature_singletrial_input_sequence_for_estimate_suffstat(self.prior._prior_input_sequence),
                 "params": {
                     "distribution": self.prior._distribution.value,
                     "D": matlab.double(self.prior.D_value())

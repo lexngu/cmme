@@ -8,7 +8,7 @@ instructions_file_path = convertStringsToChars(instructions_file_path);
 instructions_file = load(instructions_file_path);
 
 % calculate prior (if requested)
-estimate_suffstat_results = nan;
+estimate_suffstat_results = struct;
 if isfield(instructions_file, "estimate_suffstat")
     es_instructions = instructions_file.estimate_suffstat;
     distribution = es_instructions.params.distribution;
@@ -26,7 +26,7 @@ if isfield(instructions_file, "run_DREX_model")
     
     [~, nfeature] = size(input_sequence);
     
-    if ~isnan(estimate_suffstat_results)
+    if isfield(estimate_suffstat_results, "n")
         % plug-in calculated prior into params for run_DREX_model.m
         rdm_instructions.params.prior = estimate_suffstat_results;
     else
@@ -65,7 +65,8 @@ if isfield(instructions_file, "run_DREX_model")
     change_decision_threshold = pdc_instructions.threshold;
     post_DREX_changedecision_results = post_DREX_changedecision(run_DREX_model_results, change_decision_threshold);
 
-    save(instructions_file.results_file_path, "instructions_file_path", "input_sequence", "estimate_suffstat_results", "run_DREX_model_results", "post_DREX_changedecision_results", "post_DREX_prediction_results", "post_DREX_beliefdynamics_results", "post_DREX_changedecision_results", "change_decision_threshold");
+    distribution = rdm_instructions.params.distribution;
+    save(instructions_file.results_file_path, "instructions_file_path", "input_sequence", "distribution", "estimate_suffstat_results", "run_DREX_model_results", "post_DREX_changedecision_results", "post_DREX_prediction_results", "post_DREX_beliefdynamics_results", "post_DREX_changedecision_results", "change_decision_threshold");
 end
 
 out.results_file_path = instructions_file.results_file_path;

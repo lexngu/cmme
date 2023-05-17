@@ -1,7 +1,6 @@
 from typing import List
 
 from cmme.config import Config
-from cmme.drex.base import DistributionType, UnprocessedPrior
 from cmme.drex.binding import ResultsFile
 from cmme.drex.model import DREXInstructionBuilder, DREXModel
 from cmme.idyom.base import Dataset, BasicViewpoint, IDYOMResultsFile
@@ -10,7 +9,6 @@ from cmme.idyom.model import IDYOMInstructionBuilder, IDYOMModel
 from cmme.ppmdecay.base import ModelType
 from cmme.ppmdecay.binding import ResultsMetaFile
 from cmme.ppmdecay.model import PPMInstance, PPMModel, PPMSimpleInstance, PPMDecayInstance
-from cmme.util import flatten_list
 
 
 def midi_to_equal_tempered_fundamental_frequency(midi_note_number: int, standard_concert_A_pitch: int = 440, precision_dp: int = 2) -> float:
@@ -28,7 +26,9 @@ class CMMETestAndPretrainingDataContainer:
         result = list()
         compositions = self.idyom_binding.all_compositions(dataset)
         for composition in compositions:
-            result.append(self.idyom_binding.derive_viewpoint_sequence(composition, self.target_viewpoint))
+            sequence = self.idyom_binding.derive_viewpoint_sequence(composition, self.target_viewpoint)
+            if len(sequence) > 0:
+                result.append(sequence)
         return result
 
     def _dataset_as_fundamental_frequency_sequence(self, dataset: Dataset) -> List[List[float]]:
@@ -36,7 +36,8 @@ class CMMETestAndPretrainingDataContainer:
         compositions = self.idyom_binding.all_compositions(dataset)
         for composition in compositions:
             sequence = self.idyom_binding.derive_viewpoint_sequence(composition, BasicViewpoint.CPITCH)
-            result.append(list(map(midi_to_equal_tempered_fundamental_frequency, sequence)))
+            if len(sequence) > 0:
+                result.append(list(map(midi_to_equal_tempered_fundamental_frequency, sequence)))
 
         return result
 
@@ -45,7 +46,7 @@ class CMMETestAndPretrainingDataContainer:
         if self.pretraining_datasets is None:
             return result
         for dataset in self.pretraining_datasets:
-            result.append(self._dataset_as_target_viewpoint_sequence(dataset))
+            result[len(result):] = self._dataset_as_target_viewpoint_sequence(dataset)
         return result
 
     def pretraining_datasets_as_fundamental_frequency_sequence(self) -> List[List[float]]:
@@ -53,7 +54,7 @@ class CMMETestAndPretrainingDataContainer:
         if self.pretraining_datasets is None:
             return result
         for dataset in self.pretraining_datasets:
-            result.append(self._dataset_as_fundamental_frequency_sequence(dataset))
+            result[len(result):] = self._dataset_as_fundamental_frequency_sequence(dataset)
         return result
 
     def pretraining_datasets_alphabet(self) -> List[float]:
@@ -104,30 +105,6 @@ class CMME:
             raise ValueError("At the moment, only target_viewpoint == BasicViewpoint.CPITCH is supported!")
 
         self._init_runners()
-
-        self._idyom_instruction_builder\
-            .dataset(dc.target_dataset)\
-            .target_viewpoints([dc.target_viewpoint])\
-            .source_viewpoints([dc.target_viewpoint])\
-            .training_options(dc.pretraining_datasets)
-
-        alphabet_levels = dc.pretraining_datasets_alphabet() if dc.pretraining_datasets != None else dc.target_dataset_alphabet()
-
-        self._ppm_instruction_builder.input_sequence(flatten_list(dc.target_dataset_as_target_viewpoint_sequence()))\
-            .alphabet_levels(alphabet_levels)
-        # TODO PPM without pre-training so far...
-
-        drex_input_sequence = flatten_list(dc.target_dataset_as_fundamental_frequency_sequence())
-        self._drex_instruction_builder.input_sequence(drex_input_sequence)
-        prior_distribution_type = DistributionType.GAUSSIAN
-        if dc.pretraining_datasets is None or (isinstance(dc.pretraining_datasets, list) and len(dc.pretraining_datasets) == 0):
-            prior_input_sequence = drex_input_sequence
-            print("Warning! Prior's input sequence was set to input sequence due to lack of additional pretraining data.")
-        else:
-            prior_input_sequence = flatten_list(dc.pretraining_datasets_as_fundamental_frequency_sequence())
-        prior_D = 4 # TODO remove hard coded value
-
-        self._drex_instruction_builder.prior(UnprocessedPrior(prior_distribution_type, prior_input_sequence, prior_D))
 
         print("Run IDyOM...")
         idyom_result = self._idyom_runner.run(self._idyom_instruction_builder)

@@ -216,9 +216,16 @@ class UnprocessedPrior(Prior):
         pis = auto_convert_input_sequence(prior_input_sequence)
 
         # Check prior_input_sequence
-        if len(pis.shape) != 2:
-            raise ValueError("Shape of prior_input_sequence invalid! Expected two dimensions: time, feature")
-        [prior_input_sequence_times, prior_input_sequence_features] = pis.shape
+        if not isinstance(pis, np.ndarray):
+            raise ValueError("prior_input_sequence must be an instance of np.ndarray!")
+        if pis.dtype != np.object:
+            if pis.len(pis.shape) != 2:
+                raise ValueError("Shape of prior_input_sequence invalid! Expected two dimensions: time, feature")
+            prior_input_sequence_trials = 1
+            [prior_input_sequence_times, prior_input_sequence_features] = pis.shape
+        elif pis.dtype == np.object:
+            prior_input_sequence_trials = pis.shape[0]
+            [prior_input_sequence_times, prior_input_sequence_features] = pis[0].shape
 
         # Check D
         if distribution == DistributionType.GMM:
