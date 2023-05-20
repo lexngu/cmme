@@ -85,30 +85,38 @@ class IDYOMBinding:
         result = self._lisp_eval( ('idyom-db:get-next-free-id',) )
         return int(result)
 
-    def import_midi(self, midi_files_directory_path: str, description: str, dataset_id: int) -> Dataset:
+    def import_midi(self, midi_files_directory_path: str, description: str, dataset_id: int, timebase: int) -> Dataset:
         """
         Calls (idyom-db:import-data :mid <midi_file_directory_path> <description> <dataset_id>)
 
         :param midi_files_directory_path: Path to directory containing midi files to import
         :param description: A string as description of the dataset
         :param dataset_id: Target dataset id. Note that if there already is a dataset with the provided id, IDyOM will fail.
+        :param timebase: Value of "kern2db::*default-timebase*" to use
         :return:
         """
-        self._lisp_eval(('idyom-db:import-data', ':mid', '"' + path_as_string_with_trailing_slash(midi_files_directory_path) + '"', '"'+description+'"', dataset_id))
+        self._lisp_eval(
+            ("let", (("kern2db::*default-timebase*", timebase),),
+             ('idyom-db:import-data', ':mid', '"' + path_as_string_with_trailing_slash(midi_files_directory_path) + '"', '"'+description+'"', dataset_id))
+        )
         dataset_id = int(re.findall("Inserting data into database: dataset (\d+)", self.lisp.msg)[0])
 
         return Dataset(id=dataset_id, description=description)
 
-    def import_kern(self, krn_files_directory_path: str, description: str, dataset_id: int) -> Dataset:
+    def import_kern(self, krn_files_directory_path: str, description: str, dataset_id: int, timebase: int) -> Dataset:
         """
         Calls (idyom-db:import-data :mid <krn_files_directory_path> <description> <dataset_id>)
 
         :param krn_files_directory_path: Path to directory containing **kern files to import
         :param description: A string as description of the dataset
         :param dataset_id: Target dataset id. Note that if there already is a dataset with the provided id, IDyOM will fail.
+        :param timebase: Value of "kern2db::*default-timebase*" to use
         :return:
         """
-        self._lisp_eval(('idyom-db:import-data', ':krn', '"'+ path_as_string_with_trailing_slash(krn_files_directory_path) +'"', '"'+description+'"', dataset_id))
+        self._lisp_eval(
+            ("let", (("kern2db::*default-timebase*", timebase),),
+             ('idyom-db:import-data', ':krn', '"'+ path_as_string_with_trailing_slash(krn_files_directory_path) +'"', '"'+description+'"', dataset_id))
+        )
         dataset_id = int(re.findall("Inserting data into database: dataset (\d+)", self.lisp.msg)[0])
 
         return Dataset(id=dataset_id, description=description)

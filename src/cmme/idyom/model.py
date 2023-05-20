@@ -278,31 +278,33 @@ class IDYOMModel:
     def __init__(self, idyom_root_path: Path = Config().idyom_root_path(), idyom_database_path: Path = Config().idyom_database_path()):
         self.idyom_binding = IDYOMBinding(str(idyom_root_path.resolve()), str(idyom_database_path.resolve()))
 
-    def import_midi(self, midi_files_directory_path: str, description: str, dataset_id: int = None) -> Dataset:
+    def import_midi(self, midi_files_directory_path: str, description: str, dataset_id: int = None, timebase: int = 96) -> Dataset:
         """
 
         :param midi_files_directory_path:
         :param description:
         :param dataset_id: If None, a valid value will be determined automatically
+        :param timebase: Value of "kern2db::*default-timebase*" to use, MCCC requires 39473280.
         :return:
         """
         if dataset_id is None:
             dataset_id = self.idyom_binding.next_free_dataset_id()
 
-        return self.idyom_binding.import_midi(midi_files_directory_path, description, dataset_id)
+        return self.idyom_binding.import_midi(midi_files_directory_path, description, dataset_id, timebase)
 
-    def import_kern(self, krn_files_directory_path: str, description: str, dataset_id: int = None) -> Dataset:
+    def import_kern(self, krn_files_directory_path: str, description: str, dataset_id: int = None, timebase: int = 96) -> Dataset:
         """
 
         :param krn_files_directory_path:
         :param description:
         :param dataset_id: If None, a valid value will be determined automatically
+        :param timebase: Value of "kern2db::*default-timebase*" to use, MCCC requires 39473280.
         :return:
         """
         if dataset_id is None:
             dataset_id = self.idyom_binding.next_free_dataset_id()
 
-        return self.idyom_binding.import_kern(krn_files_directory_path, description, dataset_id)
+        return self.idyom_binding.import_kern(krn_files_directory_path, description, dataset_id, timebase)
 
     def all_datasets(self) -> List[Dataset]:
         return self.idyom_binding.all_datasets()
