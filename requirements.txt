@@ -7,3 +7,4 @@ pyzmq
 matplotlib
 pymatbridge
 cl4py
+pyarrow
