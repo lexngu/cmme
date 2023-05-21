@@ -7,6 +7,12 @@ addpath(fullfile(mfilepath, "../../models/DREX-model/"));
 instructions_file_path = convertStringsToChars(instructions_file_path);
 instructions_file = load(instructions_file_path);
 
+out.results_file_path = instructions_file.results_file_path;
+if isfile(instructions_file.results_file_path)
+    fprintf("Results file at %s already exists.\n", instructions_file.results_file_path);
+    return;
+end
+
 % calculate prior (if requested)
 estimate_suffstat_results = struct;
 if isfield(instructions_file, "estimate_suffstat")
@@ -68,6 +74,4 @@ if isfield(instructions_file, "run_DREX_model")
     distribution = rdm_instructions.params.distribution;
     save(instructions_file.results_file_path, "instructions_file_path", "input_sequence", "distribution", "estimate_suffstat_results", "run_DREX_model_results", "post_DREX_changedecision_results", "post_DREX_prediction_results", "post_DREX_beliefdynamics_results", "post_DREX_changedecision_results", "change_decision_threshold");
 end
-
-out.results_file_path = instructions_file.results_file_path;
 end

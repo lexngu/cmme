@@ -3,6 +3,11 @@ library(arrow, warn.conflicts = FALSE)
 ppmdecay_intermediate_script <- function(instructions_file_path) {
   # Read instructions file
   instructions_file <- arrow::read_feather(instructions_file_path)
+
+  if (file.exists(instructions_file$results_file_path)) {
+    print(paste("Results file", instructions_file$results_file_path, "already exists."))
+    return(instructions_file$results_file_path)
+  }
   
   model_type <- instructions_file$model_type # \in {SIMPLE, DECAY}
   # Data type conversions
