@@ -3,10 +3,11 @@ library(arrow, warn.conflicts = FALSE)
 ppmdecay_intermediate_script <- function(instructions_file_path) {
   # Read instructions file
   instructions_file <- arrow::read_feather(instructions_file_path)
-
-  if (file.exists(instructions_file$results_file_path)) {
-    print(paste("Results file", instructions_file$results_file_path, "already exists."))
-    return(instructions_file$results_file_path)
+  results_file_path <- paste(dirname(instructions_file_path), "/", basename(instructions_file$results_file_path), sep="")
+  
+  if (file.exists(results_file_path)) {
+    print(paste("Results file", results_file_path, "already exists."))
+    return(results_file_path)
   }
   
   model_type <- instructions_file$model_type # \in {SIMPLE, DECAY}
@@ -67,7 +68,7 @@ ppmdecay_intermediate_script <- function(instructions_file_path) {
   results$distribution <- as.character(results$distribution)
 
   # Write results file data
-  results_file_data_path <- paste(gsub("\\.feather", "", instructions_file$results_file_path), "-data.feather", sep="")
+  results_file_data_path <- paste(gsub("\\.feather", "", results_file_path), "-data.feather", sep="")
   write_feather(results, results_file_data_path)
   
   # Write results file
@@ -83,9 +84,9 @@ ppmdecay_intermediate_script <- function(instructions_file_path) {
     instructions_file_path,
     results_file_data_path
   )
-  write.csv(meta_information, instructions_file$results_file_path)
+  write_feather(meta_information, results_file_path)
   
   # Return results_file_path
-  return(instructions_file$results_file_path)
+  return(results_file_path)
 }
 
