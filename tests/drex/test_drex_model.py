@@ -1,5 +1,6 @@
 from cmme.drex.base import DistributionType, UnprocessedPrior
 from cmme.drex.model import *
+from cmme.drex.util import trialtimefeature_sequence_as_singletrial_array
 
 
 def test_default_drex_instance_uses_original_default_values():
@@ -82,10 +83,10 @@ def test_run_succeeds():
     results_file = drex_model.run(instructions_file_path, results_file_path)
 
     assert results_file.instructions_file_path == str(instructions_file_path)
-    assert np.array_equal(results_file.input_sequence, input_sequence)
+    assert np.array_equal(results_file.input_sequence, trialtimefeature_sequence_as_singletrial_array(input_sequence))
 
 def test_drex_instance_automatically_sets_obsnz_according_to_nfeatures():
-    prior_input_sequence = [[1, 1, 1], [2, 2, 2]]
+    prior_input_sequence = [[[1, 1, 1], [2, 2, 2]]]
 
     drex_instance = DREXInstructionBuilder()
 

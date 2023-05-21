@@ -2,7 +2,7 @@ import threading
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Union
 
 import matlab.engine
 import numpy.typing as npt
@@ -11,7 +11,8 @@ import scipy.io as sio
 from pymatbridge import pymatbridge
 
 from .base import DistributionType, Prior, UnprocessedPrior, GaussianPrior, LognormalPrior, GmmPrior, PoissonPrior
-from .util import transform_multifeature_singletrial_input_sequence_for_estimate_suffstat
+from .util import auto_convert_input_sequence, trialtimefeature_sequence_as_multitrial_cell, \
+    trialtimefeature_sequence_as_singletrial_array
 from ..config import Config
 
 
@@ -27,7 +28,7 @@ class PriorInstructionsFile:
     def __init__(self, instructions_file_path: Path, results_file_path: Path, input_sequence: npt.ArrayLike, distribution_type: DistributionType, D: int, max_ncomp: int):
         self.instructions_file_path = instructions_file_path
         self.results_file_path = results_file_path
-        self.input_sequence = input_sequence
+        self.input_sequence = auto_convert_input_sequence(input_sequence)
         self.distribution_type = distribution_type
         self.D = D
         self.max_ncomp = max_ncomp
@@ -40,11 +41,10 @@ class PriorInstructionsFile:
         data = dict()
 
         data["estimate_suffstat"] = {
-            "xs": transform_multifeature_singletrial_input_sequence_for_estimate_suffstat(
-                self.input_sequence),
+            "xs": trialtimefeature_sequence_as_multitrial_cell(self.input_sequence),
             "params": {
                 "distribution": self.distribution_type.value,
-                "D": matlab.double(self.D)
+                "D": float(self.D)
             }
         }
         if self.distribution_type == DistributionType.GMM:
@@ -73,7 +73,7 @@ class InstructionsFile:
             if input_sequence_length != hazard_length:
                 raise ValueError("Values invalid! If there is more than one hazard rate, the number of hazard rates must equal the number of input sequence data.")
 
-        self.input_sequence = input_sequence
+        self.input_sequence = auto_convert_input_sequence(input_sequence)
         """Input sequence: time, feature => 1"""
         self.instructions_file_path = instructions_file_path
         """Where to store the instructions file"""
@@ -103,23 +103,25 @@ class InstructionsFile:
         # Add instructions for procesing an unprocessed prior using D-REX's estimate_suffstat.m
         if isinstance(self.prior, UnprocessedPrior):
             data["estimate_suffstat"] = {
-                "xs": transform_multifeature_singletrial_input_sequence_for_estimate_suffstat(self.prior._prior_input_sequence),
+                "xs": trialtimefeature_sequence_as_multitrial_cell(self.prior._prior_input_sequence),
                 "params": {
                     "distribution": self.prior._distribution.value,
-                    "D": matlab.double(self.prior.D_value())
+                    "D": float(self.prior.D_value())
                 }
             }
             if self.prior._distribution == DistributionType.GMM:
                 data["estimate_suffstat"]["params"]["max_ncomp"] = self.prior._max_n_comp
 
         # Add instructions for invoking D-REX (run_DREX_model.m)
+        obsnz = [self.obsnz] if not isinstance(self.obsnz, list) else self.obsnz
+        obsnz = [float(o) for o in obsnz]
         data["run_DREX_model"] = {
-            "x": matlab.double(self.input_sequence),
+            "x": trialtimefeature_sequence_as_singletrial_array(self.input_sequence),
             "params": {
                 "distribution": self.prior._distribution.value,
-                "D": matlab.double(self.prior.D_value()),
-                "hazard": matlab.double(self.hazard),
-                "obsnz": matlab.double(self.obsnz),
+                "D": float(self.prior.D_value()),
+                "hazard": float(self.hazard),
+                "obsnz": obsnz,
                 "memory": self.memory,
                 "maxhyp": self.maxhyp
             },
@@ -140,7 +142,7 @@ class InstructionsFile:
         return to_mat(data, str(self.instructions_file_path))
 
 class ResultsFilePsi:
-    def __init__(self, predictions, positions):
+    def __init__(self, predictions = dict(), positions = dict()):
         """
 
         :param predictions: dictionary with key=feature, value=np.array of shape (time, position)
@@ -160,18 +162,10 @@ class ResultsFilePsi:
             if predictions_positions != positions_length:
                 raise ValueError("predictions and positions invalid! The number of positions must match.")
 
-        # Check time for each feature
-        time = predictions[0].shape[0]
-        for f in predictions_features:
-            if time != predictions[f].shape[0]:
-                raise ValueError("predictions invalid! Each feature must have an equal number of time steps.")
-            time = predictions[f].shape[0]
-
         # Set attributes
         self._features = predictions_features
         self._feature_to_positions = positions
         self._feature_to_predictions = predictions
-        self._time = time
 
     def features(self):
         """
@@ -195,13 +189,6 @@ class ResultsFilePsi:
         """
         return self._feature_to_positions[feature]
 
-    def time(self):
-        """
-
-        :return: number of time steps
-        """
-        return self._time
-
 
 def parse_post_DREX_prediction_results(results):
     predictions = dict()
@@ -223,10 +210,12 @@ def parse_post_DREX_prediction_results(results):
 
 class ResultsFile:
     # TODO add prediction_params from run_DREX_model.m?
-    def __init__(self, results_file_path, instructions_file_path, input_sequence, surprisal, joint_surprisal, context_beliefs,
+    def __init__(self, results_file_path, instructions_file_path, input_sequence, prior, surprisal, joint_surprisal, context_beliefs,
                  belief_dynamics, change_decision_changepoint, change_decision_probability, change_decision_threshold, psi: ResultsFilePsi):
         if len(input_sequence.shape) != 2:
             raise ValueError("Shape of input_sequence invalid! Expected two dimensions: time, feature.")
+        if not isinstance(prior, Prior):
+            raise ValueError("Prior must be an instance of cmme.drex.base.Prior.")
         if len(surprisal.shape) != 2:
             raise ValueError("Shape of surprisal invalid! Expected two dimensions: time, feature.")
         if len(joint_surprisal.shape) != 1:
@@ -244,14 +233,12 @@ class ResultsFile:
         joint_surprisal_times = joint_surprisal.shape[0]
         [context_beliefs_memory, context_beliefs_contexts] = context_beliefs.shape
         belief_dynamics_times = belief_dynamics.shape[0]
-        psi_features = len(psi.features())
-        psi_times = psi.time()
 
-        if not (input_sequence_times == surprisal_times and surprisal_times == joint_surprisal_times and joint_surprisal_times == (belief_dynamics_times-1) and (belief_dynamics_times-1) == psi_times):
-            raise ValueError("Dimension 'time' invalid! Value must be equal for input_sequence({}), surprisal({}), joint_surprisal({}), belief_dynamics({} (-1)), and psi({}).".format(input_sequence_times, surprisal_times, joint_surprisal_times, belief_dynamics_times, psi_times))
-        if not (input_sequence_features == surprisal_features and surprisal_features == psi_features):
+        if not (input_sequence_times == surprisal_times and surprisal_times == joint_surprisal_times and joint_surprisal_times == (belief_dynamics_times-1)):
+            raise ValueError("Dimension 'time' invalid! Value must be equal for input_sequence({}), surprisal({}), joint_surprisal({}), and belief_dynamics({}-1).".format(input_sequence_times, surprisal_times, joint_surprisal_times, belief_dynamics_times))
+        if not (input_sequence_features == surprisal_features):
             raise ValueError(
-                "Dimension 'feature' invalid! Value must be equal for input_sequence, surprisal, and psi.")
+                "Dimension 'feature' invalid! Value must be equal for input_sequence, and surprisal.")
 
         self.dimension_values = dict()
         self.dimension_values["time"] = input_sequence_times
@@ -262,6 +249,8 @@ class ResultsFile:
         """File path to source data of this object"""
         self.instructions_file_path = instructions_file_path
         """Corresponding instructions file"""
+        self.prior = prior
+        """Prior"""
         self.input_sequence = input_sequence
         """Input sequence processed: time, feature => 1"""
         self.surprisal = surprisal
@@ -281,21 +270,21 @@ class ResultsFile:
         self.psi = psi
         """Marginal (predictive) probability distribution"""
 
-def parse_results_file(results_file_path) -> ResultsFile:
+def parse_results_file(results_file_path) -> Union[ResultsFile, Prior]:
     data = from_mat(results_file_path)
 
     prior = parse_results_file_estimate_suffstat(data)
     if not "run_DREX_model_results" in data:
         return prior
 
-    instructions_file_path = data["instructions_file_path"]
+    instructions_file_path = data["instructions_file_path"][0]
     input_sequence = data["input_sequence"]
     run_results = data["run_DREX_model_results"]
     bd_results = data["post_DREX_beliefdynamics_results"]
     cd_results = data["post_DREX_changedecision_results"]
     pred_results = data["post_DREX_prediction_results"]
 
-    input_sequence = np.array(input_sequence)
+    input_sequence = trialtimefeature_sequence_as_singletrial_array(auto_convert_input_sequence([input_sequence.T.tolist()]))
     surprisal = np.array(run_results["surprisal"][0][0])
     joint_surprisal = np.array(run_results["joint_surprisal"][0][0]).flatten()
     context_beliefs = np.array(run_results["context_beliefs"][0][0])
@@ -303,9 +292,12 @@ def parse_results_file(results_file_path) -> ResultsFile:
     change_decision_changepoint = float(cd_results["changepoint"][0][0])
     change_decision_probability = np.array(cd_results["changeprobability"][0][0]).flatten()
     change_decision_threshold = float(data["change_decision_threshold"])
-    psi = parse_post_DREX_prediction_results(pred_results)
+    if prior.distribution_type() in [DistributionType.GAUSSIAN, DistributionType.LOGNORMAL, DistributionType.GMM]:
+        psi = parse_post_DREX_prediction_results(pred_results)
+    else:
+        psi = ResultsFilePsi()
 
-    return ResultsFile(results_file_path, instructions_file_path, input_sequence, surprisal, joint_surprisal, context_beliefs, belief_dynamics, change_decision_changepoint, change_decision_probability, change_decision_threshold, psi)
+    return ResultsFile(results_file_path, instructions_file_path, input_sequence, prior, surprisal, joint_surprisal, context_beliefs, belief_dynamics, change_decision_changepoint, change_decision_probability, change_decision_threshold, psi)
 
 def parse_results_file_estimate_suffstat(data) -> Prior:
     if not "estimate_suffstat_results" in data:

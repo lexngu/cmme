@@ -1,26 +1,36 @@
 import numbers
 from datetime import datetime
 
-import matlab
 import numpy as np
 
 from cmme.config import Config
 
 
-def transform_multifeature_singletrial_input_sequence_for_estimate_suffstat(input_sequence):
+def trialtimefeature_sequence_as_multitrial_cell(input_sequence):
     """
-    Converts an input sequence to the structure required by D-REX's estimate_suffstat.m (using double arrays, since cell arrays are not supported in Python)
-    :param input_sequence: np.array, time x feature
-    :return: time x 1 x feature
+    Converts an input sequence to the structure required by D-REX's estimate_suffstat.m
+    :param input_sequence: np.array, trial x time x feature
+    :return: trial x time x feature
     """
-    if input_sequence.dtype == np.object:
+    if input_sequence.dtype == np.object and len(input_sequence.shape) == 3:
+        res = np.empty((input_sequence.shape[0],), dtype=object)
         for idx,e in enumerate(input_sequence):
-            input_sequence[idx] = matlab.double(e)
-        res = input_sequence
+            res[idx] = e.tolist()
+        return res
     else:
-        res = input_sequence[..., np.newaxis] # introduce third dimension
-        res = np.transpose(res, (0, 2, 1)) # format as: time x trial (=1) x feature
-    return res
+        raise ValueError("input_sequence should be a np.array(dtype=object) of three dimensions.")
+
+def trialtimefeature_sequence_as_singletrial_array(input_sequence):
+    """
+    Converts an input sequence to the array as used for D-REX's input sequences.
+    :param input_sequence: np.array, trial x time x feature
+    :return: time x feature
+    """
+    if input_sequence.dtype == np.object and len(input_sequence.shape) == 3 and input_sequence.shape[0] == 1:
+        return np.array(input_sequence[0].tolist(), dtype=float)
+    else:
+        raise ValueError("input_sequence should be a np.array(dtype=object) of three dimensions, and with a single trial.")
+
 
 def drex_default_instructions_file_path(alias = None):
     instructions_file_filename = datetime.now().isoformat().replace("-", "").replace(":", "").replace(".", "")
@@ -38,29 +48,38 @@ def drex_default_results_file_path(alias = None):
 
 def auto_convert_input_sequence(input_sequence):
     """
+    Given any input, ensure that the input is coded as np.array([trial1, trial2, ...], dtype=object), where
+    each trial is a np.array(dtype=float) of shape (n_time, n_feature).
+
     Converts:
-    1) np.ndarray => pass-through
-    2) flat list => input_sequence with 1 feature
-    3) list of n flat lists => input_sequence with n features
-    4) list of n lists of m lists => input_sequence with n trials and m features
+    1) np.array(..., dtype=object) => pass-through
+    2) [1, 2, 3, ...] => input_sequence with 1 trial and 1 feature
+    3) [[1, 2, 3, ...], [1, 2, 3, ...], ...] => input_sequence with 1 trial and n features
+    4) [[[1, 2, 3, ...], [1, 2, 3, ...], ...], [...], ...] => input_sequence with n trials and m features
     :param input_sequence: list or np.array
     :return: np.array with shape (time, feature)
     """
-    if type(input_sequence) is np.ndarray:
+    if type(input_sequence) is np.ndarray and input_sequence.dtype == np.object:
+        # nothing to do, because already np.array(dtype=object)
         return input_sequence
-    elif isinstance(input_sequence, list):
-        if len(input_sequence) < 1: # empty list
-            return np.empty(shape=(0,0), dtype=float)
-        elif isinstance(input_sequence[0], list):
-            first_element = input_sequence[0]
-            if isinstance(first_element, numbers.Number): # assume: [f1, f2, f3]
-                return np.array(input_sequence, dtype=float).T # transpose (feature, time) => (time, feature)
-            elif isinstance(first_element, list):
-                result = list()
-                for e in input_sequence:
-                    result.append(auto_convert_input_sequence(e))
-                return np.array(result, dtype=object) # trial x time x feature
-        elif isinstance(input_sequence[0], int) or isinstance(input_sequence[0], float): # assume [x1, ...]
-            return np.array([input_sequence], dtype=float).T # transpose (feature, time) => (time, feature)
+
+    if isinstance(input_sequence, list):
+        if len(input_sequence) == 0:
+            raise ValueError("input_sequence must not be empty!")
+
+        firstlayer_firstelement = input_sequence[0]
+        if isinstance(firstlayer_firstelement, numbers.Number):
+            # then assume single trial and single feature
+            return np.array([np.array([input_sequence], dtype=float).T], dtype=object)
+        elif isinstance(firstlayer_firstelement, list):
+            secondlayer_firstelement = firstlayer_firstelement[0]
+
+            if not isinstance(secondlayer_firstelement, list):
+                raise ValueError("input_sequence with lists as elements (for each trial) must contain lists only (for each time).")
+
+            trials = list()
+            for trial in input_sequence:
+                trials.append(np.array(trial, dtype=float).T.tolist())
+            return np.array(trials, dtype=object) # trial x time x feature
     else:
-        raise ValueError("input_sequence invalid!")
+        raise ValueError("input_sequence invalid! List expected.")

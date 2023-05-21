@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-import numpy as np
 import numpy.typing as npt
 
-from cmme.drex.util import auto_convert_input_sequence
+from .util import auto_convert_input_sequence
 
 
 class DistributionType(Enum):
@@ -12,6 +11,7 @@ class DistributionType(Enum):
     LOGNORMAL = "lognormal"
     GMM = "gmm"
     POISSON = "poisson"
+
 
 class Prior(ABC):
     def __init__(self):
@@ -53,15 +53,9 @@ class GaussianPrior(Prior):
         self._D_value = means_D_value
         """D value (amount of temporal dependence while calculating the conditional distribution)"""
 
-        self.distributions = dict()
-        """Feature-specific distribution"""
-
-        for feature_index in range(len(means)):
-            _means = np.array(means[feature_index], dtype=float)
-            _covariance = np.array(covariance[feature_index], dtype=float)
-            _n = int(n[feature_index])
-
-            self.distributions[feature_index] = GaussianDistribution(_means, _covariance, _n)
+        self.means = means
+        self.covariance = covariance
+        self.n = n
 
     def distribution_type(self):
         return DistributionType.GAUSSIAN
@@ -72,7 +66,8 @@ class GaussianPrior(Prior):
     def D_value(self):
         return self._D_value
 
-class LognormalPrior(Prior): # TODO remove redundancy, cf. DrexGaussianDistributionContainer
+
+class LognormalPrior(Prior):
     def __init__(self, means: npt.ArrayLike , covariance: npt.ArrayLike, n: npt.ArrayLike):
         # Ensure parameters to have consistent shapes
         if len(means.shape) != 2:
@@ -95,18 +90,19 @@ class LognormalPrior(Prior): # TODO remove redundancy, cf. DrexGaussianDistribut
         self._D_value = means_D_value
         """D value (amount of temporal dependence while calculating the conditional distribution)"""
 
-        self.distributions = dict()
-        """Feature-specific distribution"""
-
-        for feature_index in range(len(means)):
-            _means = np.array(means[feature_index], dtype=float)
-            covariance = np.array(covariance[feature_index], dtype=float)
-            n = int(n[feature_index])
-
-            self.distributions[feature_index] = GaussianDistribution(_means, covariance, n)
+        self.means = means
+        self.covariance = covariance
+        self.n = n
 
     def distribution_type(self):
         DistributionType.LOGNORMAL
+
+    def feature_count(self):
+        return self._feature_count
+
+    def D_value(self):
+        return self._D_value
+
 
 class GmmPrior(Prior):
     """
@@ -145,18 +141,12 @@ class GmmPrior(Prior):
         self._feature_count = means_feature_count
         """Number of features"""
 
-        self.distributions = dict()
-        """Feature-specific distribution"""
-
-        for feature_index in range(self._feature_count):
-            _means = np.array(means[feature_index], dtype=float)
-            _covariance = np.array(covariance[feature_index], dtype=float)
-            _n = n[feature_index]
-            _pi = pi[feature_index]
-            _sp = sp[feature_index]
-            _k = k[feature_index]
-
-            self.distributions[feature_index] = MultivariateGaussianDistribution(_means, _covariance, _n, _pi, _sp, _k)
+        self.means = means
+        self.covariance = covariance
+        self.n = n
+        self.pi = pi
+        self.sp = sp
+        self.k = k
 
     def distribution_type(self):
         return DistributionType.GMM
@@ -181,16 +171,9 @@ class PoissonPrior(Prior):
         if not lambda_features == n_features:
             raise ValueError("Dimension 'feature' invalid! Value must be equal for lambd and n.")
 
+        self.lambd = lambd
+        self.n = n
         self._feature_count = lambda_features
-
-        self.distributions = dict()
-        """Feature-specific distribution"""
-
-        for feature_index in range(len(lambd)):
-            _lambd = np.array(lambd[feature_index], dtype=float)
-            _n = int(n[feature_index])
-
-            self.distributions[feature_index] = PoissonDistribution(_lambd, _n)
 
     def distribution_type(self):
         return DistributionType.POISSON
@@ -199,50 +182,50 @@ class PoissonPrior(Prior):
         return self._feature_count
 
     def D_value(self):
-        pass # TODO feature specific?
+        pass # TODO
 
 
 class UnprocessedPrior(Prior):
-    def __init__(self, distribution: DistributionType, prior_input_sequence, D = None, max_n_comp = None, beta = None): # TODO move beta to D-REX hyper parameters
+    def __init__(self, distribution: DistributionType, prior_input_sequence, D=None, max_n_comp=None, beta=None): # TODO move beta to D-REX hyper parameters
         """
         Creates an unprocessed prior which will be processed by D-REX and used as "prior" for new context window hypotheses.
         :param distribution: DistributionType
         :param prior_input_sequence: np.array with shape (time, feature), or 2d-array with feature x time
         :param D: amount of temporal dependence. If None, D-REX's default value will be used (Gaussian: 1, Poisson: 50), if *distribution* is GMM, D=1 is enforced.
-        :param max_n_comp: Relevant for *distribution* GMM: Maxmimum number of components in Gaussian Mixture Model.
+        :param max_n_comp: Relevant for *distribution* GMM: Maxmimum number of components in Gaussian Mixture Model (default: 10)
         :param beta: probability between [0,1]. Threshold for new GMM components (see D-REX).
         """
 
         pis = auto_convert_input_sequence(prior_input_sequence)
 
         # Check prior_input_sequence
-        if not isinstance(pis, np.ndarray):
-            raise ValueError("prior_input_sequence must be an instance of np.ndarray!")
-        if pis.dtype != np.object:
-            if pis.len(pis.shape) != 2:
-                raise ValueError("Shape of prior_input_sequence invalid! Expected two dimensions: time, feature")
-            prior_input_sequence_trials = 1
-            [prior_input_sequence_times, prior_input_sequence_features] = pis.shape
-        elif pis.dtype == np.object:
-            prior_input_sequence_trials = pis.shape[0]
-            [prior_input_sequence_times, prior_input_sequence_features] = pis[0].shape
+        [prior_input_sequence_trials, prior_input_sequence_times, prior_input_sequence_features] = pis.shape
 
         # Check D
         if distribution == DistributionType.GMM:
             if D != 1:
                 raise ValueError("D invalid! For distribution=GMM, D must be equal to 1.")
-        if D < 1:
+        elif distribution == DistributionType.GAUSSIAN:
+            if D is None:
+                D = 1
+        elif distribution == DistributionType.POISSON:
+            if D is None:
+                D = 50
+        if D is None or D < 1:
             raise ValueError("D invalid! Value must be greater than or equal 1.")
-        if prior_input_sequence_times < D:
-            raise ValueError("D invalid! Value must be less than the number of observations in prior_input_sequence_times.")
+        if prior_input_sequence_times < D: # TODO check against min times
+            raise ValueError("D invalid! Value must be less than the number of observations in prior_input_sequence.")
 
         # Check max_n_comp
         if distribution == DistributionType.GMM:
+            if max_n_comp is None:
+                max_n_comp = 10
             if max_n_comp < 1:
                 raise ValueError("max_n_comp invalid! Value must be greater than or equal 1.")
 
         self._D = D
         self._feature_count = prior_input_sequence_features
+        self._trials_count = prior_input_sequence_trials
 
         # Set attributes
         self._distribution = distribution
@@ -259,72 +242,5 @@ class UnprocessedPrior(Prior):
     def feature_count(self):
         return self._feature_count
 
-class ParameterizedDistribution(ABC):
-    """
-    Parameterized distribution (in D-REX: prior, suffstat)
-    """
-    def __init__(self):
-        pass
-
-class GaussianDistribution(ParameterizedDistribution):
-    """
-        Univariate Gaussian distribution, with one mean value, and one covariance value.
-        If D = 1, one gets a univariate Gaussian distribution with one mean and one variance value.
-        """
-
-    def __init__(self, mean, covariance, n):
-        self.mean = mean
-        """Mean value"""
-
-        self.covariance = covariance
-        """Covariance value"""
-
-        self.n = n
-        """Number of observations summarized in the parameters so far"""
-
-
-class MultivariateGaussianDistribution(ParameterizedDistribution):
-    """
-    D-variate Gaussian distribution, with +D+ mean values, and a DxD covariance matrix.
-    If D = 1, one gets a univariate Gaussian distribution with one mean and one variance value.
-    """
-
-    def __init__(self, means, covariance, n, pi, sp, k):
-        super()
-
-        self.means = means
-        """Mean of each variate"""
-
-        self.covariance = covariance
-        """Covariance matrix"""
-
-        self.n = n
-        """Number of observations summarized in the parameters so far"""
-
-        self.k = k
-        """Number of components"""
-
-        self.components = list()
-        """Components (Gaussian distributions)"""
-
-        for component_index in range(k):
-            component_mean = means[component_index]
-            component_covariance = covariance[component_index]
-            component_n = n[component_index]
-
-            self.components.append(GaussianDistribution(component_mean, component_covariance, component_n))
-
-        self.pi = np.array(pi, dtype=float)
-        """Components' weight"""
-
-        self.sp = np.array(sp, dtype=float)
-        """Components' likelihood"""
-
-
-class PoissonDistribution(ParameterizedDistribution):
-    def __init__(self, lambd, n):
-        self.lambd = lambd
-        """Lambda parameter"""
-
-        self.n = n
-        """Observation count"""
+    def trials_count(self):
+        return self._trials_count

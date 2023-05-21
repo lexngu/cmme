@@ -9,7 +9,7 @@ import numpy as np
 class DREXPriorBuilder:
     def __init__(self):
         # default values according to estimate_suffstat.m
-        self._input_sequence = auto_convert_input_sequence([])
+        self._input_sequence = None
         self._distribution_type = DistributionType.GAUSSIAN
         self._D = 1
         self._max_ncomp = 10
@@ -21,11 +21,6 @@ class DREXPriorBuilder:
         :return: self
         """
         iseq = auto_convert_input_sequence(input_sequence)
-
-        # Check shape
-        if len(iseq.shape) != 2:
-            raise ValueError("Shape of input_sequence invalid! Expected two dimensions: time, feature.")
-        [input_sequence_times, input_sequence_features] = iseq.shape
 
         self._input_sequence = iseq
         return self
@@ -57,7 +52,7 @@ class DREXPriorBuilder:
 class DREXInstructionBuilder:
     def __init__(self):
         # Use original default values
-        self._input_sequence = auto_convert_input_sequence([])
+        self._input_sequence = None
         self._hazard = 0.01
         self._memory = np.inf
         self._maxhyp = np.inf
@@ -78,11 +73,7 @@ class DREXInstructionBuilder:
         :return: self
         """
         iseq = auto_convert_input_sequence(input_sequence)
-
-        # Check shape
-        if len(iseq.shape) != 2:
-            raise ValueError("Shape of input_sequence invalid! Expected two dimensions: time, feature.")
-        [input_sequence_times, input_sequence_features] = iseq.shape
+        [input_sequence_trials, input_sequence_times, input_sequence_features] = iseq.shape
 
         # Check correspondence to prior (if present)
         if self._prior is not None:
