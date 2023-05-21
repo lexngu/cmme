@@ -29,7 +29,7 @@ def test_to_instructions_file_uses_specified_values():
     hazard = 0.12
     memory = 22
     maxhyp = 11
-    obsnz = 0.03
+    obsnz = [0.03]
     change_decision_threshold = 0.5
     drex_instance.input_sequence(input_sequence)
     drex_instance.hazard(hazard)
@@ -40,9 +40,8 @@ def test_to_instructions_file_uses_specified_values():
     drex_instance.prior(prior)
 
     drex_model = DREXModel(drex_instance)
-    instructions_file = drex_model.to_instructions_file(instructions_file_path, results_file_path)
+    instructions_file = drex_model.to_instructions_file(results_file_path)
 
-    assert instructions_file.instructions_file_path == instructions_file_path
     assert instructions_file.results_file_path == results_file_path
     assert np.array_equal(instructions_file.input_sequence, input_sequence)
     assert instructions_file.prior == prior

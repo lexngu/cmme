@@ -1,91 +1,62 @@
-import threading
-import time
-from datetime import datetime
+import numbers
 from pathlib import Path
-from typing import Any, Union
+from typing import Union
 
-import matlab.engine
-import numpy.typing as npt
 import numpy as np
 import scipy.io as sio
-from pymatbridge import pymatbridge
 
 from .base import DistributionType, Prior, UnprocessedPrior, GaussianPrior, LognormalPrior, GmmPrior, PoissonPrior
 from .util import auto_convert_input_sequence, trialtimefeature_sequence_as_multitrial_cell, \
     trialtimefeature_sequence_as_singletrial_array
-from ..config import Config
 
 
 def to_mat(data, file_path):
     sio.savemat(str(file_path), data)
     return file_path
 
+
 def from_mat(file_path):
     mat_data = sio.loadmat(file_path)
     return mat_data
 
-class PriorInstructionsFile:
-    def __init__(self, instructions_file_path: Path, results_file_path: Path, input_sequence: npt.ArrayLike, distribution_type: DistributionType, D: int, max_ncomp: int):
-        self.instructions_file_path = instructions_file_path
-        self.results_file_path = results_file_path
-        self.input_sequence = auto_convert_input_sequence(input_sequence)
-        self.distribution_type = distribution_type
-        self.D = D
-        self.max_ncomp = max_ncomp
-
-    def write_to_mat(self) -> Path:
-        """
-        Writes the instructions file to disk.
-        :return: Path to instructions file
-        """
-        data = dict()
-
-        data["estimate_suffstat"] = {
-            "xs": trialtimefeature_sequence_as_multitrial_cell(self.input_sequence),
-            "params": {
-                "distribution": self.distribution_type.value,
-                "D": float(self.D)
-            }
-        }
-        if self.distribution_type == DistributionType.GMM:
-            data["estimate_suffstat"]["params"]["max_ncomp"] = self.max_ncomp
-
-        # Add results_file_path
-        data["results_file_path"] = str(self.results_file_path)
-
-        # Write and return
-        return to_mat(data, str(self.instructions_file_path))
 
 class InstructionsFile:
-    def __init__(self, instructions_file_path: Path, results_file_path: Path, input_sequence: npt.ArrayLike,
-                 prior: Prior, hazard: Any, memory: int, maxhyp: int, obsnz: float,
-                 change_decision_threshold : float = None):
+    def __init__(self, results_file_path: Path, input_sequence: np.ndarray,
+                 prior: Prior, hazard: Union[numbers.Number, list, np.ndarray], memory: Union[int, float], maxhyp: Union[int, float],
+                 obsnz: float, change_decision_threshold : float = None):
         # Checks
         input_sequence_length = len(input_sequence)
-        if type(hazard) is int or type(hazard) is float:
+        if not isinstance(prior, Prior):
+            raise ValueError("prior invalid! Should be an instance of drex.base.Prior.")
+        if isinstance(hazard, numbers.Number):
             hazard_length = 1
-        elif type(hazard) is np.ndarray:
+        elif isinstance(hazard, list) or isinstance(hazard, np.ndarray):
             hazard_length = len(hazard)
         else:
-            raise ValueError("hazard invalid! Should be scalar, or numpy.ndarray.")
-        # If hazard is not scalar (i.e. more than one element), then there must be one value for each time step.
+            raise ValueError("hazard invalid! Should be scalar, np.ndarray, or list.")
         if hazard_length > 1:
+            # If hazard is not scalar (i.e. more than one element), then there must be one value for each time step.
             if input_sequence_length != hazard_length:
                 raise ValueError("Values invalid! If there is more than one hazard rate, the number of hazard rates must equal the number of input sequence data.")
+        if not (isinstance(memory, int) or memory == float('inf')):
+            raise ValueError("memory invalid! Should be an integer or float('inf').")
+        if not (isinstance(maxhyp, int) or maxhyp == float('inf')):
+            raise ValueError("maxhyp invalid! Should be an integer or float('inf').")
+
+        # convert to list of float(s)
+        obsnz = [obsnz] if not isinstance(obsnz, list) else obsnz
+        obsnz = [float(o) for o in obsnz]
 
         self.input_sequence = auto_convert_input_sequence(input_sequence)
         """Input sequence: time, feature => 1"""
-        self.instructions_file_path = instructions_file_path
-        """Where to store the instructions file"""
         self.results_file_path = results_file_path
         """Where to store the model's results"""
-        """Temporal dependence (for Gaussian, Lognormal, GMM) respectively interval size (Poisson)"""
         self.prior = prior
         """Prior distribution"""
         self.hazard = hazard
         """Hazard rate(s): scalar or list of numbers (for each input datum)"""
         self.obsnz = obsnz
-        """Observation noise: feature => 1""" # TODO
+        """Observation noise: feature => 1"""
         self.memory = memory
         """Number of most-recent hypotheses to calculate"""
         self.maxhyp = maxhyp
@@ -93,7 +64,7 @@ class InstructionsFile:
         self.change_decision_threshold = change_decision_threshold
         """Threshold used for change detector"""
 
-    def write_to_mat(self) -> Path:
+    def write_to_mat(self, instructions_file_path: Path) -> Path:
         """
         Writes the instructions file to disk.
         :return: Path to instructions file
@@ -103,43 +74,42 @@ class InstructionsFile:
         # Add instructions for procesing an unprocessed prior using D-REX's estimate_suffstat.m
         if isinstance(self.prior, UnprocessedPrior):
             data["estimate_suffstat"] = {
-                "xs": trialtimefeature_sequence_as_multitrial_cell(self.prior._prior_input_sequence),
+                "xs": trialtimefeature_sequence_as_multitrial_cell(self.prior.prior_input_sequence),
                 "params": {
-                    "distribution": self.prior._distribution.value,
+                    "distribution": self.prior.distribution_type().value,
                     "D": float(self.prior.D_value())
                 }
             }
             if self.prior._distribution == DistributionType.GMM:
-                data["estimate_suffstat"]["params"]["max_ncomp"] = self.prior._max_n_comp
+                data["estimate_suffstat"]["params"]["max_ncomp"] = self.prior.max_n_comp
 
         # Add instructions for invoking D-REX (run_DREX_model.m)
-        obsnz = [self.obsnz] if not isinstance(self.obsnz, list) else self.obsnz
-        obsnz = [float(o) for o in obsnz]
         data["run_DREX_model"] = {
             "x": trialtimefeature_sequence_as_singletrial_array(self.input_sequence),
             "params": {
-                "distribution": self.prior._distribution.value,
+                "distribution": self.prior.distribution_type().value,
                 "D": float(self.prior.D_value()),
                 "hazard": float(self.hazard),
-                "obsnz": obsnz,
+                "obsnz": self.obsnz,
                 "memory": self.memory,
                 "maxhyp": self.maxhyp
             },
         }
-        if self.prior._distribution == DistributionType.GMM:
-            data["run_DREX_model"]["params"]["max_ncomp"] = self.prior._max_n_comp
+        if self.prior.distribution_type() == DistributionType.GMM:
+            data["run_DREX_model"]["params"]["max_ncomp"] = self.prior.max_n_comp
 
         # Add instructions for post_DREX_changedecision.m
-        if self.change_decision_threshold != None:
+        if self.change_decision_threshold is not None:
             data["post_DREX_changedecision"] = {
-                "threshold": self.change_decision_threshold
+                "threshold": float(self.change_decision_threshold)
             }
 
         # Add results_file_path
         data["results_file_path"] = str(self.results_file_path)
 
         # Write and return
-        return to_mat(data, str(self.instructions_file_path))
+        return to_mat(data, str(instructions_file_path))
+
 
 class ResultsFilePsi:
     def __init__(self, predictions = dict(), positions = dict()):
@@ -210,8 +180,11 @@ def parse_post_DREX_prediction_results(results):
 
 class ResultsFile:
     # TODO add prediction_params from run_DREX_model.m?
-    def __init__(self, results_file_path, instructions_file_path, input_sequence, prior, surprisal, joint_surprisal, context_beliefs,
-                 belief_dynamics, change_decision_changepoint, change_decision_probability, change_decision_threshold, psi: ResultsFilePsi):
+    def __init__(self, results_file_path: Path, instructions_file_path: Path,
+                 input_sequence: np.ndarray, prior: Prior, surprisal: np.ndarray, joint_surprisal: np.ndarray,
+                 context_beliefs: np.ndarray, belief_dynamics: np.ndarray, change_decision_changepoint: int,
+                 change_decision_probability: np.ndarray, change_decision_threshold: numbers.Number,
+                 psi: ResultsFilePsi):
         if len(input_sequence.shape) != 2:
             raise ValueError("Shape of input_sequence invalid! Expected two dimensions: time, feature.")
         if not isinstance(prior, Prior):
@@ -224,9 +197,6 @@ class ResultsFile:
             raise ValueError("Shape of context_beliefs invalid! Expected two dimensions: time, context.")
         if len(belief_dynamics.shape) != 1:
             raise ValueError("Shape of belief_dynamics invalid! Expected one dimension: time.")
-        # TODO replace
-        #if len(psi.shape) != 3:
-        #    raise ValueError("Shape of psi invalid! Expected three dimensions: time, feature, position.")
 
         [input_sequence_times, input_sequence_features] = input_sequence.shape
         [surprisal_times, surprisal_features] = surprisal.shape
@@ -270,6 +240,7 @@ class ResultsFile:
         self.psi = psi
         """Marginal (predictive) probability distribution"""
 
+
 def parse_results_file(results_file_path) -> Union[ResultsFile, Prior]:
     data = from_mat(results_file_path)
 
@@ -299,10 +270,11 @@ def parse_results_file(results_file_path) -> Union[ResultsFile, Prior]:
 
     return ResultsFile(results_file_path, instructions_file_path, input_sequence, prior, surprisal, joint_surprisal, context_beliefs, belief_dynamics, change_decision_changepoint, change_decision_probability, change_decision_threshold, psi)
 
+
 def parse_results_file_estimate_suffstat(data) -> Prior:
-    if not "estimate_suffstat_results" in data:
+    if "estimate_suffstat_results" not in data:
         raise ValueError("Missing dictionary key 'estimate_suffstat_results'!")
-    if not "distribution" in data:
+    if "distribution" not in data:
         raise ValueError("Missing dictionary key 'distribution'!")
     distribution = data["distribution"]
     es_data = data["estimate_suffstat_results"]
@@ -385,112 +357,3 @@ def parse_results_file_estimate_suffstat(data) -> Prior:
             _n.append(data_n[f_idx][0][0][0])
 
         return PoissonPrior(np.array(_lambd), np.array(_n))
-
-
-class MatlabWorker:
-    DREX_INTERMEDIATE_SCRIPT_PATH = (Path(
-        __file__).parent.parent.parent.parent.absolute() / "./res/wrappers/d-rex/drex_intermediate_script.m").resolve()
-    SUMMARY_PLOT_SCRIPT_PATH = (Path(
-        __file__).parent.parent.parent.parent.absolute() / "./res/wrappers/d-rex/summary_plot.m").resolve()
-
-    AUTOSTOP_WAIT_TIME = 10 # seconds
-
-    def run_model(instructions_file_path: Path):
-        """
-        Triggers the execution of the wrapper script, running D-REX's run_DREX_model.m function.
-        :return: dictionary with MATLAB output
-        """
-        MatlabEngineWorker._autostart_matlab()
-        MatlabEngineWorker._matlab_work_in_progress += 1
-
-        MatlabEngineWorker._matlab_engine.addpath(str(MatlabWorker.DREX_INTERMEDIATE_SCRIPT_PATH.parent))  # load script
-        result = MatlabEngineWorker._matlab_engine.drex_intermediate_script(str(instructions_file_path))  # execute script
-
-        MatlabEngineWorker._matlab_work_in_progress -= 1
-        return result
-
-    def plot(input_file_path: Path):
-        """Triggers the execution of the script generating the comparison plot."""
-        PymatbridgeMatlabWorker._autostart_matlab()
-        PymatbridgeMatlabWorker._matlab_work_in_progress += 1
-
-        PymatbridgeMatlabWorker._matlab_instance.addpath(str(MatlabWorker.SUMMARY_PLOT_SCRIPT_PATH.parent)) # load script
-        result = PymatbridgeMatlabWorker._matlab_instance.summary_plot(str(input_file_path)) # execute script
-
-        PymatbridgeMatlabWorker._matlab_work_in_progress -= 1
-        return result
-
-class MatlabEngineWorker:
-    _matlab_engine = None
-    _matlab_engine_running = False
-    _matlab_last_action = None
-    _matlab_work_in_progress = 0
-
-    def _start_matlab():
-        if MatlabEngineWorker._matlab_engine == None:
-            MatlabEngineWorker._matlab_engine = matlab.engine.start_matlab()
-            MatlabEngineWorker._matlab_engine_running = True
-            MatlabEngineWorker._autostop_thread = threading.Thread(target=MatlabEngineWorker._autostop_matlab_thread_func)
-            MatlabEngineWorker._autostop_thread.start()
-
-    def _stop_matlab():
-        if MatlabEngineWorker._matlab_engine != None:
-            MatlabEngineWorker._matlab_engine.exit()
-            MatlabEngineWorker._matlab_engine_running = False
-            MatlabEngineWorker._matlab_engine = None
-
-    def restart_matlab():
-        MatlabEngineWorker._stop_matlab()
-        MatlabEngineWorker._start_matlab()
-
-    def _autostart_matlab():
-        MatlabEngineWorker._matlab_last_action = datetime.now()
-        if MatlabEngineWorker._matlab_engine_running != True:
-            MatlabEngineWorker._start_matlab()
-
-    def _autostop_matlab_thread_func():
-        sleep_time = max(MatlabWorker.AUTOSTOP_WAIT_TIME / 5.0, 1) # seconds until next check; once every >=1s
-        while (MatlabEngineWorker._matlab_engine != None):
-            now = datetime.now()
-            if MatlabEngineWorker._matlab_work_in_progress <= 0 and\
-                    (now - MatlabEngineWorker._matlab_last_action).total_seconds() >= MatlabWorker.AUTOSTOP_WAIT_TIME:
-                MatlabEngineWorker._stop_matlab()
-            time.sleep(sleep_time)
-
-class PymatbridgeMatlabWorker:
-    _matlab_instance = None
-    _matlab_instance_running = False
-    _matlab_last_action = None
-    _matlab_work_in_progress = 0
-
-    def _start_matlab(matlab_executable_path = str(Config().matlab_path())):
-        if PymatbridgeMatlabWorker._matlab_instance == None:
-            PymatbridgeMatlabWorker._matlab_instance = pymatbridge.Matlab(executable=matlab_executable_path, startup_options="-nodisplay -nodesktop -nosplash")
-            PymatbridgeMatlabWorker._matlab_instance.start()
-            PymatbridgeMatlabWorker._matlab_instance_running = True
-            PymatbridgeMatlabWorker._autostop_thread = threading.Thread(target=PymatbridgeMatlabWorker._autostop_matlab_thread_func)
-            PymatbridgeMatlabWorker._autostop_thread.start()
-
-    def _stop_matlab():
-        if PymatbridgeMatlabWorker._matlab_instance != None:
-            PymatbridgeMatlabWorker._matlab_instance.exit()
-            PymatbridgeMatlabWorker._matlab_instance_running = False
-            PymatbridgeMatlabWorker._matlab_instance = None
-
-    def restart_matlab():
-        PymatbridgeMatlabWorker._stop_matlab()
-        PymatbridgeMatlabWorker._start_matlab()
-
-    def _autostart_matlab():
-        PymatbridgeMatlabWorker._matlab_last_action = datetime.now()
-        if PymatbridgeMatlabWorker._matlab_instance_running != True:
-            PymatbridgeMatlabWorker._start_matlab()
-
-    def _autostop_matlab_thread_func():
-        sleep_time = max(MatlabWorker.AUTOSTOP_WAIT_TIME / 5.0, 1) # seconds until next check; once every >=1s
-        while (PymatbridgeMatlabWorker._matlab_instance != None):
-            now = datetime.now()
-            if PymatbridgeMatlabWorker._matlab_work_in_progress <= 0 and\
-                    (now - PymatbridgeMatlabWorker._matlab_last_action).total_seconds() >= MatlabWorker.AUTOSTOP_WAIT_TIME:
-                PymatbridgeMatlabWorker._stop_matlab()
-            time.sleep(sleep_time)

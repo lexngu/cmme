@@ -1,10 +1,12 @@
 import numbers
 from pathlib import Path
-from .base import Prior, GaussianPrior, DistributionType
-from .binding import MatlabWorker, InstructionsFile, ResultsFile, parse_results_file, PriorInstructionsFile
+from .base import Prior, DistributionType
+from .binding import InstructionsFile, ResultsFile, parse_results_file
+from .worker import MatlabWorker
 from .util import auto_convert_input_sequence, drex_default_instructions_file_path, drex_default_results_file_path
 import numpy as np
 
+# TODO GMM has a paramater "beta", which is not a prior parameter, but a main function's parameter
 
 class DREXPriorBuilder:
     def __init__(self):
@@ -152,6 +154,7 @@ class DREXInstructionBuilder:
         self._change_decision_threshold = change_decision_threshold
         return self
 
+
 class DREXModel:
     """
     High-level interface for using D-REX.
@@ -162,33 +165,19 @@ class DREXModel:
         """Creates a D-REX instance with D-REX's current default values"""
         self.instance = instance
 
-    def calculate_prior(self, drex_prior_builder: DREXPriorBuilder,
-                        instructions_file_path = drex_default_instructions_file_path("prior"),
-                        results_file_path = drex_default_results_file_path("prior")) -> Prior:
-        drex_prior_builder.assert_is_valid()
-        instructions_file = PriorInstructionsFile(instructions_file_path, results_file_path,
-                                                  drex_prior_builder._input_sequence, drex_prior_builder._distribution_type,
-                                                  drex_prior_builder._D, drex_prior_builder._max_ncomp)
-        instructions_file.write_to_mat()
-        results = MatlabWorker.run_model(instructions_file_path)
-        prior = parse_results_file(results['results_file_path'])
-        return prior
-
-
-    def to_instructions_file(self, instructions_file_path = drex_default_instructions_file_path(), results_file_path = drex_default_results_file_path()) -> InstructionsFile:
+    def to_instructions_file(self, results_file_path = drex_default_results_file_path()) -> InstructionsFile:
         """
         Returns an instruction file object. To write it to disk, use its write_instructions_file() method
-        :param instructions_file_path: path to where the instructions file should be stored
         :param results_file_path:  path to where the results file should be stored
         :return: instructions file object
         """
-        return InstructionsFile(instructions_file_path, results_file_path,
+        return InstructionsFile(results_file_path,
                                 self.instance._input_sequence, self.instance._prior, self.instance._hazard, self.instance._memory, self.instance._maxhyp, self.instance._obsnz,
                                 self.instance._change_decision_threshold)
 
     def run(self, instructions_file_path : Path = drex_default_instructions_file_path(), results_file_path : Path = drex_default_results_file_path()) -> ResultsFile:
-        instructions_file = self.to_instructions_file(instructions_file_path, results_file_path)
-        instructions_file.write_to_mat()
+        instructions_file = self.to_instructions_file(results_file_path)
+        instructions_file.write_to_mat(instructions_file_path)
         results = MatlabWorker.run_model(instructions_file_path)
         results_file = parse_results_file(results['results_file_path'])
         return results_file

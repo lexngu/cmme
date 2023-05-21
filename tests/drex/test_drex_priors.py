@@ -15,15 +15,15 @@ def test_unprocessed_prior_with_prior_input_sequence_none_fails():
 def test_unprocessed_prior_prior_input_sequence_should_be_nparray():
     pis = [1, 2, 3]
     p = UnprocessedPrior(DistributionType.GAUSSIAN, pis)
-    assert isinstance(p._prior_input_sequence, ndarray)
-    assert p._prior_input_sequence.shape == (1, 3, 1)
+    assert isinstance(p.prior_input_sequence, ndarray)
+    assert p.prior_input_sequence.shape == (1, 3, 1)
     assert p.feature_count() == 1
     assert p.trials_count() == 1
 
     pis = [[[1, 2, 3], [11, 12, 13], [21, 22, 23]]]
     p = UnprocessedPrior(DistributionType.GAUSSIAN, pis)
-    assert isinstance(p._prior_input_sequence, ndarray)
-    assert p._prior_input_sequence.shape == (1, 3, 3)
+    assert isinstance(p.prior_input_sequence, ndarray)
+    assert p.prior_input_sequence.shape == (1, 3, 3)
     assert p.feature_count() == 3
     assert p.trials_count() == 1
 
@@ -32,8 +32,8 @@ def test_unprocessed_prior_prior_input_sequence_should_be_nparray():
         [[31, 32, 33], [41, 42, 43], [51, 52, 53]]
     ], dtype=object)
     p = UnprocessedPrior(DistributionType.GAUSSIAN, pis)
-    assert isinstance(p._prior_input_sequence, ndarray)
-    assert p._prior_input_sequence.shape == (2, 3, 3)
+    assert isinstance(p.prior_input_sequence, ndarray)
+    assert p.prior_input_sequence.shape == (2, 3, 3)
     assert p.feature_count() == 3
     assert p.trials_count() == 2
 

@@ -203,6 +203,8 @@ class UnprocessedPrior(Prior):
 
         # Check D
         if distribution == DistributionType.GMM:
+            if D == None:
+                D = 1
             if D != 1:
                 raise ValueError("D invalid! For distribution=GMM, D must be equal to 1.")
         elif distribution == DistributionType.GAUSSIAN:
@@ -229,9 +231,9 @@ class UnprocessedPrior(Prior):
 
         # Set attributes
         self._distribution = distribution
-        self._prior_input_sequence = pis
-        self._max_n_comp = max_n_comp
-        self._beta = beta
+        self.prior_input_sequence = pis
+        self.max_n_comp = max_n_comp
+        self.beta = beta
 
     def distribution_type(self):
         return self._distribution
