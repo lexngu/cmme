@@ -2,6 +2,9 @@ import csv
 import os
 from abc import ABC
 from pathlib import Path
+
+import pandas
+
 from cmme.config import Config
 from cmme.ppmdecay.base import ModelType
 from cmme.ppmdecay.util import list_to_str, str_to_list
@@ -39,40 +42,38 @@ class InstructionsFile(ABC):
     def write_instructions_file(self, instructions_file_path: Path):
         # TODO use generator for instructions_file_path
         data = {
-            "model_type": self._model_type.value,
-            "alphabet_levels": list_to_str(self._alphabet_levels),
-            "order_bound": self._order_bound,
-            "input_sequence": list_to_str(self._input_sequence),
-            "results_file_path": self._results_file_path
+            "model_type": [self._model_type.value],
+            "alphabet_levels": [list_to_str(self._alphabet_levels)],
+            "order_bound": [self._order_bound],
+            "input_sequence": [list_to_str(self._input_sequence)],
+            "results_file_path": [str(self._results_file_path)]
         }
         if isinstance(self, PPMSimpleInstructionsFile):
             data.update({
-                "shortest_deterministic": self._shortest_deterministic,
-                "exclusion": self._exclusion,
-                "update_exclusion": self._update_exclusion,
-                "escape": self._escape_method.value
+                "shortest_deterministic": [self._shortest_deterministic],
+                "exclusion": [self._exclusion],
+                "update_exclusion": [self._update_exclusion],
+                "escape": [self._escape_method.value]
             })
         elif isinstance(self, PPMDecayInstructionsFile):
             data.update({
-                "input_time_sequence": list_to_str(self._input_time_sequence),
-                "buffer_weight": self._buffer_weight,
-                "buffer_length_time": self._buffer_length_time,
-                "buffer_length_items": self._buffer_length_items,
-                "stm_weight": self._stm_weight,
-                "stm_duration": self._stm_duration,
-                "only_learn_from_buffer": self._only_learn_from_buffer,
-                "only_predict_from_buffer": self._only_predict_from_buffer,
-                "ltm_weight": self._ltm_weight,
-                "ltm_half_life": self._ltm_half_life,
-                "ltm_asymptote": self._ltm_asymptote,
-                "noise": self._noise,
-                "seed": self._seed
+                "input_time_sequence": [list_to_str(self._input_time_sequence)],
+                "buffer_weight": [self._buffer_weight],
+                "buffer_length_time": [self._buffer_length_time],
+                "buffer_length_items": [self._buffer_length_items],
+                "stm_weight": [self._stm_weight],
+                "stm_duration": [self._stm_duration],
+                "only_learn_from_buffer": [self._only_learn_from_buffer],
+                "only_predict_from_buffer": [self._only_predict_from_buffer],
+                "ltm_weight": [self._ltm_weight],
+                "ltm_half_life": [self._ltm_half_life],
+                "ltm_asymptote": [self._ltm_asymptote],
+                "noise": [self._noise],
+                "seed": [self._seed]
             })
 
-        with open(instructions_file_path, "w") as f:
-            csvwriter = csv.DictWriter(f, fieldnames=data.keys())
-            csvwriter.writeheader()
-            csvwriter.writerow(data)
+        df = pandas.DataFrame.from_dict(data)
+        df.to_feather(instructions_file_path)
 
         return instructions_file_path
 

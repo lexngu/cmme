@@ -1,9 +1,10 @@
 library(ppm)
+library(arrow, warn.conflicts = FALSE)
 ppmdecay_intermediate_script <- function(instructions_file_path) {
   # Read instructions file
-  instructions_file <- read.csv(instructions_file_path)
+  instructions_file <- arrow::read_feather(instructions_file_path)
   
-  model_type <- instructions_file$model # \in {SIMPLE, DECAY}
+  model_type <- instructions_file$model_type # \in {SIMPLE, DECAY}
   # Data type conversions
   if (model_type == "DECAY") {
     instructions_file$only_learn_from_buffer <- as.logical(instructions_file$only_learn_from_buffer)
@@ -61,8 +62,8 @@ ppmdecay_intermediate_script <- function(instructions_file_path) {
   results$distribution <- as.character(results$distribution)
 
   # Write results file data
-  results_file_data_path <- paste(gsub("\\.csv", "", instructions_file$results_file_path), "-data.csv", sep="")
-  write.csv(results, results_file_data_path)
+  results_file_data_path <- paste(gsub("\\.feather", "", instructions_file$results_file_path), "-data.feather", sep="")
+  write_feather(results, results_file_data_path)
   
   # Write results file
   meta_information = df <- data.frame(
@@ -82,3 +83,4 @@ ppmdecay_intermediate_script <- function(instructions_file_path) {
   # Return results_file_path
   return(instructions_file$results_file_path)
 }
+

@@ -14,12 +14,12 @@ def ppmdecay_default_instructions_file_path(alias = None):
     instructions_file_filename = datetime.now().isoformat().replace("-", "").replace(":", "").replace(".", "")
     instructions_file_filename = instructions_file_filename + "-ppmdecay-instructionsfile"
     instructions_file_filename = instructions_file_filename + "-" + alias if alias is not None else instructions_file_filename
-    instructions_file_filename = instructions_file_filename + ".csv"
+    instructions_file_filename = instructions_file_filename + ".feather"
     return Config().model_io_path() / instructions_file_filename
 
 def ppmdecay_default_results_file_path(alias = None):
     results_file_filename = datetime.now().isoformat().replace("-", "").replace(":", "").replace(".", "")
     results_file_filename = results_file_filename + "-ppmdecay-resultsfile"
     results_file_filename = results_file_filename + "-" + alias if alias is not None else results_file_filename
-    results_file_filename = results_file_filename + ".csv"
+    results_file_filename = results_file_filename + ".feather"
     return Config().model_io_path() / results_file_filename
