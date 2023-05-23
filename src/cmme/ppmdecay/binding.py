@@ -3,7 +3,7 @@ import os
 from abc import ABC
 from pathlib import Path
 
-import pandas
+import pandas as pd
 
 from cmme.config import Config
 from cmme.ppmdecay.base import ModelType
@@ -72,7 +72,7 @@ class InstructionsFile(ABC):
                 "seed": [self._seed]
             })
 
-        df = pandas.DataFrame.from_dict(data)
+        df = pd.DataFrame.from_dict(data)
         df.to_feather(instructions_file_path)
 
         return instructions_file_path
@@ -152,20 +152,19 @@ class ResultsMetaFile:
         entropies = []
         distributions = []
 
-        with open(self._results_file_data_path, 'r') as f:
-            csvreader = csv.DictReader(f)
-            for row in csvreader:
-                symbol = row["symbol"]
-                model_order = row["model_order"]
-                information_content = row["information_content"]
-                entropy = row["entropy"]
-                distribution = str_to_list(row["distribution"])
+        df = pd.read_feather(self._results_file_data_path)
+        for idx, row in df.iterrows():
+            symbol = row["symbol"]
+            model_order = row["model_order"]
+            information_content = row["information_content"]
+            entropy = row["entropy"]
+            distribution = str_to_list(row["distribution"])
 
-                symbols.append(symbol)
-                model_orders.append(int(model_order))
-                information_contents.append(float(information_content))
-                entropies.append(float(entropy))
-                distributions.append(list(map(float, distribution)))
+            symbols.append(symbol)
+            model_orders.append(int(model_order))
+            information_contents.append(float(information_content))
+            entropies.append(float(entropy))
+            distributions.append(list(map(float, distribution)))
 
         return PPMSimpleResultsFileData(self._results_file_data_path, symbols, model_orders, information_contents, entropies, distributions)
 
@@ -178,34 +177,32 @@ class ResultsMetaFile:
         entropies = []
         distributions = []
 
-        with open(self._results_file_data_path, 'r') as f:
-            csvreader = csv.DictReader(f)
-            for row in csvreader:
-                symbol = row["symbol"]
-                pos = row["pos"]
-                time = row["time"]
-                model_order = row["model_order"]
-                information_content = row["information_content"]
-                entropy = row["entropy"]
-                distribution = str_to_list(row["distribution"])
+        df = pd.read_feather(self._results_file_data_path)
+        for idx,row in df.iterrows():
+            symbol = row["symbol"]
+            pos = row["pos"]
+            time = row["time"]
+            model_order = row["model_order"]
+            information_content = row["information_content"]
+            entropy = row["entropy"]
+            distribution = str_to_list(row["distribution"])
 
-                symbols.append(symbol)
-                positions.append(int(pos))
-                times.append(float(time))
-                model_orders.append(int(model_order))
-                information_contents.append(float(information_content))
-                entropies.append(float(entropy))
-                distributions.append(list(map(float, distribution)))
+            symbols.append(symbol)
+            positions.append(int(pos))
+            times.append(float(time))
+            model_orders.append(int(model_order))
+            information_contents.append(float(information_content))
+            entropies.append(float(entropy))
+            distributions.append(list(map(float, distribution)))
 
         return PPMDecayResultsFileData(self._results_file_data_path, symbols, model_orders, information_contents, entropies, distributions, positions, times)
 
 def parse_results_meta_file(results_file_meta_path : Path):
-    with open(results_file_meta_path, 'r') as f:
-        csvreader = csv.DictReader(f)
-        for row in csvreader:
-            model_type = ModelType(row["model_type"])
-            alphabet_levels = str_to_list(row["alphabet_levels"])
-            instructions_file_path = row["instructions_file_path"]
-            results_file_data_path = row["results_file_data_path"]
+    df = pd.read_feather(results_file_meta_path)
+
+    model_type = ModelType(df["model_type"][0])
+    alphabet_levels = str_to_list(df["alphabet_levels"][0])
+    instructions_file_path = df["instructions_file_path"][0]
+    results_file_data_path = df["results_file_data_path"][0]
 
     return ResultsMetaFile(results_file_meta_path, model_type, alphabet_levels, instructions_file_path, results_file_data_path)
