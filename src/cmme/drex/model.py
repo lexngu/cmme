@@ -8,6 +8,7 @@ import numpy as np
 
 # TODO GMM has a paramater "beta", which is not a prior parameter, but a main function's parameter
 
+
 class DREXPriorBuilder:
     def __init__(self):
         # default values according to estimate_suffstat.m
