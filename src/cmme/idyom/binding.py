@@ -1,4 +1,6 @@
-from typing import Any, Tuple
+from pathlib import Path
+import pandas as pd
+from typing import Any, Tuple, Union
 import os
 import cl4py
 import re
@@ -8,7 +10,7 @@ from cmme.util import path_as_string_with_trailing_slash
 from .util import cl4py_cons_to_list
 
 
-def install_idyom(idyom_root_path, force_reset = False) -> Path:
+def install_idyom(idyom_root_path: Union[str, Path], force_reset = False) -> Path:
     """
     Installs idyom as quicklisp project, and initializes the database
     :param idyom_root_path:
@@ -157,3 +159,43 @@ class IDYOMBinding:
         alphabet = self._lisp_eval( tuple(cmd) )
         alphabet = list(map(lambda x: x, alphabet))  # convert Cons to list
         return alphabet
+
+
+def infer_target_viewpoints_target_viewpoint_values_and_used_source_viewpoints(fieldnames): # "used", because each target viewpoint may use only a subset of all provided source viewpoints
+    unrelatedFieldnames = ['dataset.id', 'melody.id', 'note.id', 'melody.name', 'vertint12', 'articulation', 'comma',
+                           'voice', 'ornament', 'dyn', 'phrase', 'bioi', 'deltast', 'accidental', 'mpitch', 'cpitch',
+                           'barlength', 'pulses', 'tempo', 'mode', 'keysig', 'dur', 'onset',
+                           'probability', 'information.content', 'entropy', 'information.gain',
+                           '']
+    remainingFieldnames = [o for o in fieldnames if o not in unrelatedFieldnames]
+
+    targetViewpoints = list(set(list(map(lambda o: o.split(".", 1)[0], remainingFieldnames))))
+
+    targetViewpointValues = dict()  # target viewpoint => list of values
+    for tv in targetViewpoints:
+        candidates = [o for o in remainingFieldnames if o.startswith(tv) and not any(
+            target in o for target in ["weight", "ltm", "stm", "probability", "information.content", "entropy"])]
+        values = list(map(lambda o: o.split(".")[1], candidates))  # note: leave it unsorted?
+        targetViewpointValues[tv] = values
+
+    usedSourceViewpoints = dict()  # target viewpoint => list of source viewpoints
+    for tv in targetViewpoints:
+        candidates = [o for o in remainingFieldnames if o.startswith(tv + ".order.stm.")]
+        usedSourceViewpoints[tv] = list(set(list(map(lambda o: o.split(".")[3], candidates))))
+
+    return targetViewpoints, targetViewpointValues, usedSourceViewpoints
+
+
+class IDYOMResultsFile:
+    def __init__(self, df: pd.DataFrame):
+        self.df = df
+        self.targetViewpoints, self.targetViewpointValues, self.usedSourceViewpoints = infer_target_viewpoints_target_viewpoint_values_and_used_source_viewpoints(df.columns.values.tolist())
+
+
+def parse_idyom_results(file_path: Path):
+    df = pd.read_csv(file_path, sep=" ")
+
+    unnamedColumns = df.columns.str.match("Unnamed")
+    df = df.loc[:,~unnamedColumns] # remove unnamed columns
+
+    return IDYOMResultsFile(df)

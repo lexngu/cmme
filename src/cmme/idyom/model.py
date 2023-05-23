@@ -1,10 +1,9 @@
+import csv
 import tempfile
-import os
-from .base import *
-from .binding import IDYOMBinding
-from cmme.util import flatten_list
-from ..config import Config
+
+from .binding import *
 from .util import *
+from ..util import flatten_list
 
 
 class IDYOMInstructionBuilder:
@@ -274,6 +273,7 @@ class IDYOMInstructionBuilder:
 
         return leb.build()
 
+
 class IDYOMModel:
     def __init__(self, idyom_root_path: Path = Config().idyom_root_path(), idyom_database_path: Path = Config().idyom_database_path()):
         self.idyom_binding = IDYOMBinding(str(idyom_root_path.resolve()), str(idyom_database_path.resolve()))
@@ -310,9 +310,23 @@ class IDYOMModel:
         return self.idyom_binding.all_datasets()
 
     def run(self, instruction_builder: IDYOMInstructionBuilder) -> IDYOMResultsFile:
+        # log execution string
+        results_file_path = os.path.join(instruction_builder._output_options["output_path"], self.idyom_binding.eval(instruction_builder.build_for_cl4py_filename_inference()))
+        instructions_file_data = {
+            "cmd": instruction_builder.build_for_lisp(),
+            "datasets": self.all_datasets(),
+            "results_file_path": results_file_path
+        }
+
+        instructions_file_path = idyom_default_instructions_file_path()
+        with open(instructions_file_path, "w") as f:
+            csvwriter = csv.DictWriter(f, fieldnames=instructions_file_data.keys())
+            csvwriter.writeheader()
+            csvwriter.writerow(instructions_file_data)
+        print("This IDyOM run is documented in {}.".format(str(instructions_file_path)))
+
         self.idyom_binding.eval( instruction_builder.build_for_cl4py() )
 
-        filename = os.path.join(instruction_builder._output_options["output_path"], self.idyom_binding.eval( instruction_builder.build_for_cl4py_filename_inference() ))
-        results = parse_idyom_results(filename)
+        results = parse_idyom_results(results_file_path)
 
         return results

@@ -1,5 +1,4 @@
-from cmme.idyom.base import IDYOMModelValue, IDYOMEscape
-from cmme.idyom.model import IDYOMInstructionBuilder
+from cmme.idyom.model import *
 
 
 def test_default_idyom_instruction_builder_uses_default_values():
@@ -30,3 +29,19 @@ def test_default_idyom_instruction_builder_uses_default_values():
         assert select_options['min_links'] == 2
     assert output_options['overwrite'] == False
     assert output_options['separator'] == " "
+
+
+def test_idyom_run_succeeds():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        install_idyom(tmpdir)
+        idyom_model = IDYOMModel(Config().idyom_root_path(), Path(tmpdir) / Path("./db/database.sqlite"))
+
+        midi_dir_path = str(Path(__file__).parent.parent.resolve() / Path("sample_files/idyom-midi")) + "/"
+        dataset = idyom_model.import_midi(midi_dir_path, "test")
+
+        idyomib = IDYOMInstructionBuilder()
+        idyomib.source_viewpoints([BasicViewpoint.CPITCH]).target_viewpoints([BasicViewpoint.CPITCH]).dataset(dataset)
+
+        idyom_results_file = idyom_model.run(idyomib)
+
+        assert idyom_results_file.df is not None
