@@ -1,6 +1,6 @@
 from cmme.drex.base import DistributionType, UnprocessedPrior
-from cmme.drex.model import DREXModel, DREXInstructionBuilder
-from cmme.ppmdecay.base import ModelType
+from cmme.drex.model import DREXInstructionBuilder
+from cmme.drex.worker import DREXModel
 from cmme.ppmdecay.model import PPMModel, PPMDecayInstance
 from cmme.visualization.data_frame import DataFrame
 
@@ -14,8 +14,9 @@ def test_init_succeeds():
     drex_prior = UnprocessedPrior(DistributionType.GAUSSIAN, [1, 1, 1.5, 2], 2)
     drex_instance = DREXInstructionBuilder()
     drex_instance.prior(drex_prior).input_sequence(input_sequence)
-    drex_model = DREXModel(drex_instance)
-    drex_results_file = drex_model.run()
+    instructions_file_path = drex_instance.build_instructions_file().write_to_mat()
+    drex_model = DREXModel()
+    drex_results_file = drex_model.run(instructions_file_path)
     data_frame = DataFrame(ppm_results_file, drex_results_file, input_sequence)
 
     print(data_frame)

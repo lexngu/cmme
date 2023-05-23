@@ -12,7 +12,7 @@ def trialtimefeature_sequence_as_multitrial_cell(input_sequence):
     :param input_sequence: np.array, trial x time x feature
     :return: trial x time x feature
     """
-    if input_sequence.dtype == np.object:
+    if input_sequence.dtype == object:
         res = np.empty((input_sequence.shape[0],), dtype=object)
         for idx,e in enumerate(input_sequence):
                 res[idx] = e.tolist()
@@ -26,7 +26,7 @@ def trialtimefeature_sequence_as_singletrial_array(input_sequence):
     :param input_sequence: np.array, trial x time x feature
     :return: time x feature
     """
-    if input_sequence.dtype == np.object and input_sequence.shape[0] == 1:
+    if input_sequence.dtype == object and input_sequence.shape[0] == 1:
         return np.array(input_sequence[0].tolist(), dtype=float)
     else:
         raise ValueError("input_sequence should be a np.array(dtype=object) of three dimensions, and with a single trial.")
@@ -59,7 +59,7 @@ def auto_convert_input_sequence(input_sequence):
     :param input_sequence: list or np.array
     :return: np.array with shape (trial,)
     """
-    if type(input_sequence) is np.ndarray and input_sequence.dtype == np.object:
+    if type(input_sequence) is np.ndarray and input_sequence.dtype == object:
         # nothing to do, because already np.array(dtype=object)
         return input_sequence
 
