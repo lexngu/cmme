@@ -199,7 +199,13 @@ class UnprocessedPrior(Prior):
         pis = auto_convert_input_sequence(prior_input_sequence)
 
         # Check prior_input_sequence
-        [prior_input_sequence_trials, prior_input_sequence_times, prior_input_sequence_features] = pis.shape
+        if len(pis.shape) == 3:
+            [prior_input_sequence_trials, prior_input_sequence_times, prior_input_sequence_features] = pis.shape
+        elif len(pis.shape) == 1:
+            [prior_input_sequence_trials] = pis.shape
+            [prior_input_sequence_times, prior_input_sequence_features] = pis[0].shape
+        else:
+            raise ValueError("Could not convert input sequence.")
 
         # Check D
         if distribution == DistributionType.GMM:

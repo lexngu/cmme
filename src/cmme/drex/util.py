@@ -12,10 +12,10 @@ def trialtimefeature_sequence_as_multitrial_cell(input_sequence):
     :param input_sequence: np.array, trial x time x feature
     :return: trial x time x feature
     """
-    if input_sequence.dtype == np.object and len(input_sequence.shape) == 3:
+    if input_sequence.dtype == np.object:
         res = np.empty((input_sequence.shape[0],), dtype=object)
         for idx,e in enumerate(input_sequence):
-            res[idx] = e.tolist()
+                res[idx] = e.tolist()
         return res
     else:
         raise ValueError("input_sequence should be a np.array(dtype=object) of three dimensions.")
@@ -26,7 +26,7 @@ def trialtimefeature_sequence_as_singletrial_array(input_sequence):
     :param input_sequence: np.array, trial x time x feature
     :return: time x feature
     """
-    if input_sequence.dtype == np.object and len(input_sequence.shape) == 3 and input_sequence.shape[0] == 1:
+    if input_sequence.dtype == np.object and input_sequence.shape[0] == 1:
         return np.array(input_sequence[0].tolist(), dtype=float)
     else:
         raise ValueError("input_sequence should be a np.array(dtype=object) of three dimensions, and with a single trial.")
@@ -57,7 +57,7 @@ def auto_convert_input_sequence(input_sequence):
     3) [[1, 2, 3, ...], [1, 2, 3, ...], ...] => input_sequence with 1 trial and n features
     4) [[[1, 2, 3, ...], [1, 2, 3, ...], ...], [...], ...] => input_sequence with n trials and m features
     :param input_sequence: list or np.array
-    :return: np.array with shape (time, feature)
+    :return: np.array with shape (trial,)
     """
     if type(input_sequence) is np.ndarray and input_sequence.dtype == np.object:
         # nothing to do, because already np.array(dtype=object)
@@ -74,12 +74,13 @@ def auto_convert_input_sequence(input_sequence):
         elif isinstance(firstlayer_firstelement, list):
             secondlayer_firstelement = firstlayer_firstelement[0]
 
-            if not isinstance(secondlayer_firstelement, list):
-                raise ValueError("input_sequence with lists as elements (for each trial) must contain lists only (for each time).")
+            if isinstance(secondlayer_firstelement, numbers.Number):
+                # multi-trial, but single feature
+                input_sequence = [[trial] for trial in input_sequence]
 
             trials = list()
             for trial in input_sequence:
-                trials.append(np.array(trial, dtype=float).T.tolist())
+                trials.append(np.array(trial, dtype=float).T)
             return np.array(trials, dtype=object) # trial x time x feature
     else:
         raise ValueError("input_sequence invalid! List expected.")

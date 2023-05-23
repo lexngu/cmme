@@ -5,6 +5,8 @@ from pathlib import Path
 
 import matlab.engine
 from pymatbridge import pymatbridge
+
+from .binding import ResultsFile, parse_results_file
 from ..config import Config
 
 
@@ -117,3 +119,18 @@ class PymatbridgeMatlabWorker:
                     (now - PymatbridgeMatlabWorker._matlab_last_action).total_seconds() >= MatlabWorker.AUTOSTOP_WAIT_TIME:
                 PymatbridgeMatlabWorker._stop_matlab()
             time.sleep(sleep_time)
+
+
+class DREXModel:
+    """
+    High-level interface for using D-REX.
+    Using +instance+, one can hyper-parameterize D-REX.
+    """
+
+    def __init__(self):
+        pass
+
+    def run(self, instructions_file_path) -> ResultsFile:
+        results = MatlabWorker.run_model(instructions_file_path)
+        results_file = parse_results_file(results['results_file_path'])
+        return results_file

@@ -7,7 +7,7 @@ import scipy.io as sio
 
 from .base import DistributionType, Prior, UnprocessedPrior, GaussianPrior, LognormalPrior, GmmPrior, PoissonPrior
 from .util import auto_convert_input_sequence, trialtimefeature_sequence_as_multitrial_cell, \
-    trialtimefeature_sequence_as_singletrial_array
+    trialtimefeature_sequence_as_singletrial_array, drex_default_instructions_file_path
 
 
 def to_mat(data, file_path):
@@ -64,7 +64,7 @@ class InstructionsFile:
         self.change_decision_threshold = change_decision_threshold
         """Threshold used for change detector"""
 
-    def write_to_mat(self, instructions_file_path: Path) -> Path:
+    def write_to_mat(self, instructions_file_path: Path = drex_default_instructions_file_path()) -> Path:
         """
         Writes the instructions file to disk.
         :return: Path to instructions file

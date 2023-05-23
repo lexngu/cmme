@@ -1,6 +1,7 @@
-from cmme.drex.base import UnprocessedPrior
+from cmme.drex.base import UnprocessedPrior, DistributionType
 from cmme.drex.model import *
-from cmme.drex.util import trialtimefeature_sequence_as_singletrial_array
+from cmme.drex.util import trialtimefeature_sequence_as_singletrial_array, drex_default_instructions_file_path
+from cmme.drex.worker import DREXModel
 
 
 def test_default_drex_instance_uses_original_default_values():
@@ -26,7 +27,7 @@ def test_to_instructions_file_uses_specified_values():
     prior_beta = 0.02
     prior = UnprocessedPrior(prior_distribution_type, prior_input_sequence, prior_D,
                              prior_max_n_comp, prior_beta)
-    input_sequence = auto_convert_input_sequence([1,2,3])
+    input_sequence = auto_convert_input_sequence([1, 2, 3])
     hazard = 0.12
     memory = 22
     maxhyp = 11
@@ -40,8 +41,7 @@ def test_to_instructions_file_uses_specified_values():
     drex_instance.change_decision_threshold(change_decision_threshold)
     drex_instance.prior(prior)
 
-    drex_model = DREXModel(drex_instance)
-    instructions_file = drex_model.to_instructions_file(results_file_path)
+    instructions_file = drex_instance.build_instructions_file(results_file_path)
 
     assert instructions_file.results_file_path == results_file_path
     assert np.array_equal(instructions_file.input_sequence, input_sequence)
@@ -60,7 +60,7 @@ def test_run_succeeds():
     prior_max_n_comp = 9
     prior_beta = 0.02
     prior = UnprocessedPrior(prior_distribution_type, prior_input_sequence, prior_D,
-                                                 prior_max_n_comp, prior_beta)
+                             prior_max_n_comp, prior_beta)
     drex_instance = DREXInstructionBuilder()
 
     input_sequence = auto_convert_input_sequence([1, 2, 3])
@@ -80,8 +80,9 @@ def test_run_succeeds():
     instructions_file_path = drex_default_instructions_file_path()
     results_file_path = drex_default_results_file_path()
 
-    drex_model = DREXModel(drex_instance)
-    results_file = drex_model.run(instructions_file_path, results_file_path)
+    drex_model = DREXModel()
+    drex_instance.build_instructions_file(results_file_path).write_to_mat(instructions_file_path)
+    results_file = drex_model.run(instructions_file_path)
 
     assert results_file.instructions_file_path == str(instructions_file_path)
     assert np.array_equal(results_file.input_sequence, trialtimefeature_sequence_as_singletrial_array(input_sequence))
