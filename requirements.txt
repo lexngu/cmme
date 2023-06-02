@@ -1,10 +1,11 @@
-pandas
 numpy
 scipy
+pandas
 rpy2
+zmq
 pyzmq
 # matlab-engine
 matplotlib
 pymatbridge
-cl4py
+# cl4py - patched version required!
 pyarrow
