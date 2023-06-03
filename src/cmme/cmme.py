@@ -4,8 +4,8 @@ from cmme.config import Config
 from cmme.drex.binding import ResultsFile
 from cmme.drex.model import DREXInstructionBuilder
 from cmme.drex.worker import DREXModel
-from cmme.idyom.base import Dataset, BasicViewpoint, IDYOMResultsFile
-from cmme.idyom.binding import IDYOMBinding
+from cmme.idyom.base import Dataset, BasicViewpoint
+from cmme.idyom.binding import IDYOMBinding, IDYOMResultsFile
 from cmme.idyom.model import IDYOMInstructionBuilder, IDYOMModel
 from cmme.ppmdecay.base import ModelType
 from cmme.ppmdecay.binding import ResultsMetaFile

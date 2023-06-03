@@ -84,7 +84,7 @@ class DataFrame:
 
         return data_frame
 
-    def write_to_mat(self, output_file_path = cmme_default_plot_instructions_file_path()):
+    def write_to_mat(self, instructions_file_path = cmme_default_plot_instructions_file_path()):
         data = {
             "ppm_results_file_path": str(self.ppm_results_file.results_file_meta_path),
             "drex_results_file_path": str(self.drex_results_file.results_file_path),
@@ -96,8 +96,8 @@ class DataFrame:
         data["data_frame"]["drex_cd_changepoint"] = data["data_frame"]["drex_cd_changepoint"][0]
         data["data_frame"]["drex_cd_threshold"] = data["data_frame"]["drex_cd_threshold"][0]
 
-        sio.savemat(str(output_file_path), data) # Note: uses scipy.io because of easier use with np.arrays
-        return output_file_path
+        sio.savemat(str(instructions_file_path), data) # Note: uses scipy.io because of easier use with np.arrays
+        return instructions_file_path
 
 
 def calc_drex_entropy(ensemble) -> float:

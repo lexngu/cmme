@@ -1,5 +1,6 @@
 from datetime import datetime
 from enum import Enum
+from pathlib import Path
 
 from cl4py import Cons
 
@@ -92,9 +93,8 @@ def cl4py_cons_to_list(cons):
     return result
 
 
-def idyom_default_instructions_file_path(alias = None):
-    instructions_file_filename = datetime.now().isoformat().replace("-", "").replace(":", "").replace(".", "")
-    instructions_file_filename = instructions_file_filename + "-idyom-instructionsfile"
+def idyom_default_instructions_file_path(alias: str = None, io_path: Path = Config().model_io_path()):
+    instructions_file_filename = "idyom-instructionsfile"
     instructions_file_filename = (instructions_file_filename + "-" + alias) if alias is not None else instructions_file_filename
     instructions_file_filename = instructions_file_filename + ".csv"
-    return Config().model_io_path() / instructions_file_filename
+    return io_path / instructions_file_filename

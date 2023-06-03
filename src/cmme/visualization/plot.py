@@ -7,7 +7,7 @@ from cmme.drex.worker import MatlabWorker
 from cmme.visualization.data_frame import DataFrame
 import numpy as np
 
-from cmme.visualization.util.util import cmme_default_plot_output_file_path
+from cmme.visualization.util.util import cmme_default_plot_output_file_path, cmme_default_plot_instructions_file_path
 
 
 class Plot(ABC):
@@ -22,8 +22,8 @@ class MatlabPlot(Plot):
     def __init__(self, data_frame: DataFrame):
         super().__init__(data_frame)
 
-    def plot(self, plot_output_file_path = cmme_default_plot_output_file_path()):
-        data_frame_path = self.data_frame.write_to_mat()
+    def plot(self, plot_output_file_path = cmme_default_plot_output_file_path(), instructions_file_path = cmme_default_plot_instructions_file_path()):
+        data_frame_path = self.data_frame.write_to_mat(instructions_file_path)
         result = MatlabWorker.plot(data_frame_path)
         result_figures = result['content']['figures']
         res = []

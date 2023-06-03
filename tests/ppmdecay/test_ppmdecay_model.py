@@ -1,3 +1,6 @@
+import tempfile
+from pathlib import Path
+
 from cmme.ppmdecay.model import *
 from cmme.ppmdecay.util import str_to_list, list_to_str
 
@@ -35,20 +38,21 @@ def test_run_ppm_simple_succeeds():
     shortest_deterministic = False
     update_exclusion = False
     exclusion = False
-    instructions_file_path = ppmdecay_default_instructions_file_path("test")
-    results_file_path = ppmdecay_default_results_file_path("test")
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        instructions_file_path = ppmdecay_default_instructions_file_path(None, Path(tmpdirname))
+        results_file_path = ppmdecay_default_results_file_path(None, Path(tmpdirname))
 
-    ppmsimple_instance = PPMSimpleInstance()
-    ppmsimple_instance.alphabet_levels(alphabet_levels)\
-        .order_bound(order_bound).input_sequence(input_sequence)\
-        .escape_method(escape_method).shortest_deterministic(shortest_deterministic).update_exclusion(update_exclusion).exclusion(exclusion)
+        ppmsimple_instance = PPMSimpleInstance()
+        ppmsimple_instance.alphabet_levels(alphabet_levels)\
+            .order_bound(order_bound).input_sequence(input_sequence)\
+            .escape_method(escape_method).shortest_deterministic(shortest_deterministic).update_exclusion(update_exclusion).exclusion(exclusion)
 
-    ppm_model = PPMModel(ppmsimple_instance)
-    results_meta_file = ppm_model.run(instructions_file_path, results_file_path)
+        ppm_model = PPMModel(ppmsimple_instance)
+        results_meta_file = ppm_model.run(instructions_file_path, results_file_path)
 
-    assert results_meta_file._model_type == ModelType.SIMPLE
-    assert results_meta_file._alphabet_levels == str_to_list(list_to_str(alphabet_levels))
-    assert results_meta_file._instructions_file_path == str(instructions_file_path)
+        assert results_meta_file._model_type == ModelType.SIMPLE
+        assert results_meta_file._alphabet_levels == str_to_list(list_to_str(alphabet_levels))
+        assert results_meta_file._instructions_file_path == str(instructions_file_path)
 
 
 
@@ -69,21 +73,23 @@ def test_run_ppm_decay_succeeds():
     ltm_asymptote = 0.1
     noise = 0.05
     seed = 999
-    instructions_file_path = ppmdecay_default_instructions_file_path("test")
-    results_file_path = ppmdecay_default_results_file_path("test")
 
-    ppmdecay_instance = PPMDecayInstance()
-    ppmdecay_instance.alphabet_levels(alphabet_levels) \
-        .order_bound(order_bound).input_sequence(input_sequence).input_time_sequence(input_time_sequence)\
-        .buffer_weight(buffer_weight).buffer_length_time(buffer_length_time).buffer_length_items(buffer_length_items)\
-        .only_learn_from_buffer(only_learn_from_buffer).only_predict_from_buffer(only_predict_from_buffer)\
-        .stm_weight(stm_weight).stm_duration(stm_duration)\
-        .ltm_weight(ltm_weight).ltm_half_life(ltm_half_life).ltm_asymptote(ltm_asymptote)\
-        .noise(noise).seed(seed)
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        instructions_file_path = ppmdecay_default_instructions_file_path(None, Path(tmpdirname))
+        results_file_path = ppmdecay_default_results_file_path(None, Path(tmpdirname))
 
-    ppm_model = PPMModel(ppmdecay_instance)
-    results_meta_file = ppm_model.run(instructions_file_path, results_file_path)
+        ppmdecay_instance = PPMDecayInstance()
+        ppmdecay_instance.alphabet_levels(alphabet_levels) \
+            .order_bound(order_bound).input_sequence(input_sequence).input_time_sequence(input_time_sequence)\
+            .buffer_weight(buffer_weight).buffer_length_time(buffer_length_time).buffer_length_items(buffer_length_items)\
+            .only_learn_from_buffer(only_learn_from_buffer).only_predict_from_buffer(only_predict_from_buffer)\
+            .stm_weight(stm_weight).stm_duration(stm_duration)\
+            .ltm_weight(ltm_weight).ltm_half_life(ltm_half_life).ltm_asymptote(ltm_asymptote)\
+            .noise(noise).seed(seed)
 
-    assert results_meta_file._model_type == ModelType.DECAY
-    assert results_meta_file._alphabet_levels == str_to_list(list_to_str(alphabet_levels))
-    assert results_meta_file._instructions_file_path == str(instructions_file_path)
+        ppm_model = PPMModel(ppmdecay_instance)
+        results_meta_file = ppm_model.run(instructions_file_path, results_file_path)
+
+        assert results_meta_file._model_type == ModelType.DECAY
+        assert results_meta_file._alphabet_levels == str_to_list(list_to_str(alphabet_levels))
+        assert results_meta_file._instructions_file_path == str(instructions_file_path)

@@ -1,3 +1,6 @@
+import tempfile
+from pathlib import Path
+
 from cmme.drex.base import UnprocessedPrior, DistributionType
 from cmme.drex.model import *
 from cmme.drex.util import trialtimefeature_sequence_as_singletrial_array, drex_default_instructions_file_path
@@ -76,16 +79,16 @@ def test_run_succeeds():
     drex_instance.obsnz(obsnz)
     drex_instance.change_decision_threshold(change_decision_threshold)
     drex_instance.prior(prior)
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        instructions_file_path = drex_default_instructions_file_path(None, Path(tmpdirname))
+        results_file_path = drex_default_results_file_path(None, Path(tmpdirname))
 
-    instructions_file_path = drex_default_instructions_file_path()
-    results_file_path = drex_default_results_file_path()
+        drex_model = DREXModel()
+        drex_instance.build_instructions_file(results_file_path).write_to_mat(instructions_file_path)
+        results_file = drex_model.run(instructions_file_path)
 
-    drex_model = DREXModel()
-    drex_instance.build_instructions_file(results_file_path).write_to_mat(instructions_file_path)
-    results_file = drex_model.run(instructions_file_path)
-
-    assert results_file.instructions_file_path == str(instructions_file_path)
-    assert np.array_equal(results_file.input_sequence, trialtimefeature_sequence_as_singletrial_array(input_sequence))
+        assert results_file.instructions_file_path == str(instructions_file_path)
+        assert np.array_equal(results_file.input_sequence, trialtimefeature_sequence_as_singletrial_array(input_sequence))
 
 
 def test_drex_instance_automatically_sets_obsnz_according_to_nfeatures():
