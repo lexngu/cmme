@@ -24,17 +24,7 @@ ppmdecay_intermediate_script <- function(instructions_file_path) {
   # Parse alphabet_levels, therefore split string using the separator ", "
   alphabet_levels <- strsplit(instructions_file$alphabet_levels, ", ")[[1]]
   
-  # Parse input_time_seq (if DECAY)
-  if (model_type == "DECAY") {
-    input_time_seq <- strsplit(instructions_file$input_time_sequence, ", ")[[1]]
-    input_time_seq <- as.numeric(input_time_seq)
-  }
-  
-  # Parse input_sequence
-  input_sequence <- strsplit(instructions_file$input_sequence, ", ")[[1]]
-  input_sequence <- factor(input_sequence, levels = alphabet_levels)
-  
-  # Invoke model
+  # Instantiate model
   if (model_type == "DECAY") {
     mod <- new_ppm_decay(alphabet_levels = alphabet_levels,
 
@@ -48,7 +38,6 @@ ppmdecay_intermediate_script <- function(instructions_file_path) {
                          noise = instructions_file$noise, 
                          seed = instructions_file$seed
                          )
-    results <- model_seq(mod, input_sequence, time=input_time_seq)
   } else if (model_type == "SIMPLE") {
     mod <- new_ppm_simple(alphabet_levels = alphabet_levels,
                           
@@ -59,13 +48,34 @@ ppmdecay_intermediate_script <- function(instructions_file_path) {
                           update_exclusion = instructions_file$update_exclusion,
                           escape = instructions_file$escape
                           )
-    results <- model_seq(mod, input_sequence)
+  }
+  
+  # Parse input_sequence_trials
+  input_sequence_trials <- instructions_file$input_sequence[[1]]
+  
+  # Parse input_time_seq_trials (if DECAY)
+  if (model_type == "DECAY") {
+    input_time_seq_trials <- instructions_file$input_time_sequence
+  }
+  
+  # For each trial
+  results <- list()
+  for (i in 1:length(input_sequence_trials)) {
+    input_sequence <- factor(input_sequence_trials[[i]], levels = alphabet_levels)
+    
+    if (model_type == "DECAY") {
+      input_time_seq <- as.numeric(input_time_seq_trials[[i]])
+      
+      results[[i]] <- model_seq(mod, input_sequence, time=input_time_seq)
+    } else if (model_type == "SIMPLE") {
+      results[[i]] <- model_seq(mod, input_sequence)
+    }
+    
+    results[[i]]$trial_idx <- i
   }
 
-  
-  # Convert $distribution to string of comma separated values
-  results$distribution <- lapply(results$distribution, toString)
-  results$distribution <- as.character(results$distribution)
+  # Convert results list to single data frame
+  results <- do.call("rbind", results)
 
   # Write results file data
   results_file_data_path <- paste(gsub("\\.feather", "", results_file_path), "-data.feather", sep="")

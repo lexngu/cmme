@@ -2,7 +2,7 @@ import tempfile
 from pathlib import Path
 
 from cmme.ppmdecay.model import *
-from cmme.ppmdecay.util import str_to_list, list_to_str
+from cmme.ppmdecay.util import str_to_list, list_to_str, auto_convert_input_sequence
 
 
 def test_default_ppm_simple_instance_uses_original_default_values():
@@ -93,3 +93,32 @@ def test_run_ppm_decay_succeeds():
         assert results_meta_file._model_type == ModelType.DECAY
         assert results_meta_file._alphabet_levels == str_to_list(list_to_str(alphabet_levels))
         assert results_meta_file._instructions_file_path == str(instructions_file_path)
+
+def test_run_ppm_simple_with_multitrial_input_succeeds():
+    alphabet_levels = [1, 2, 3, 4, 5, 6]
+    input_sequence = [[1, 2, 3, 4, 5], [1, 1, 3, 2]]
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        instructions_file_path = ppmdecay_default_instructions_file_path(None, Path(tmpdirname))
+        results_file_path = ppmdecay_default_results_file_path(None, Path(tmpdirname))
+
+        ppmsimple_instance = PPMSimpleInstance()
+        ppmsimple_instance.alphabet_levels(alphabet_levels)\
+            .input_sequence(input_sequence)
+
+        ppm_model = PPMModel(ppmsimple_instance)
+        results_meta_file = ppm_model.run(instructions_file_path, results_file_path)
+        results_file_data = results_meta_file.results_file_dataa
+
+        assert results_meta_file._model_type == ModelType.SIMPLE
+        assert results_meta_file._alphabet_levels == str_to_list(list_to_str(alphabet_levels))
+        assert results_meta_file._instructions_file_path == str(instructions_file_path)
+        assert list(set(results_file_data.df["trial_idx"].tolist())) == [1, 2]
+        assert results_file_data.df[results_file_data.df["trial_idx"] == 1]["symbol"].tolist() == list(map(str, input_sequence[0]))
+        assert results_file_data.df[results_file_data.df["trial_idx"] == 2]["symbol"].tolist() == list(map(str, input_sequence[1]))
+
+def test_input_sequence():
+    iseq = ["a", "b", "c", "d"]
+    assert auto_convert_input_sequence(iseq) == [iseq]
+
+    iseq = [["a", "b", "c", "d"], ["e", "f", "g", "h"]]
+    assert auto_convert_input_sequence(iseq) == iseq

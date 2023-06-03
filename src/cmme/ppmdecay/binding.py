@@ -1,4 +1,3 @@
-import csv
 import os
 from abc import ABC
 from pathlib import Path
@@ -45,7 +44,7 @@ class InstructionsFile(ABC):
             "model_type": [self._model_type.value],
             "alphabet_levels": [list_to_str(self._alphabet_levels)],
             "order_bound": [self._order_bound],
-            "input_sequence": [list_to_str(self._input_sequence)],
+            "input_sequence": [self._input_sequence],
             "results_file_path": [str(self._results_file_path)]
         }
         if isinstance(self, PPMSimpleInstructionsFile):
@@ -57,7 +56,7 @@ class InstructionsFile(ABC):
             })
         elif isinstance(self, PPMDecayInstructionsFile):
             data.update({
-                "input_time_sequence": [list_to_str(self._input_time_sequence)],
+                "input_time_sequence": [self._input_time_sequence],
                 "buffer_weight": [self._buffer_weight],
                 "buffer_length_time": [self._buffer_length_time],
                 "buffer_length_items": [self._buffer_length_items],
@@ -111,26 +110,21 @@ class PPMDecayInstructionsFile(InstructionsFile):
 
         self._seed = seed
 
+
 class ResultsFileData(ABC):
-    def __init__(self, results_file_data_path, symbols, model_orders, information_contents, entropies, distributions):
+    def __init__(self, results_file_data_path, df):
         self.results_file_data_path = results_file_data_path
-        self.symbols = symbols
-        self.model_orders = model_orders
-        self.information_contents = information_contents
-        self.entropies = entropies
-        self.distributions = distributions
+        self.df = df
 
 
 class PPMSimpleResultsFileData(ResultsFileData):
-    def __init__(self, results_file_data_path, symbols, model_orders, information_contents, entropies, distributions):
-        super().__init__(results_file_data_path, symbols, model_orders, information_contents, entropies, distributions)
+    def __init__(self, results_file_data_path, df):
+        super().__init__(results_file_data_path, df)
 
 
 class PPMDecayResultsFileData(ResultsFileData):
-    def __init__(self, results_file_data_path, symbols, model_orders, information_contents, entropies, distributions, positions, times):
-        super().__init__(results_file_data_path, symbols, model_orders, information_contents, entropies, distributions)
-        self._positions = positions
-        self._times = times
+    def __init__(self, results_file_data_path, df):
+        super().__init__(results_file_data_path, df)
 
 
 class ResultsMetaFile:
@@ -146,56 +140,14 @@ class ResultsMetaFile:
             self.results_file_data = self._parse_ppm_decay_results_file_data()
 
     def _parse_ppm_simple_results_file_data(self):
-        symbols = []
-        model_orders = []
-        information_contents = []
-        entropies = []
-        distributions = []
-
         df = pd.read_feather(self._results_file_data_path)
-        for idx, row in df.iterrows():
-            symbol = row["symbol"]
-            model_order = row["model_order"]
-            information_content = row["information_content"]
-            entropy = row["entropy"]
-            distribution = str_to_list(row["distribution"])
-
-            symbols.append(symbol)
-            model_orders.append(int(model_order))
-            information_contents.append(float(information_content))
-            entropies.append(float(entropy))
-            distributions.append(list(map(float, distribution)))
-
-        return PPMSimpleResultsFileData(self._results_file_data_path, symbols, model_orders, information_contents, entropies, distributions)
+        return PPMSimpleResultsFileData(self._results_file_data_path, df)
 
     def _parse_ppm_decay_results_file_data(self):
-        symbols = []
-        positions = []
-        times = []
-        model_orders = []
-        information_contents = []
-        entropies = []
-        distributions = []
-
         df = pd.read_feather(self._results_file_data_path)
-        for idx,row in df.iterrows():
-            symbol = row["symbol"]
-            pos = row["pos"]
-            time = row["time"]
-            model_order = row["model_order"]
-            information_content = row["information_content"]
-            entropy = row["entropy"]
-            distribution = str_to_list(row["distribution"])
+        return PPMDecayResultsFileData(self._results_file_data_path, df)
 
-            symbols.append(symbol)
-            positions.append(int(pos))
-            times.append(float(time))
-            model_orders.append(int(model_order))
-            information_contents.append(float(information_content))
-            entropies.append(float(entropy))
-            distributions.append(list(map(float, distribution)))
-
-        return PPMDecayResultsFileData(self._results_file_data_path, symbols, model_orders, information_contents, entropies, distributions, positions, times)
+import os
 
 def parse_results_meta_file(results_file_meta_path : Path):
     df = pd.read_feather(results_file_meta_path)
@@ -204,5 +156,12 @@ def parse_results_meta_file(results_file_meta_path : Path):
     alphabet_levels = str_to_list(df["alphabet_levels"][0])
     instructions_file_path = df["instructions_file_path"][0]
     results_file_data_path = df["results_file_data_path"][0]
+
+    if not os.path.exists(results_file_data_path):
+        results_file_data_filename = os.path.basename(results_file_data_path)
+        original_results_file_data_path = results_file_data_path
+        results_file_data_path = os.path.join(os.path.dirname(str(results_file_meta_path)), results_file_data_filename)
+        if not os.path.exists(results_file_data_path):
+            raise ValueError("Could not locate {}!".format(original_results_file_data_path))
 
     return ResultsMetaFile(results_file_meta_path, model_type, alphabet_levels, instructions_file_path, results_file_data_path)

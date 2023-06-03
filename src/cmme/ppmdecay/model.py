@@ -4,7 +4,8 @@ import random
 from cmme.ppmdecay.base import EscapeMethod, ModelType
 from cmme.ppmdecay.binding import InstructionsFile, PPMSimpleInstructionsFile, PPMDecayInstructionsFile, \
     ResultsMetaFile, invoke_model, parse_results_meta_file
-from cmme.ppmdecay.util import ppmdecay_default_results_file_path, ppmdecay_default_instructions_file_path
+from cmme.ppmdecay.util import ppmdecay_default_results_file_path, ppmdecay_default_instructions_file_path, \
+    auto_convert_input_sequence
 
 
 class PPMInstance(ABC):
@@ -14,6 +15,7 @@ class PPMInstance(ABC):
         self._order_bound = 10
         self._alphabet_levels = []
         self._input_sequence = []
+        self._input_time_sequence = []
 
     def order_bound(self, order_bound):
         """
@@ -42,28 +44,33 @@ class PPMInstance(ABC):
     def input_sequence(self, input_sequence, input_time_sequence = None):
         """
 
-        :param input_sequence:
+        :param input_sequence: a shallow list as single-trial input, or a list of lists
         :param input_time_sequence: Relevant for PPMDecayInstance. If None, a default time sequence is generated: [1, 2, 3, ...]
         :return:
         """
-        if not len(input_sequence) > 1:
-            raise ValueError("input_sequence invalid! Length must be greater than or equal 1.")
+        input_sequence = auto_convert_input_sequence(input_sequence)
         # check correspondence with alphabet_levels
         if len(self._alphabet_levels) >= 1:
-            if not set(input_sequence).issubset(set(self._alphabet_levels)):
+            input_sequence_alphabet = set()
+            for trial in input_sequence:
+                for e in trial:
+                    input_sequence_alphabet.add(e)
+            if not input_sequence_alphabet.issubset(set(self._alphabet_levels)):
                 raise ValueError("input_sequence invalid! Its elements must be compatible to alphabet_levels.")
 
         # auto-generate time sequence if None
-        its = input_time_sequence
-        if its == None:
-            its = list(range(len(input_sequence)))
+
+        if input_time_sequence is None:
+            input_time_sequence = []
+            for trial in input_sequence:
+                input_time_sequence.append(range(len(trial)))
         # check correspondence of both sequences
-        if len(input_sequence) != len(its):
+        if len(input_sequence) != len(input_time_sequence):
             raise ValueError("input_sequence and input_time_sequence invalid! Length must match.")
 
         # Set attributes
         self._input_sequence = input_sequence
-        self._input_time_sequence = its
+        self._input_time_sequence = input_time_sequence
 
         return self
 
@@ -111,10 +118,6 @@ class PPMDecayInstance(PPMInstance):
         self._noise = 0
 
         self._seed = random.randint(1, pow(2, 31)-1)
-
-    def input_time_sequence(self, input_time_sequence):
-        self._input_time_sequence = input_time_sequence
-        return self
 
     def buffer_weight(self, buffer_weight):
         if not (buffer_weight >= self._stm_weight and buffer_weight >= self._ltm_weight):
