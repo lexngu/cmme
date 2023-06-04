@@ -80,7 +80,7 @@ def test_run_ppm_decay_succeeds():
 
         ppmdecay_instance = PPMDecayInstance()
         ppmdecay_instance.alphabet_levels(alphabet_levels) \
-            .order_bound(order_bound).input_sequence(input_sequence).input_time_sequence(input_time_sequence)\
+            .order_bound(order_bound).input_sequence(input_sequence, input_time_sequence)\
             .buffer_weight(buffer_weight).buffer_length_time(buffer_length_time).buffer_length_items(buffer_length_items)\
             .only_learn_from_buffer(only_learn_from_buffer).only_predict_from_buffer(only_predict_from_buffer)\
             .stm_weight(stm_weight).stm_duration(stm_duration)\
@@ -107,7 +107,7 @@ def test_run_ppm_simple_with_multitrial_input_succeeds():
 
         ppm_model = PPMModel(ppmsimple_instance)
         results_meta_file = ppm_model.run(instructions_file_path, results_file_path)
-        results_file_data = results_meta_file.results_file_dataa
+        results_file_data = results_meta_file.results_file_data
 
         assert results_meta_file._model_type == ModelType.SIMPLE
         assert results_meta_file._alphabet_levels == str_to_list(list_to_str(alphabet_levels))

@@ -7,14 +7,17 @@ import pandas as pd
 from cmme.config import Config
 from cmme.ppmdecay.base import ModelType
 from cmme.ppmdecay.util import list_to_str, str_to_list
+
 # R_HOME specifies the R instance to use by rpy2.
 # Needs to happen before any imports from rpy2
 os.environ["R_HOME"] = str(Config().r_home())
 from rpy2.robjects.packages import SignatureTranslatedAnonymousPackage
-PPM_RUN_FILEPATH = (Path(__file__).parent.parent.parent.parent.absolute() / "./res/wrappers/ppm-decay/ppmdecay_intermediate_script.R").resolve()
+
+PPM_RUN_FILEPATH = (Path(
+    __file__).parent.parent.parent.parent.absolute() / "./res/wrappers/ppm-decay/ppmdecay_intermediate_script.R").resolve()
 
 
-def invoke_model(instructions_file_path : Path):
+def invoke_model(instructions_file_path: Path):
     """
 
     :param instructions_file_path:
@@ -90,7 +93,8 @@ class PPMSimpleInstructionsFile(InstructionsFile):
 
 class PPMDecayInstructionsFile(InstructionsFile):
     def __init__(self, alphabet_levels, order_bound, input_sequence, input_time_sequence, results_file_path,
-                 buffer_weight, buffer_length_time, buffer_length_items, only_learn_from_buffer, only_predict_from_buffer,
+                 buffer_weight, buffer_length_time, buffer_length_items, only_learn_from_buffer,
+                 only_predict_from_buffer,
                  stm_weight, stm_duration, ltm_weight, ltm_half_life, ltm_asymptote,
                  noise, seed):
         super().__init__(ModelType.DECAY, alphabet_levels, order_bound, input_sequence, results_file_path)
@@ -115,6 +119,15 @@ class ResultsFileData(ABC):
     def __init__(self, results_file_data_path, df):
         self.results_file_data_path = results_file_data_path
         self.df = df
+        self.trials = list(set(df["trial_idx"].tolist()))
+
+    def df_by_trial(self, trial):
+        if trial not in self.trials:
+            raise ValueError("trial {} does not exist!".format(trial))
+        return self.df[self.df["trial_idx"] == trial]
+
+    def df_of_last_trial(self):
+        return self.df_by_trial(self.trials[-1])
 
 
 class PPMSimpleResultsFileData(ResultsFileData):
@@ -128,7 +141,8 @@ class PPMDecayResultsFileData(ResultsFileData):
 
 
 class ResultsMetaFile:
-    def __init__(self, results_file_meta_path, model_type: ModelType, alphabet_levels, instructions_file_path, results_file_data_path):
+    def __init__(self, results_file_meta_path, model_type: ModelType, alphabet_levels, instructions_file_path,
+                 results_file_data_path):
         self.results_file_meta_path = results_file_meta_path
         self._model_type = model_type
         self._alphabet_levels = alphabet_levels
@@ -147,9 +161,11 @@ class ResultsMetaFile:
         df = pd.read_feather(self._results_file_data_path)
         return PPMDecayResultsFileData(self._results_file_data_path, df)
 
+
 import os
 
-def parse_results_meta_file(results_file_meta_path : Path):
+
+def parse_results_meta_file(results_file_meta_path: Path):
     df = pd.read_feather(results_file_meta_path)
 
     model_type = ModelType(df["model_type"][0])
@@ -164,4 +180,5 @@ def parse_results_meta_file(results_file_meta_path : Path):
         if not os.path.exists(results_file_data_path):
             raise ValueError("Could not locate {}!".format(original_results_file_data_path))
 
-    return ResultsMetaFile(results_file_meta_path, model_type, alphabet_levels, instructions_file_path, results_file_data_path)
+    return ResultsMetaFile(results_file_meta_path, model_type, alphabet_levels, instructions_file_path,
+                           results_file_data_path)

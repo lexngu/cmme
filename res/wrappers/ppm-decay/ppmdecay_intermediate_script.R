@@ -55,7 +55,7 @@ ppmdecay_intermediate_script <- function(instructions_file_path) {
   
   # Parse input_time_seq_trials (if DECAY)
   if (model_type == "DECAY") {
-    input_time_seq_trials <- instructions_file$input_time_sequence
+    input_time_seq_trials <- instructions_file$input_time_sequence[[1]]
   }
   
   # For each trial

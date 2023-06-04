@@ -25,7 +25,7 @@ class DataFrame:
         ppm_data = self.ppm_results_file.results_file_data
         drex_data = self.drex_results_file
 
-        ppm_input_sequence = ppm_data.symbols
+        ppm_input_sequence = ppm_data.df_of_last_trial()["symbol"].tolist()
         try:
             ppm_input_sequence_as_numbers = list(map(float, ppm_input_sequence))
         except:
@@ -46,12 +46,12 @@ class DataFrame:
 
         # Data frame columns
         observations = drex_input_sequence
-        ppm_information_content = ppm_data.information_contents
+        ppm_information_content = ppm_data.df_of_last_trial()["information_content"]
         drex_joint_surprisal = drex_data.joint_surprisal
-        ppm_entropy = ppm_data.entropies
-        ppm_predictions = ppm_data.distributions
+        ppm_entropy = ppm_data.df_of_last_trial()["entropy"]
+        ppm_predictions = ppm_data.df_of_last_trial()["distribution"]
         drex_predictions = drex_data.psi.prediction_by_feature(self.drex_feature_index)
-        ppm_model_order = ppm_data.model_orders
+        ppm_model_order = ppm_data.df_of_last_trial()["model_order"]
         drex_context_beliefs = drex_data.context_beliefs
         drex_belief_dynamics = drex_data.belief_dynamics
         drex_changedecision_probability = drex_data.change_decision_probability
