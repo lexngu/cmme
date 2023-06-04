@@ -122,3 +122,10 @@ def test_input_sequence():
 
     iseq = [["a", "b", "c", "d"], ["e", "f", "g", "h"]]
     assert auto_convert_input_sequence(iseq) == iseq
+
+def test_input_time_sequence():
+    iseq = [["a", "b", "c", "d"], ["e", "f", "g", "h"]]
+    ppmsimple_instance = PPMSimpleInstance()
+    ppmsimple_instance.input_sequence(iseq)
+
+    assert ppmsimple_instance._input_time_sequence == [[0, 1, 2, 3], [4, 5, 6, 7]]

@@ -62,8 +62,11 @@ class PPMInstance(ABC):
 
         if input_time_sequence is None:
             input_time_sequence = []
+            input_time_sequence_counter = 0
             for trial in input_sequence:
-                input_time_sequence.append(list(range(len(trial))))
+                trial_length = len(trial)
+                input_time_sequence.append(list(range(input_time_sequence_counter, input_time_sequence_counter+trial_length)))
+                input_time_sequence_counter += trial_length
         else:
             input_time_sequence = auto_convert_input_sequence(input_time_sequence)
         # check correspondence of both sequences
