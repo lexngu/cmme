@@ -37,4 +37,8 @@ def path_as_string_with_trailing_slash(path) -> str:
         raise ValueError("path must not be None!")
     if not isinstance(path, Path):
         path = Path(path)
-    return os.path.join(path.expanduser().resolve(), '')
+    try:
+        path = path.expanduser().resolve()
+    except:
+        pass
+    return os.path.join(path, '')

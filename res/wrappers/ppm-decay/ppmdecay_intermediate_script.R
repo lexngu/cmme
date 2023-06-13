@@ -1,12 +1,17 @@
 library(ppm)
 library(arrow, warn.conflicts = FALSE)
+
 ppmdecay_intermediate_script <- function(instructions_file_path) {
+
   # Read instructions file
   instructions_file <- arrow::read_feather(instructions_file_path)
   results_file_path <- paste(dirname(instructions_file_path), "/", basename(instructions_file$results_file_path), sep="")
-  
+
+  # Set working directory
+  setwd(dirname(instructions_file_path))
+
   if (file.exists(results_file_path)) {
-    print(paste("Results file", results_file_path, "already exists."))
+    print(paste("Results file", results_file_path, "already exists. Abort."))
     return(results_file_path)
   }
   

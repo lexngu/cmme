@@ -33,7 +33,7 @@ def invoke_model(instructions_file_path: Path):
 
 
 class InstructionsFile(ABC):
-    def __init__(self, model_type: ModelType, alphabet_levels, order_bound, input_sequence, results_file_path):
+    def __init__(self, model_type: ModelType, alphabet_levels, order_bound, input_sequence, results_file_path: str):
         self._model_type = model_type
         self._alphabet_levels = alphabet_levels
         self._order_bound = order_bound
@@ -48,7 +48,7 @@ class InstructionsFile(ABC):
             "alphabet_levels": [list_to_str(self._alphabet_levels)],
             "order_bound": [self._order_bound],
             "input_sequence": [self._input_sequence],
-            "results_file_path": [str(self._results_file_path)]
+            "results_file_path": [self._results_file_path]
         }
         if isinstance(self, PPMSimpleInstructionsFile):
             data.update({
@@ -176,7 +176,7 @@ def parse_results_meta_file(results_file_meta_path: Path):
     if not os.path.exists(results_file_data_path):
         results_file_data_filename = os.path.basename(results_file_data_path)
         original_results_file_data_path = results_file_data_path
-        results_file_data_path = os.path.join(os.path.dirname(str(results_file_meta_path)), results_file_data_filename)
+        results_file_data_path = os.path.join(os.path.dirname(results_file_meta_path), results_file_data_filename)
         if not os.path.exists(results_file_data_path):
             raise ValueError("Could not locate {}!".format(original_results_file_data_path))
 

@@ -1,5 +1,7 @@
+import os.path
 from abc import ABC
 import random
+from pathlib import Path
 
 from cmme.ppmdecay.base import EscapeMethod, ModelType
 from cmme.ppmdecay.binding import InstructionsFile, PPMSimpleInstructionsFile, PPMDecayInstructionsFile, \
@@ -202,7 +204,7 @@ class PPMModel:
         self.instance = instance
         self.model_type = instance._model_type
 
-    def to_instructions_file(self, results_file_path = ppmdecay_default_results_file_path()) -> InstructionsFile:
+    def to_instructions_file(self, results_file_path: str = ppmdecay_default_results_file_path()) -> InstructionsFile:
         if self.model_type == ModelType.SIMPLE:
             return PPMSimpleInstructionsFile(self.instance._alphabet_levels, self.instance._order_bound, self.instance._input_sequence, results_file_path,
                                              self.instance._shortest_deterministic, self.instance._exclusion, self.instance._update_exclusion, self.instance._escape_method)
@@ -213,10 +215,11 @@ class PPMModel:
                                              self.instance._ltm_weight, self.instance._ltm_half_life, self.instance._ltm_asymptote,
                                              self.instance._noise, self.instance._seed)
 
-    def run(self, instructions_file_path = ppmdecay_default_instructions_file_path(), results_file_path = ppmdecay_default_results_file_path()) -> ResultsMetaFile:
+    def run(self, instructions_file_path: str = ppmdecay_default_instructions_file_path(), results_file_path: str = ppmdecay_default_results_file_path()) -> ResultsMetaFile:
         instructions_file = self.to_instructions_file(results_file_path)
         instructions_file.write_instructions_file(instructions_file_path)
         model_output = invoke_model(instructions_file_path)
 
-        results_meta_file = parse_results_meta_file(results_file_path)
+        resolved_results_file_path = Path(instructions_file_path) / Path(results_file_path)
+        results_meta_file = parse_results_meta_file(resolved_results_file_path)
         return results_meta_file

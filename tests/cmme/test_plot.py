@@ -32,6 +32,7 @@ def test_matlab_plot():
         results = matlab_plot.plot(cmme_default_plot_output_file_path(None, Path(tmpdirname)), cmme_default_plot_instructions_file_path(None, Path(tmpdirname)))
         assert len(results) >= 1
 
+
 def test_matplotlib_plot():
     with tempfile.TemporaryDirectory() as tmpdirname:
         tmpdir_path = Path(tmpdirname)

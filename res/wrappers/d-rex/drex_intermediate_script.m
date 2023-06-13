@@ -1,4 +1,5 @@
 function out = drex_intermediate_script(instructions_file_path)
+
 % load D-REX
 mfilepath=fileparts(which(mfilename));
 addpath(fullfile(mfilepath, "../../models/DREX-model/"));
@@ -7,9 +8,12 @@ addpath(fullfile(mfilepath, "../../models/DREX-model/"));
 instructions_file_path = convertStringsToChars(instructions_file_path);
 instructions_file = load(instructions_file_path);
 
+% set working directory
+cd(fileparts(instructions_file_path));
+
 out.results_file_path = instructions_file.results_file_path;
 if isfile(instructions_file.results_file_path)
-    fprintf("Results file at %s already exists.\n", instructions_file.results_file_path);
+    fprintf("Results file at %s already exists. Abort.\n", instructions_file.results_file_path);
     return;
 end
 

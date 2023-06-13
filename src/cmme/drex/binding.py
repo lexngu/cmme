@@ -21,7 +21,7 @@ def from_mat(file_path):
 
 
 class InstructionsFile:
-    def __init__(self, results_file_path: Path, input_sequence: np.ndarray,
+    def __init__(self, results_file_path: str, input_sequence: np.ndarray,
                  prior: Prior, hazard: Union[numbers.Number, list, np.ndarray], memory: Union[int, float], maxhyp: Union[int, float],
                  obsnz: float, change_decision_threshold : float = None):
         # Checks
@@ -64,7 +64,7 @@ class InstructionsFile:
         self.change_decision_threshold = change_decision_threshold
         """Threshold used for change detector"""
 
-    def write_to_mat(self, instructions_file_path: Path = drex_default_instructions_file_path()) -> Path:
+    def write_to_mat(self, instructions_file_path = drex_default_instructions_file_path()) -> Path:
         """
         Writes the instructions file to disk.
         :return: Path to instructions file
@@ -105,10 +105,10 @@ class InstructionsFile:
             }
 
         # Add results_file_path
-        data["results_file_path"] = str(self.results_file_path)
+        data["results_file_path"] = self.results_file_path
 
         # Write and return
-        return to_mat(data, str(instructions_file_path))
+        return to_mat(data, instructions_file_path)
 
 
 class ResultsFilePsi:
@@ -180,7 +180,7 @@ def parse_post_DREX_prediction_results(results):
 
 class ResultsFile:
     # TODO add prediction_params from run_DREX_model.m?
-    def __init__(self, results_file_path: Path, instructions_file_path: Path,
+    def __init__(self, results_file_path: str, instructions_file_path: str,
                  input_sequence: np.ndarray, prior: Prior, surprisal: np.ndarray, joint_surprisal: np.ndarray,
                  context_beliefs: np.ndarray, belief_dynamics: np.ndarray, change_decision_changepoint: int,
                  change_decision_probability: np.ndarray, change_decision_threshold: numbers.Number,
@@ -241,7 +241,7 @@ class ResultsFile:
         """Marginal (predictive) probability distribution"""
 
 
-def parse_results_file(results_file_path) -> Union[ResultsFile, Prior]:
+def parse_results_file(results_file_path: str) -> Union[ResultsFile, Prior]:
     data = from_mat(results_file_path)
 
     prior = parse_results_file_estimate_suffstat(data)

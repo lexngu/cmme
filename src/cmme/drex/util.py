@@ -33,17 +33,19 @@ def trialtimefeature_sequence_as_singletrial_array(input_sequence):
         raise ValueError("input_sequence should be a np.array(dtype=object) of three dimensions, and with a single trial.")
 
 
-def drex_default_instructions_file_path(alias: str = None, io_path: Path = Config().model_io_path()):
+def drex_default_instructions_file_path(alias: str = None, io_path: Path = Config().model_io_path()) -> str:
     instructions_file_filename = "drex-instructionsfile"
     instructions_file_filename = (instructions_file_filename + "-" + alias) if alias is not None else instructions_file_filename
     instructions_file_filename = instructions_file_filename + ".mat"
-    return io_path / instructions_file_filename
+    return str(io_path / instructions_file_filename)
 
-def drex_default_results_file_path(alias: str = None, io_path: Path = Config().model_io_path()):
+
+def drex_default_results_file_path(alias: str = None, io_path: Path = Path(".")) -> str:
     results_file_filename = "drex-resultsfile"
     results_file_filename = (results_file_filename + "-" + alias) if alias is not None else results_file_filename
     results_file_filename = results_file_filename + ".mat"
-    return io_path / results_file_filename
+    return str(io_path / results_file_filename)
+
 
 def auto_convert_input_sequence(input_sequence):
     """
