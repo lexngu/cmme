@@ -34,6 +34,7 @@ def test_to_instructions_file_uses_specified_values():
     hazard = 0.12
     memory = 22
     maxhyp = 11
+    predscale = 0.987
     obsnz = [0.03]
     change_decision_threshold = 0.5
     drex_instance.input_sequence(input_sequence)
@@ -43,6 +44,7 @@ def test_to_instructions_file_uses_specified_values():
     drex_instance.obsnz(obsnz)
     drex_instance.change_decision_threshold(change_decision_threshold)
     drex_instance.prior(prior)
+    drex_instance.predscale(predscale)
 
     instructions_file = drex_instance.build_instructions_file(results_file_path)
 
@@ -53,6 +55,7 @@ def test_to_instructions_file_uses_specified_values():
     assert instructions_file.memory == memory
     assert instructions_file.maxhyp == maxhyp
     assert instructions_file.obsnz == obsnz
+    assert instructions_file.predscale == predscale
     assert instructions_file.change_decision_threshold == change_decision_threshold
 
 

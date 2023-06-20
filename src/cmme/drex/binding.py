@@ -23,7 +23,7 @@ def from_mat(file_path):
 class InstructionsFile:
     def __init__(self, results_file_path: str, input_sequence: np.ndarray,
                  prior: Prior, hazard: Union[numbers.Number, list, np.ndarray], memory: Union[int, float], maxhyp: Union[int, float],
-                 obsnz: float, change_decision_threshold : float = None):
+                 obsnz: float, predscale: float, change_decision_threshold : float = None):
         # Checks
         input_sequence_length = len(input_sequence)
         if not isinstance(prior, Prior):
@@ -61,6 +61,8 @@ class InstructionsFile:
         """Number of most-recent hypotheses to calculate"""
         self.maxhyp = maxhyp
         """Number of hypotheses to calculate at every time step"""
+        self.predscale = predscale
+        """Predscale (D-REX internal)"""
         self.change_decision_threshold = change_decision_threshold
         """Threshold used for change detector"""
 
@@ -92,7 +94,8 @@ class InstructionsFile:
                 "hazard": float(self.hazard),
                 "obsnz": self.obsnz,
                 "memory": self.memory,
-                "maxhyp": self.maxhyp
+                "maxhyp": self.maxhyp,
+                "predscale": self.predscale
             },
         }
         if self.prior.distribution_type() == DistributionType.GMM:

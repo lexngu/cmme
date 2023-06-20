@@ -17,6 +17,7 @@ class DREXInstructionBuilder:
         # self._D = 1 # implicitly specified by prior
         self._change_decision_threshold = 0.01
         self._obsnz = 0
+        self._predscale = 0.001
 
         self._prior = None
 
@@ -115,4 +116,10 @@ class DREXInstructionBuilder:
                                 self._input_sequence, self._prior,
                                 self._hazard, self._memory,
                                 self._maxhyp, self._obsnz,
-                                self._change_decision_threshold)
+                                self._predscale, self._change_decision_threshold)
+
+    def predscale(self, predscale: float):
+        if not predscale > 0 and predscale <= 1:
+            raise ValueError("predscale invalid! Value must be in range (0,1].")
+        self._predscale = float(predscale)
+        return self
