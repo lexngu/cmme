@@ -5,7 +5,9 @@ mfilepath=fileparts(which(mfilename));
 addpath(fullfile(mfilepath, "../../models/DREX-model/"));
 
 % read instructions file
-instructions_file_path = convertStringsToChars(instructions_file_path);
+if exist('OCTAVE_VERSION', 'builtin') == 0 %is MATLAB%
+    instructions_file_path = convertStringsToChars(instructions_file_path);
+end
 instructions_file = load(instructions_file_path);
 
 % set working directory
@@ -58,7 +60,7 @@ if isfield(instructions_file, "run_DREX_model")
     
     % calculate marginal (predictive) prob. distribution (post_DREX_prediction.m)
     post_DREX_prediction_results = cell(nfeature,1);
-    if rdm_instructions.params.distribution == "gaussian" | rdm_instructions.params.distribution == "gmm" | rdm_instructions.params.distribution == "lognormal"
+    if strcmp(rdm_instructions.params.distribution, "gaussian") | strcmp(rdm_instructions.params.distribution, "gmm") | strcmp(rdm_instructions.params.distribution, "lognormal")
         for f = 1:nfeature
             positions = reshape(unique(input_sequence(:,f)), 1, []);
             
@@ -76,6 +78,6 @@ if isfield(instructions_file, "run_DREX_model")
     post_DREX_changedecision_results = post_DREX_changedecision(run_DREX_model_results, change_decision_threshold);
 
     distribution = rdm_instructions.params.distribution;
-    save(instructions_file.results_file_path, "instructions_file_path", "input_sequence", "distribution", "estimate_suffstat_results", "run_DREX_model_results", "post_DREX_changedecision_results", "post_DREX_prediction_results", "post_DREX_beliefdynamics_results", "post_DREX_changedecision_results", "change_decision_threshold");
+    save(instructions_file.results_file_path, "-v7", "instructions_file_path", "input_sequence", "distribution", "estimate_suffstat_results", "run_DREX_model_results", "post_DREX_changedecision_results", "post_DREX_prediction_results", "post_DREX_beliefdynamics_results", "post_DREX_changedecision_results", "change_decision_threshold");
 end
 end
