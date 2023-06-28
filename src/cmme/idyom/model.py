@@ -181,7 +181,7 @@ class IDYOMInstructionBuilder:
                 [":order-bound", order_bound, ":mixtures", mixtures, ":update-exclusion", update_exclusion, ":escape",
                  escape])
         # (CMD <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...] ...)
-        if self._model == IDYOMModelValue.LTM or self._model == IDYOMModelValue.BOTH or self._model == IDYOMModelValue.BOTH_PLUS:
+        if self._model == IDYOMModelValue.LTM or self._model == IDYOMModelValue.BOTH or self._model == IDYOMModelValue.BOTH_PLUS or self._model == IDYOMModelValue.LTM_PLUS:
             order_bound = str(self._ltm_options["order_bound"]) if self._ltm_options[
                                                                        "order_bound"] is not None else "nil"
             mixtures = "t" if self._ltm_options["mixtures"] else "nil"
