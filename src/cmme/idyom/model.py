@@ -309,7 +309,7 @@ class IDYOMModel:
     def all_datasets(self) -> List[Dataset]:
         return self.idyom_binding.all_datasets()
 
-    def run(self, instruction_builder: IDYOMInstructionBuilder) -> IDYOMResultsFile:
+    def run(self, instruction_builder: IDYOMInstructionBuilder, instructions_file_path = idyom_default_instructions_file_path()) -> IDYOMResultsFile:
         # log execution string
         results_file_path = os.path.join(instruction_builder._output_options["output_path"], self.idyom_binding.eval(instruction_builder.build_for_cl4py_filename_inference()))
         instructions_file_data = {
@@ -318,12 +318,12 @@ class IDYOMModel:
             "results_file_path": results_file_path
         }
 
-        instructions_file_path = idyom_default_instructions_file_path()
-        with open(instructions_file_path, "w") as f:
-            csvwriter = csv.DictWriter(f, fieldnames=instructions_file_data.keys())
-            csvwriter.writeheader()
-            csvwriter.writerow(instructions_file_data)
-        print("This IDyOM run is documented in {}.".format(str(instructions_file_path)))
+        if instructions_file_path is not None:
+            with open(instructions_file_path, "w") as f:
+                csvwriter = csv.DictWriter(f, fieldnames=instructions_file_data.keys())
+                csvwriter.writeheader()
+                csvwriter.writerow(instructions_file_data)
+            print("This run is documented in {}.".format(str(instructions_file_path)))
 
         self.idyom_binding.eval( instruction_builder.build_for_cl4py() )
 
