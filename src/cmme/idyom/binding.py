@@ -8,6 +8,7 @@ import re
 from .base import *
 from cmme.util import path_as_string_with_trailing_slash
 from .util import cl4py_cons_to_list
+from ..lib.results_file import ResultsFile
 
 
 def install_idyom(idyom_root_path: Union[str, Path], force_reset = False) -> Path:
@@ -186,7 +187,7 @@ def infer_target_viewpoints_target_viewpoint_values_and_used_source_viewpoints(f
     return targetViewpoints, targetViewpointValues, usedSourceViewpoints
 
 
-class IDYOMResultsFile:
+class IDYOMResultsFile(ResultsFile):
     def __init__(self, df: pd.DataFrame):
         self.df = df
         self.targetViewpoints, self.targetViewpointValues, self.usedSourceViewpoints = infer_target_viewpoints_target_viewpoint_values_and_used_source_viewpoints(df.columns.values.tolist())

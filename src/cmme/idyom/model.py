@@ -3,10 +3,11 @@ import tempfile
 
 from .binding import *
 from .util import *
+from ..lib.model import ModelBuilder, Model
 from ..util import flatten_list
 
 
-class IDYOMInstructionBuilder:
+class IDYOMInstructionBuilder(ModelBuilder):
     def __init__(self):
         self._dataset: Dataset = None
         self._target_viewpoints: List[Viewpoint] = []
@@ -274,7 +275,7 @@ class IDYOMInstructionBuilder:
         return leb.build()
 
 
-class IDYOMModel:
+class IDYOMModel(Model):
     def __init__(self, idyom_root_path: Path = Config().idyom_root_path(), idyom_database_path: Path = Config().idyom_database_path()):
         self.idyom_binding = IDYOMBinding(str(idyom_root_path.resolve()), str(idyom_database_path.resolve()))
 

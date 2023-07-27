@@ -5,6 +5,8 @@ from pathlib import Path
 import pandas as pd
 
 from cmme.config import Config
+from cmme.lib.instructions_file import InstructionsFile
+from cmme.lib.results_file import ResultsFile
 from cmme.ppmdecay.base import ModelType
 from cmme.ppmdecay.util import list_to_str, str_to_list
 
@@ -32,7 +34,7 @@ def invoke_model(instructions_file_path: Path):
     return results_file_path
 
 
-class InstructionsFile(ABC):
+class PPMInstructionsFile(InstructionsFile, ABC):
     def __init__(self, model_type: ModelType, alphabet_levels, order_bound, input_sequence, results_file_path: str):
         self._model_type = model_type
         self._alphabet_levels = alphabet_levels
@@ -80,7 +82,7 @@ class InstructionsFile(ABC):
         return instructions_file_path
 
 
-class PPMSimpleInstructionsFile(InstructionsFile):
+class PPMSimpleInstructionsFile(PPMInstructionsFile):
     def __init__(self, alphabet_levels, order_bound, input_sequence, results_file_path,
                  shortest_deterministic, exclusion, update_exclusion, escape_method):
         super().__init__(ModelType.SIMPLE, alphabet_levels, order_bound, input_sequence, results_file_path)
@@ -91,7 +93,7 @@ class PPMSimpleInstructionsFile(InstructionsFile):
         self._escape_method = escape_method
 
 
-class PPMDecayInstructionsFile(InstructionsFile):
+class PPMDecayInstructionsFile(PPMInstructionsFile):
     def __init__(self, alphabet_levels, order_bound, input_sequence, input_time_sequence, results_file_path,
                  buffer_weight, buffer_length_time, buffer_length_items, only_learn_from_buffer,
                  only_predict_from_buffer,
@@ -140,7 +142,7 @@ class PPMDecayResultsFileData(ResultsFileData):
         super().__init__(results_file_data_path, df)
 
 
-class ResultsMetaFile:
+class PPMResultsMetaFile(ResultsFile):
     def __init__(self, results_file_meta_path, model_type: ModelType, alphabet_levels, instructions_file_path,
                  results_file_data_path):
         self.results_file_meta_path = results_file_meta_path
@@ -180,5 +182,5 @@ def parse_results_meta_file(results_file_meta_path: Path):
         if not os.path.exists(results_file_data_path):
             raise ValueError("Could not locate {}!".format(original_results_file_data_path))
 
-    return ResultsMetaFile(results_file_meta_path, model_type, alphabet_levels, instructions_file_path,
-                           results_file_data_path)
+    return PPMResultsMetaFile(results_file_meta_path, model_type, alphabet_levels, instructions_file_path,
+                              results_file_data_path)

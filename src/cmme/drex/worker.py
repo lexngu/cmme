@@ -6,7 +6,7 @@ from pathlib import Path
 import matlab.engine
 from pymatbridge import pymatbridge
 
-from .binding import ResultsFile, parse_results_file
+from .binding import DREXResultsFile, parse_results_file
 from ..config import Config
 
 
@@ -130,7 +130,7 @@ class DREXModel:
     def __init__(self):
         pass
 
-    def run(self, instructions_file_path) -> ResultsFile:
+    def run(self, instructions_file_path) -> DREXResultsFile:
         results = MatlabWorker.run_model(instructions_file_path)
         results_file = parse_results_file(results['results_file_path'])
         return results_file

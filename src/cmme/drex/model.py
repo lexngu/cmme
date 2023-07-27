@@ -1,13 +1,18 @@
 import numbers
+from abc import ABC
+
 from .base import Prior
-from .binding import InstructionsFile
+from .binding import DREXInstructionsFile
 from .util import auto_convert_input_sequence, drex_default_results_file_path
 import numpy as np
+
+from ..lib.model import ModelBuilder, Model
+
 
 # TODO GMM has a paramater "beta", which is not a prior parameter, but a main function's parameter
 
 
-class DREXInstructionBuilder:
+class DREXInstructionBuilder(ModelBuilder, ABC):
     def __init__(self):
         # Use original default values
         self._input_sequence = None
@@ -111,15 +116,21 @@ class DREXInstructionBuilder:
         self._change_decision_threshold = change_decision_threshold
         return self
 
-    def build_instructions_file(self, results_file_path = drex_default_results_file_path()) -> InstructionsFile:
-        return InstructionsFile(results_file_path,
-                                self._input_sequence, self._prior,
-                                self._hazard, self._memory,
-                                self._maxhyp, self._obsnz,
-                                self._predscale, self._change_decision_threshold)
+    def build_instructions_file(self, results_file_path = drex_default_results_file_path()) -> DREXInstructionsFile:
+        return DREXInstructionsFile(results_file_path,
+                                    self._input_sequence, self._prior,
+                                    self._hazard, self._memory,
+                                    self._maxhyp, self._obsnz,
+                                    self._predscale, self._change_decision_threshold)
+
+    def to_instructions_file(self) -> DREXInstructionsFile:
+        return self.build_instructions_file() # TODO remove build_instructions_file()
 
     def predscale(self, predscale: float):
         if not predscale > 0 and predscale <= 1:
             raise ValueError("predscale invalid! Value must be in range (0,1].")
         self._predscale = float(predscale)
         return self
+
+class DREXModel(Model):
+    pass

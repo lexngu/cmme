@@ -4,7 +4,7 @@ import numpy as np
 from numpy import array
 
 from cmme.drex.base import UnprocessedPrior, DistributionType, GaussianPrior
-from cmme.drex.binding import from_mat, to_mat, InstructionsFile, ResultsFile, ResultsFilePsi, parse_results_file
+from cmme.drex.binding import from_mat, to_mat, DREXInstructionsFile, DREXResultsFile, ResultsFilePsi, parse_results_file
 from cmme.drex.util import auto_convert_input_sequence, trialtimefeature_sequence_as_singletrial_array, \
     trialtimefeature_sequence_as_multitrial_cell
 
@@ -45,7 +45,7 @@ def test_drex_instructions_file():
     maxhyp = 2
     obsnz = 0.1
     change_decision_threshold = 0.1
-    instructions_file = InstructionsFile(results_file_path, input_sequence, prior, hazard, memory, maxhyp, obsnz, change_decision_threshold)
+    instructions_file = DREXInstructionsFile(results_file_path, input_sequence, prior, hazard, memory, maxhyp, obsnz, change_decision_threshold)
 
     tmp_file_path = tempfile.NamedTemporaryFile().name
 
@@ -326,10 +326,10 @@ def test_drex_results_file():
     change_decision_threshold = 0.01
     psi = ResultsFilePsi()  # TODO
 
-    rf = ResultsFile(results_file_path, instructions_file_path,
-                     input_sequence, prior, surprisal, joint_surprisal,
-                     context_beliefs, belief_dynamics, change_decision_changepoint,
-                     change_decision_probability, change_decision_threshold, psi)
+    rf = DREXResultsFile(results_file_path, instructions_file_path,
+                         input_sequence, prior, surprisal, joint_surprisal,
+                         context_beliefs, belief_dynamics, change_decision_changepoint,
+                         change_decision_probability, change_decision_threshold, psi)
 
     assert rf is not None
 

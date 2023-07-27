@@ -3,14 +3,15 @@ from abc import ABC
 import random
 from pathlib import Path
 
+from cmme.lib.model import ModelBuilder, Model
 from cmme.ppmdecay.base import EscapeMethod, ModelType
-from cmme.ppmdecay.binding import InstructionsFile, PPMSimpleInstructionsFile, PPMDecayInstructionsFile, \
-    ResultsMetaFile, invoke_model, parse_results_meta_file
+from cmme.ppmdecay.binding import PPMInstructionsFile, PPMSimpleInstructionsFile, PPMDecayInstructionsFile, \
+    PPMResultsMetaFile, invoke_model, parse_results_meta_file
 from cmme.ppmdecay.util import ppmdecay_default_results_file_path, ppmdecay_default_instructions_file_path, \
     auto_convert_input_sequence
 
 
-class PPMInstance(ABC):
+class PPMInstance(ModelBuilder):
     def __init__(self, model_type: ModelType):
         self._model_type = model_type
 
@@ -199,12 +200,12 @@ class PPMDecayInstance(PPMInstance):
         self._seed = seed
         return self
 
-class PPMModel:
+class PPMModel(Model):
     def __init__(self, instance: PPMInstance):
         self.instance = instance
         self.model_type = instance._model_type
 
-    def to_instructions_file(self, results_file_path: str = ppmdecay_default_results_file_path()) -> InstructionsFile:
+    def to_instructions_file(self, results_file_path: str = ppmdecay_default_results_file_path()) -> PPMInstructionsFile:
         if self.model_type == ModelType.SIMPLE:
             return PPMSimpleInstructionsFile(self.instance._alphabet_levels, self.instance._order_bound, self.instance._input_sequence, results_file_path,
                                              self.instance._shortest_deterministic, self.instance._exclusion, self.instance._update_exclusion, self.instance._escape_method)
@@ -215,7 +216,7 @@ class PPMModel:
                                              self.instance._ltm_weight, self.instance._ltm_half_life, self.instance._ltm_asymptote,
                                              self.instance._noise, self.instance._seed)
 
-    def run(self, instructions_file_path: str = ppmdecay_default_instructions_file_path(), results_file_path: str = ppmdecay_default_results_file_path()) -> ResultsMetaFile:
+    def run(self, instructions_file_path: str = ppmdecay_default_instructions_file_path(), results_file_path: str = ppmdecay_default_results_file_path()) -> PPMResultsMetaFile:
         instructions_file = self.to_instructions_file(results_file_path)
         instructions_file.write_instructions_file(instructions_file_path)
         model_output = invoke_model(instructions_file_path)

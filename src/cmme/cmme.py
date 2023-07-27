@@ -1,14 +1,14 @@
 from typing import List
 
 from cmme.config import Config
-from cmme.drex.binding import ResultsFile
+from cmme.drex.binding import DREXResultsFile
 from cmme.drex.model import DREXInstructionBuilder
 from cmme.drex.worker import DREXModel
 from cmme.idyom.base import Dataset, BasicViewpoint
 from cmme.idyom.binding import IDYOMBinding, IDYOMResultsFile
 from cmme.idyom.model import IDYOMInstructionBuilder, IDYOMModel
 from cmme.ppmdecay.base import ModelType
-from cmme.ppmdecay.binding import ResultsMetaFile
+from cmme.ppmdecay.binding import PPMResultsMetaFile
 from cmme.ppmdecay.model import PPMInstance, PPMModel, PPMSimpleInstance, PPMDecayInstance
 
 freq_to_midi = {
@@ -82,7 +82,7 @@ class CMMETestAndPretrainingDataContainer:
 
 
 class CMMEResultsContainer:
-    def __init__(self, idyom_results_file: IDYOMResultsFile = None, ppmdecay_results_meta_file: ResultsMetaFile = None, drex_results_file: ResultsFile = None):
+    def __init__(self, idyom_results_file: IDYOMResultsFile = None, ppmdecay_results_meta_file: PPMResultsMetaFile = None, drex_results_file: DREXResultsFile = None):
         self.idyom_results_file = idyom_results_file
         self.ppmdecay_results_meta_file = ppmdecay_results_meta_file
         self.drex_results_file = drex_results_file

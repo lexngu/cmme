@@ -8,6 +8,8 @@ import scipy.io as sio
 from .base import DistributionType, Prior, UnprocessedPrior, GaussianPrior, LognormalPrior, GmmPrior, PoissonPrior
 from .util import auto_convert_input_sequence, trialtimefeature_sequence_as_multitrial_cell, \
     trialtimefeature_sequence_as_singletrial_array, drex_default_instructions_file_path
+from ..lib.instructions_file import InstructionsFile
+from ..lib.results_file import ResultsFile
 
 
 def to_mat(data, file_path):
@@ -20,7 +22,7 @@ def from_mat(file_path):
     return mat_data
 
 
-class InstructionsFile:
+class DREXInstructionsFile(InstructionsFile):
     def __init__(self, results_file_path: str, input_sequence: np.ndarray,
                  prior: Prior, hazard: Union[numbers.Number, list, np.ndarray], memory: Union[int, float], maxhyp: Union[int, float],
                  obsnz: float, predscale: float, change_decision_threshold : float = None):
@@ -181,7 +183,7 @@ def parse_post_DREX_prediction_results(results):
     return ResultsFilePsi(predictions, positions)
 
 
-class ResultsFile:
+class DREXResultsFile(ResultsFile):
     # TODO add prediction_params from run_DREX_model.m?
     def __init__(self, results_file_path: str, instructions_file_path: str,
                  input_sequence: np.ndarray, prior: Prior, surprisal: np.ndarray, joint_surprisal: np.ndarray,
@@ -244,7 +246,7 @@ class ResultsFile:
         """Marginal (predictive) probability distribution"""
 
 
-def parse_results_file(results_file_path: str) -> Union[ResultsFile, Prior]:
+def parse_results_file(results_file_path: str) -> Union[DREXResultsFile, Prior]:
     data = from_mat(results_file_path)
 
     prior = parse_results_file_estimate_suffstat(data)
@@ -271,7 +273,7 @@ def parse_results_file(results_file_path: str) -> Union[ResultsFile, Prior]:
     else:
         psi = ResultsFilePsi()
 
-    return ResultsFile(results_file_path, instructions_file_path, input_sequence, prior, surprisal, joint_surprisal, context_beliefs, belief_dynamics, change_decision_changepoint, change_decision_probability, change_decision_threshold, psi)
+    return DREXResultsFile(results_file_path, instructions_file_path, input_sequence, prior, surprisal, joint_surprisal, context_beliefs, belief_dynamics, change_decision_changepoint, change_decision_probability, change_decision_threshold, psi)
 
 
 def parse_results_file_estimate_suffstat(data) -> Prior:

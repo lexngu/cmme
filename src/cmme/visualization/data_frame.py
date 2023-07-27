@@ -1,15 +1,15 @@
 import numpy as np
 import pandas as pd
 import scipy.io as sio
-from cmme.drex.binding import ResultsFile
-from cmme.ppmdecay.binding import ResultsMetaFile
+from cmme.drex.binding import DREXResultsFile
+from cmme.ppmdecay.binding import PPMResultsMetaFile
 from cmme.visualization.util.util import cmme_default_plot_instructions_file_path
 
 
 class DataFrame:
     """Aggregates ResultsFiles into a single dataframe (if the contained input sequence is commensurable)"""
 
-    def __init__(self, ppm_results_file: ResultsMetaFile, drex_results_file: ResultsFile, input_sequence):
+    def __init__(self, ppm_results_file: PPMResultsMetaFile, drex_results_file: DREXResultsFile, input_sequence):
         """
         :param ppm_results_file:
         :param drex_results_file:
