@@ -146,7 +146,21 @@ class IDYOMViewpointSelectionBasis(Enum):
     ONSET = ':onset'
 
 
-def viewpoints_list_to_string_list(viewpoints: List[Viewpoint]) -> List[str]:
+def transform_viewpoints_list_to_string_list(viewpoints: List[Viewpoint]) -> List[str]:
+    """
+    Transform a (possibly nested) list of viewpoints to a list of strings, where
+    each string corresponds to the string-name of each viewpoint.
+
+    Parameters
+    ----------
+    viewpoints
+        List of viewpoints
+
+    Returns
+    -------
+    List[str]
+        List of strings
+    """
     result = []
 
     if isinstance(viewpoints, Viewpoint):
@@ -155,7 +169,7 @@ def viewpoints_list_to_string_list(viewpoints: List[Viewpoint]) -> List[str]:
         if len(viewpoints) == 0:
             raise ValueError("viewpoints invalid! Length must be greater than zero.")
         for viewpoint in viewpoints:
-            recursion_result = viewpoints_list_to_string_list(viewpoint)
+            recursion_result = transform_viewpoints_list_to_string_list(viewpoint)
             if len(recursion_result) == 1:
                 result.append(recursion_result[0])
             else:

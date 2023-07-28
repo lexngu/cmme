@@ -7,7 +7,7 @@ from .util import transform_to_unified_drex_input_sequence_representation
 
 
 class DistributionType(Enum):
-    """Implemented distribution types of D-REX"""
+    """Distribution types implemented by D-REX"""
     GAUSSIAN = "gaussian"
     LOGNORMAL = "lognormal"
     GMM = "gmm"
@@ -20,19 +20,32 @@ class Prior(ABC):
 
     @abstractmethod
     def distribution_type(self):
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def feature_count(self):
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def D_value(self):
-        pass
+        raise NotImplementedError
 
 
 class GaussianPrior(Prior):
     def __init__(self, means: np.ndarray, covariance: np.ndarray, n: np.ndarray):
+        """
+        Representation of a Gaussian prior
+
+        Parameters
+        ----------
+        means
+            mean values, shape: (feature, D)
+        covariance
+            covariance values, shape: (feature, D, D)
+        n
+            indicator of how many elements were counted so far, shape: (feature,)
+        """
+
         # Ensure parameters to have consistent shapes
         super().__init__()
         if len(means.shape) != 2:
@@ -72,6 +85,19 @@ class GaussianPrior(Prior):
 
 class LognormalPrior(Prior):
     def __init__(self, means: np.ndarray, covariance: np.ndarray, n: np.ndarray):
+        """
+        Representation of a Lognormal prior
+
+        Parameters
+        ----------
+        means
+            mean values, shape: (feature, D)
+        covariance
+            covariance values, shape: (feature, D, D)
+        n
+            indicator of how many elements were counted so far, shape: (feature,)
+        """
+
         # Ensure parameters to have consistent shapes
         super().__init__()
         if len(means.shape) != 2:
@@ -110,10 +136,24 @@ class LognormalPrior(Prior):
 
 
 class GmmPrior(Prior):
-    """
-    1-variate Gaussian Mixture Model, consisting of up to +k+ components.
-    """
-    def __init__(self, means, covariance, n, pi, sp, k):
+    def __init__(self, means: np.ndarray, covariance: np.ndarray, n: np.ndarray,
+                 pi: np.ndarray, sp: np.ndarray, k: np.ndarray):
+        """
+        Representation of a Gaussian Mixture Model prior
+
+        Parameters
+        ----------
+        means
+            mean values, shape: (feature, component)
+        covariance
+            covariance values, shape: (feature, component)
+        n
+            indicator of how many elements were counted so far, shape: (feature, component)
+        pi
+        sp
+        k
+        """
+
         # Check shapes
         super().__init__()
         if len(means.shape) != 2:
@@ -167,7 +207,17 @@ class GmmPrior(Prior):
 
 
 class PoissonPrior(Prior):
-    def __init__(self, lambd, n):
+    def __init__(self, lambd: np.ndarray, n: np.ndarray):
+        """
+        Representation of a Poisson prior
+
+        Parameters
+        ----------
+        lambd
+            interval size, shape: (feature,)
+        n
+            indicator of how many elements were counted so far, shape: (feature,)
+        """
         super().__init__()
         if len(lambd.shape) != 1:
             raise ValueError("Shape of lambd invalid! Expected one dimension: feature.")
@@ -195,19 +245,21 @@ class PoissonPrior(Prior):
 
 
 class UnprocessedPrior(Prior):
-    def __init__(self, distribution: DistributionType, prior_input_sequence, D=None, max_n_comp=None, beta=None):
-        # TODO move beta to D-REX hyper parameters
+    def __init__(self, distribution: DistributionType, prior_input_sequence: np.ndarray,
+                 D: int = None):
         """
-        Creates an unprocessed prior which will be processed by D-REX and used as "prior" for new context window
-        hypotheses.
+        Representation of an unprocessed prior which will be processed by D-REX and used as "prior" for
+        new context window hypotheses.
 
-        :param distribution: DistributionType
-        :param prior_input_sequence: np.array with shape (time, feature), or 2d-array with feature x time
-        :param D: amount of temporal dependence. If None, D-REX's default value will be used (Gaussian: 1, Poisson: 50),
-        if *distribution* is GMM, D=1 is enforced.
-        :param max_n_comp: Relevant for *distribution* GMM: Maxmimum number of components in Gaussian Mixture Model
-        (default: 10)
-        :param beta: probability between [0,1]. Threshold for new GMM components (see D-REX).
+        Parameters
+        ----------
+        distribution
+            Distribution type
+        prior_input_sequence
+            np.array with shape (time, feature), or 2d-list with feature x time
+        D
+            Amount of temporal dependence. If None, D-REX's default value will be used (Gaussian: 1, Poisson: 50),
+            if *distribution* is GMM, D=1 is enforced.
         """
 
         super().__init__()
@@ -239,13 +291,6 @@ class UnprocessedPrior(Prior):
         if prior_input_sequence_times < D:  # TODO check against min times
             raise ValueError("D invalid! Value must be less than the number of observations in prior_input_sequence.")
 
-        # Check max_n_comp
-        if distribution == DistributionType.GMM:
-            if max_n_comp is None:
-                max_n_comp = 10
-            if max_n_comp < 1:
-                raise ValueError("max_n_comp invalid! Value must be greater than or equal 1.")
-
         self._D = D
         self._feature_count = prior_input_sequence_features
         self._trials_count = prior_input_sequence_trials
@@ -253,8 +298,6 @@ class UnprocessedPrior(Prior):
         # Set attributes
         self._distribution = distribution
         self.prior_input_sequence = pis
-        self.max_n_comp = max_n_comp
-        self.beta = beta
 
     def distribution_type(self):
         return self._distribution

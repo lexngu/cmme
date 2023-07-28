@@ -1,9 +1,10 @@
 import tempfile
+from pathlib import Path
 
 from cmme.drex.base import UnprocessedPrior, DistributionType
 from cmme.drex.model import *
-from cmme.drex.util import transform_to_unified_drex_input_sequence_representation
 from cmme.drex.binding import transform_to_rundrexmodel_representation
+from cmme.drex.util import transform_to_unified_drex_input_sequence_representation
 from cmme.lib.util import drex_default_instructions_file_path, drex_default_results_file_path
 from cmme.drex.worker import DREXModel
 
@@ -27,14 +28,13 @@ def test_to_instructions_file_uses_specified_values():
     prior_distribution_type = DistributionType.GMM
     prior_input_sequence = [2, 3, 4]
     prior_D = 1
-    prior_max_n_comp = 9
-    prior_beta = 0.02
-    prior = UnprocessedPrior(prior_distribution_type, prior_input_sequence, prior_D,
-                             prior_max_n_comp, prior_beta)
+    prior = UnprocessedPrior(prior_distribution_type, prior_input_sequence, prior_D)
     input_sequence = transform_to_unified_drex_input_sequence_representation([1, 2, 3])
     hazard = 0.12
     memory = 22
     maxhyp = 11
+    max_ncomp = 9
+    beta = 0.02
     predscale = 0.987
     obsnz = [0.03]
     change_decision_threshold = 0.5
@@ -45,6 +45,8 @@ def test_to_instructions_file_uses_specified_values():
     drex_instance.obsnz(obsnz)
     drex_instance.change_decision_threshold(change_decision_threshold)
     drex_instance.prior(prior)
+    drex_instance.max_ncomp(max_ncomp)
+    drex_instance.beta(beta)
     drex_instance.predscale(predscale)
 
     instructions_file = drex_instance.to_instructions_file()
@@ -56,6 +58,8 @@ def test_to_instructions_file_uses_specified_values():
     assert instructions_file.maxhyp == maxhyp
     assert instructions_file.obsnz == obsnz
     assert instructions_file.predscale == predscale
+    assert instructions_file.max_ncomp == max_ncomp
+    assert instructions_file.beta == beta
     assert instructions_file.change_decision_threshold == change_decision_threshold
 
 
@@ -63,10 +67,7 @@ def test_run_succeeds():
     prior_distribution_type = DistributionType.GMM
     prior_input_sequence = [1, 1, 1, 1, 4, 4, 4, 4, 1, 2, 3, 4, 2, 2, 2, 2, 1, 1, 1, 1]
     prior_D = 1
-    prior_max_n_comp = 9
-    prior_beta = 0.02
-    prior = UnprocessedPrior(prior_distribution_type, prior_input_sequence, prior_D,
-                             prior_max_n_comp, prior_beta)
+    prior = UnprocessedPrior(prior_distribution_type, prior_input_sequence, prior_D)
     drex_instance = DREXInstructionBuilder()
 
     input_sequence = transform_to_unified_drex_input_sequence_representation([1, 2, 3])

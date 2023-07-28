@@ -1,9 +1,15 @@
+from __future__ import annotations
+
+import os
 from enum import Enum
 from pathlib import Path
+from typing import Union
 
+import cl4py
 from cl4py import Cons
 
 from cmme.config import Config
+from cmme.lib.util import path_as_string_with_trailing_slash
 
 
 class LispExpressionBuilderMode(Enum):
@@ -99,3 +105,39 @@ def idyom_default_instructions_file_path(alias: str = None, io_path: Path = Conf
         else instructions_file_filename
     instructions_file_filename = instructions_file_filename + ".csv"
     return io_path / instructions_file_filename
+
+
+def install_idyom(idyom_root_path: Union[str, Path], force_reset=False) -> Path:
+    """
+    Installs idyom as quicklisp project, and initializes the database
+    :param idyom_root_path:
+    :param force_reset:
+    :return: Path to idyom database
+    """
+    idyom_repository_path = (Path(__file__) / Path("../../../../res/models/idyom/")).resolve()
+    quicklisp_local_package_path = Path("~/quicklisp/local-projects/").expanduser().resolve()
+    idyom_repository_symlink_target_path = (quicklisp_local_package_path / "idyom/")
+    if not quicklisp_local_package_path.exists():
+        quicklisp_local_package_path.mkdir(parents=True)
+    if not idyom_repository_symlink_target_path.exists():
+        idyom_repository_symlink_target_path.symlink_to(idyom_repository_path)
+
+    lisp = cl4py.Lisp(quicklisp=True)
+
+    idyom_root_path = path_as_string_with_trailing_slash(idyom_root_path)
+    idyom_db_path = Path(os.path.join(idyom_root_path, "db/database.sqlite"))
+
+    if idyom_db_path.exists() and not force_reset:
+        print(
+            "Database at {} already exists. Use force_reset, if you want to reset the database.".format(idyom_db_path))
+
+    if not idyom_db_path.parent.exists():
+        Path(idyom_db_path).parent.mkdir(parents=True)
+
+    lisp.eval(('defvar', 'common-lisp-user::*idyom-root*', '"' + idyom_root_path + '"'))
+    lisp.eval(('ql:quickload', '"idyom"'))
+    lisp.eval(('clsql:connect', (
+        'list', '"' + str(idyom_db_path) + '"'), ':if-exists', ':old', ':database-type', ':sqlite3'))
+    lisp.eval(('idyom-db:initialise-database',))
+
+    return idyom_db_path

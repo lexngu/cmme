@@ -97,7 +97,7 @@ def transform_to_rundrexmodel_representation(input_sequence: np.ndarray) -> np.n
 class DREXInstructionsFile(InstructionsFile):
     @staticmethod
     def save(instructions_file: DREXInstructionsFile, instructions_file_path: Union[str, Path],
-             results_file_path: Union[str, Path]):
+             results_file_path: Union[str, Path] = None):
         data = dict()
 
         # Add instructions for procesing an unprocessed prior using D-REX's estimate_suffstat.m
@@ -109,8 +109,6 @@ class DREXInstructionsFile(InstructionsFile):
                     "D": float(instructions_file.prior.D_value())
                 }
             }
-            if instructions_file.prior.distribution_type() == DistributionType.GMM:
-                data["estimate_suffstat"]["params"]["max_ncomp"] = instructions_file.prior.max_n_comp
 
         # Add instructions for invoking D-REX (run_DREX_model.m)
         data["run_DREX_model"] = {
@@ -126,7 +124,8 @@ class DREXInstructionsFile(InstructionsFile):
             },
         }
         if instructions_file.prior.distribution_type() == DistributionType.GMM:
-            data["run_DREX_model"]["params"]["max_ncomp"] = instructions_file.prior.max_n_comp
+            data["run_DREX_model"]["params"]["max_ncomp"] = instructions_file.max_ncomp
+            data["run_DREX_model"]["params"]["beta"] = instructions_file.beta
 
         # Add instructions for post_DREX_changedecision.m
         if instructions_file.change_decision_threshold is not None:
@@ -153,8 +152,10 @@ class DREXInstructionsFile(InstructionsFile):
         maxhyp = data_rundrexmodel_params["maxhyp"]
         predscale = data_rundrexmodel_params["predscale"]
 
+        beta = None
         max_ncomp = None
         if distribution == DistributionType.GMM:
+            beta = data_rundrexmodel_params["beta"]
             max_ncomp = data_rundrexmodel_params["max_ncomp"]
 
         change_decision_threshold = None
@@ -171,12 +172,16 @@ class DREXInstructionsFile(InstructionsFile):
         else:
             raise NotImplementedError("Processed priors not implemented yet.")
 
-        return DREXInstructionsFile(input_sequence, prior, hazard, memory, maxhyp, obsnz, predscale,
-                                    change_decision_threshold)
+        return DREXInstructionsFile(input_sequence, prior,
+                                    hazard, memory, maxhyp, obsnz,
+                                    max_ncomp, beta,
+                                    predscale, change_decision_threshold)
 
     def __init__(self, input_sequence: np.ndarray, prior: Prior,
                  hazard: Union[float, list], memory: Union[int, float], maxhyp: Union[int, float],
-                 obsnz: Union[float, list], predscale: float, change_decision_threshold: float = None):
+                 obsnz: Union[float, list],
+                 max_ncomp: int, beta: float,
+                 predscale: float, change_decision_threshold: float):
         """
         Complete representation of a single D-REX run.
 
@@ -194,6 +199,10 @@ class DREXInstructionsFile(InstructionsFile):
             Number of hypotheses to calculate at every time step
         obsnz
             Observation noise, shape: (feature,)
+        max_ncomp
+            Maxmimum number of components (relevant if using a GMM prior)
+        beta
+            Threshold for new components (relevant if using a GMM prior
         predscale
             Predscale (D-REX internal)
         change_decision_threshold
@@ -231,6 +240,8 @@ class DREXInstructionsFile(InstructionsFile):
         self.obsnz = obsnz
         self.memory = memory
         self.maxhyp = maxhyp
+        self.max_ncomp = max_ncomp
+        self.beta = beta
         self.predscale = predscale
         self.change_decision_threshold = change_decision_threshold
 

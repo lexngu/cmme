@@ -187,7 +187,7 @@ class IDYOMInstructionBuilder(ModelBuilder):
         if not self._select_options == {}:  # if not empty
             leb.add(":select")
         else:
-            source_viewpoint_names = viewpoints_list_to_string_list(self._source_viewpoints)
+            source_viewpoint_names = transform_viewpoints_list_to_string_list(self._source_viewpoints)
             leb.add_list(source_viewpoint_names)
         # (CMD <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> ...)
         leb.add(":models").add(self._model.value)

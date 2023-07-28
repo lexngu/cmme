@@ -2,7 +2,7 @@ import os.path
 import tempfile
 from pathlib import Path
 
-from cmme.idyom.binding import install_idyom
+from cmme.idyom.util import install_idyom
 
 
 def test_install_idyom():

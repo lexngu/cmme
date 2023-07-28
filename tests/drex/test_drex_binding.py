@@ -44,8 +44,11 @@ def test_drex_instructions_file():
     maxhyp = 2
     obsnz = 0.1
     predscale = 0.001
+    beta = 0.002
+    max_ncomp = 11
     change_decision_threshold = 0.1
     instructions_file = DREXInstructionsFile(input_sequence, prior, hazard, memory, maxhyp, obsnz,
+                                             max_ncomp, beta,
                                              predscale, change_decision_threshold)
 
     tmp_file_path = tempfile.NamedTemporaryFile().name
@@ -56,7 +59,6 @@ def test_drex_instructions_file():
     assert np.array_equal(transform_to_estimatesuffstat_representation(prior_input_sequence), transform_to_estimatesuffstat_representation(prior_input_sequence_from_mat_to_trialtimefeature_sequence(data_after_read["estimate_suffstat"]["xs"][0])))
     assert prior.distribution_type().value == data_after_read["estimate_suffstat"]["params"][0][0][0]["distribution"][0][0]
     assert prior.D_value() == data_after_read["estimate_suffstat"]["params"][0][0][0]["D"][0][0][0]
-    assert prior.max_n_comp == data_after_read["estimate_suffstat"]["params"][0][0][0]["max_ncomp"][0][0][0]
     assert np.array_equal(transform_to_rundrexmodel_representation(instructions_file.input_sequence), data_after_read["run_DREX_model"]["x"][0][0])
     assert prior.distribution_type().value == data_after_read["run_DREX_model"]["params"][0][0][0]["distribution"][0][0]
     assert prior.D_value() == data_after_read["run_DREX_model"]["params"][0][0][0]["D"][0][0][0]
@@ -64,7 +66,8 @@ def test_drex_instructions_file():
     assert instructions_file.memory == data_after_read["run_DREX_model"]["params"][0][0][0]["memory"][0][0][0]
     assert instructions_file.maxhyp == data_after_read["run_DREX_model"]["params"][0][0][0]["maxhyp"][0][0][0]
     assert instructions_file.obsnz == data_after_read["run_DREX_model"]["params"][0][0][0]["obsnz"][0][0][0]
-    assert prior.max_n_comp == data_after_read["run_DREX_model"]["params"][0][0][0]["max_ncomp"][0][0][0]
+    assert max_ncomp == data_after_read["run_DREX_model"]["params"][0][0][0]["max_ncomp"][0][0][0]
+    assert beta == data_after_read["run_DREX_model"]["params"][0][0][0]["beta"][0][0][0]
     assert instructions_file.change_decision_threshold == data_after_read["post_DREX_changedecision"]["threshold"][0][0][0]
 
 

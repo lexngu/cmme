@@ -102,13 +102,13 @@ class PPMSimpleInstructionsFile(PPMInstructionsFile):
 class PPMDecayInstructionsFile(PPMInstructionsFile):
     @classmethod
     def save(cls, instructions_file: PPMDecayInstructionsFile, instructions_file_path: Union[str, Path],
-              results_file_path: Union[str, Path] = None):
+             results_file_path: Union[str, Path] = None):
         data = {
             "model_type": [instructions_file._model_type.value],
             "alphabet_levels": [list_to_str(instructions_file._alphabet_levels)],
             "order_bound": [instructions_file._order_bound],
             "input_sequence": [instructions_file._input_sequence],
-            "results_file_path": [str(results_file_path)] if results_file_path is not None else []
+            "results_file_path": [str(results_file_path)] if results_file_path is not None else [""]
         }
 
         data.update({

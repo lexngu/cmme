@@ -1,4 +1,5 @@
 from cmme.idyom.model import *
+from cmme.idyom.util import install_idyom
 
 
 def test_default_idyom_instruction_builder_uses_default_values():

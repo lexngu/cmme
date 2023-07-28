@@ -2,19 +2,14 @@ from __future__ import annotations
 
 import numbers
 from abc import ABC
-from pathlib import Path
 from typing import Union, List
 
 from .base import Prior
 from .binding import DREXInstructionsFile
 from .util import transform_to_unified_drex_input_sequence_representation
-from ..lib.util import drex_default_results_file_path
 import numpy as np
 
 from ..lib.model import ModelBuilder
-
-
-# TODO GMM has a paramater "beta", which is not a prior parameter, but a main function's parameter
 
 
 class DREXInstructionBuilder(ModelBuilder, ABC):
@@ -26,6 +21,8 @@ class DREXInstructionBuilder(ModelBuilder, ABC):
         * memory = inf
         * maxhyp = inf
         * obsnz = 0
+        * max_ncomp = 10 (relevant for GMM priors)
+        * beta = 0.001 (relevant for GMM priors)
         * predscale = 0.01
         * change decision threshold = 0.01
 
@@ -45,10 +42,24 @@ class DREXInstructionBuilder(ModelBuilder, ABC):
         self._change_decision_threshold = 0.01
         self._obsnz = 0
         self._predscale = 0.001
+        self._max_ncomp = 10
+        self._beta = 0.001
 
         self._prior = None
 
-    def prior(self, prior: Prior):
+    def prior(self, prior: Prior) -> DREXInstructionBuilder:
+        """
+        Set the (un)processed prior.
+
+        Parameters
+        ----------
+        prior
+            Prior
+        Returns
+        -------
+        DREXInstructionBuilder
+            self
+        """
         self._prior = prior
         return self
 
@@ -170,7 +181,7 @@ class DREXInstructionBuilder(ModelBuilder, ABC):
 
     def change_decision_threshold(self, change_decision_threshold: float) -> DREXInstructionBuilder:
         """
-        Sets the change decision threshold.
+        Set the change decision threshold.
 
         Parameters
         ----------
@@ -187,14 +198,72 @@ class DREXInstructionBuilder(ModelBuilder, ABC):
         self._change_decision_threshold = change_decision_threshold
         return self
 
-    def to_instructions_file(self) -> DREXInstructionsFile:
-        return DREXInstructionsFile(self._input_sequence, self._prior,
-                                    self._hazard, self._memory,
-                                    self._maxhyp, self._obsnz,
-                                    self._predscale, self._change_decision_threshold)
+    def predscale(self, predscale: float) -> DREXInstructionBuilder:
+        """
+        Set the predscale value.
 
-    def predscale(self, predscale: float):
+        Parameters
+        ----------
+        predscale
+            float in range [0,1]
+
+        Returns
+        -------
+        DREXInstructionBuilder
+            self
+        """
         if not predscale > 0 and predscale <= 1:
             raise ValueError("predscale invalid! Value must be in range (0,1].")
         self._predscale = float(predscale)
         return self
+
+    def max_ncomp(self, max_ncomp: int) -> DREXInstructionBuilder:
+        """
+        Set the max_ncomp value D-REX's handling of GMM priors.
+
+        Parameters
+        ----------
+        max_ncomp
+            Maximum number of components
+
+        Returns
+        -------
+        DREXInstructionBuilder
+            self
+        """
+        if not (max_ncomp > 0 and isinstance(max_ncomp, int)):
+            raise ValueError("max_ncomp invalid! Value must be positive and integer.")
+
+        self._max_ncomp = max_ncomp
+
+        return self
+
+    def beta(self, beta: float) -> DREXInstructionBuilder:
+        """
+        Set the beta value for D-REX's handling of GMM priors.
+
+        Parameters
+        ----------
+        beta
+            Threshold for new GMM components.
+
+        Returns
+        -------
+        DREXInstructionBuilder
+            self
+        """
+        if not (0 <= beta <= 1):
+            raise ValueError("beta invalid! Value must be between 0 and 1.")
+
+        self._beta = beta
+
+        return self
+
+    def to_instructions_file(self) -> DREXInstructionsFile:
+        return DREXInstructionsFile(self._input_sequence, self._prior,
+                                    self._hazard, self._memory,
+                                    self._maxhyp, self._obsnz,
+                                    self._max_ncomp, self._beta,
+                                    self._predscale, self._change_decision_threshold)
+
+
