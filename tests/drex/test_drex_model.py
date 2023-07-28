@@ -1,9 +1,10 @@
 import tempfile
-from pathlib import Path
 
 from cmme.drex.base import UnprocessedPrior, DistributionType
 from cmme.drex.model import *
-from cmme.drex.util import trialtimefeature_sequence_as_singletrial_array, drex_default_instructions_file_path
+from cmme.drex.util import trialtimefeature_sequence_as_singletrial_array
+from cmme.lib.input_data import auto_convert_input_sequence
+from cmme.lib.util import drex_default_instructions_file_path, drex_default_results_file_path
 from cmme.drex.worker import DREXModel
 
 

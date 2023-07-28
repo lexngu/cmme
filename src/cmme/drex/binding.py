@@ -1,35 +1,37 @@
 from __future__ import annotations
 
 import numbers
+from pathlib import Path
 from typing import Union
 
 import numpy as np
 import scipy.io as sio
 
 from .base import DistributionType, Prior, UnprocessedPrior, GaussianPrior, LognormalPrior, GmmPrior, PoissonPrior
-from .util import auto_convert_input_sequence, trialtimefeature_sequence_as_multitrial_cell, \
+from .util import trialtimefeature_sequence_as_multitrial_cell, \
     trialtimefeature_sequence_as_singletrial_array
+from ..lib.input_data import auto_convert_input_sequence
 from ..lib.instructions_file import InstructionsFile
 from ..lib.results_file import ResultsFile
 
 
-def to_mat(data, file_path):
+def to_mat(data, file_path: Union[str, Path]):
     sio.savemat(str(file_path), data)
-    return file_path
 
 
-def from_mat(file_path):
-    mat_data = sio.loadmat(file_path)
+def from_mat(file_path: Union[str, Path]) -> dict:
+    mat_data = sio.loadmat(str(file_path))
+
     return mat_data
 
 
 class DREXInstructionsFile(InstructionsFile):
     @staticmethod
-    def _generate_instructions_file_path() -> str:
-        return "drex-instructions.mat"
+    def _generate_instructions_file_path() -> Path:
+        return Path("./drex-instructions.mat")
 
     @classmethod
-    def _save(cls, instructions_file: DREXInstructionsFile, file_path: str):
+    def _save(cls, instructions_file: DREXInstructionsFile, file_path: Union[str, Path]):
         data = dict()
 
         # Add instructions for procesing an unprocessed prior using D-REX's estimate_suffstat.m
@@ -67,20 +69,20 @@ class DREXInstructionsFile(InstructionsFile):
             }
 
         # Add results_file_path
-        data["results_file_path"] = instructions_file.results_file_path
+        data["results_file_path"] = str(instructions_file.results_file_path)
 
         # Write and return
         return to_mat(data, file_path)
 
     @classmethod
-    def save(cls, instructions_file: DREXInstructionsFile, file_path: str = _generate_instructions_file_path()):
+    def save(cls, instructions_file: DREXInstructionsFile, file_path: Union[str, Path] = _generate_instructions_file_path()):
         cls._save(instructions_file, file_path)
 
     @staticmethod
     def load(file_path: str) -> InstructionsFile:
         pass
 
-    def __init__(self, results_file_path: str, input_sequence: np.ndarray, prior: Prior,
+    def __init__(self, results_file_path: Union[str, Path], input_sequence: np.ndarray, prior: Prior,
                  hazard: Union[numbers.Number, list, np.ndarray], memory: Union[int, float], maxhyp: Union[int, float],
                  obsnz: float, predscale: float, change_decision_threshold: float = None):
         # TODO move predscale to last position
@@ -198,15 +200,15 @@ def parse_post_DREX_prediction_results(results):
 
 class DREXResultsFile(ResultsFile):
     @staticmethod
-    def _generate_results_file_path() -> str:
-        return "drex-results.mat"
+    def _generate_results_file_path() -> Path:
+        return Path("drex-results.mat")
 
     @staticmethod
-    def _save(results_file: DREXResultsFile, file_path: str):
-        pass
+    def _save(results_file: DREXResultsFile, file_path: Union[str, Path]):
+        raise NotImplementedError  # TODO
 
     @staticmethod
-    def load(file_path: str) -> Union[DREXResultsFile, Prior]:
+    def load(file_path: Union[str, Path]) -> Union[DREXResultsFile, Prior]:
         data = from_mat(file_path)
 
         prior = parse_results_file_estimate_suffstat(data)
@@ -234,17 +236,18 @@ class DREXResultsFile(ResultsFile):
         else:
             psi = ResultsFilePsi({}, {})
 
-        return DREXResultsFile(file_path, instructions_file_path, input_sequence, prior, surprisal,
+        return DREXResultsFile(str(file_path), str(instructions_file_path), input_sequence, prior, surprisal,
                                joint_surprisal,
                                context_beliefs, belief_dynamics, change_decision_changepoint,
                                change_decision_probability,
                                change_decision_threshold, psi)
 
     # TODO add prediction_params from run_DREX_model.m?
-    def __init__(self, results_file_path: str, instructions_file_path: str, input_sequence: np.ndarray, prior: Prior,
+    def __init__(self, results_file_path: Union[str, Path], instructions_file_path: Union[str, Path],
+                 input_sequence: np.ndarray, prior: Prior,
                  surprisal: np.ndarray, joint_surprisal: np.ndarray, context_beliefs: np.ndarray,
                  belief_dynamics: np.ndarray, change_decision_changepoint: int, change_decision_probability: np.ndarray,
-                 change_decision_threshold: numbers.Number, psi: ResultsFilePsi):
+                 change_decision_threshold: float, psi: ResultsFilePsi):
         super().__init__()
         if len(input_sequence.shape) != 2:
             raise ValueError("Shape of input_sequence invalid! Expected two dimensions: time, feature.")
@@ -262,7 +265,7 @@ class DREXResultsFile(ResultsFile):
         [input_sequence_times, input_sequence_features] = input_sequence.shape
         [surprisal_times, surprisal_features] = surprisal.shape
         joint_surprisal_times = joint_surprisal.shape[0]
-        [context_beliefs_memory, context_beliefs_contexts] = context_beliefs.shape
+        [_, context_beliefs_contexts] = context_beliefs.shape
         belief_dynamics_times = belief_dynamics.shape[0]
 
         if not (
@@ -297,7 +300,8 @@ class DREXResultsFile(ResultsFile):
         self.belief_dynamics = belief_dynamics
         """Belief dynamics: time => 1"""
         self.change_decision_changepoint = change_decision_changepoint
-        """Change detector's calculated changepoint (although being an int, this value is stored as float, in order to support float('nan'))"""
+        """Change detector's calculated changepoint (although being an int, 
+        this value is stored as float, in order to support float('nan'))"""
         self.change_decision_probability = change_decision_probability
         """Change detector's calculated change probability: time => 1"""
         self.change_decision_threshold = change_decision_threshold

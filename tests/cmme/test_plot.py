@@ -3,10 +3,10 @@ from pathlib import Path
 
 from cmme.drex.base import DistributionType, UnprocessedPrior
 from cmme.drex.model import DREXInstructionBuilder
-from cmme.drex.util import drex_default_instructions_file_path, drex_default_results_file_path
+from cmme.lib.util import drex_default_instructions_file_path, drex_default_results_file_path, \
+    ppmdecay_default_instructions_file_path, ppmdecay_default_results_file_path
 from cmme.drex.worker import DREXModel
 from cmme.ppmdecay.model import PPMModel, PPMDecayInstance
-from cmme.ppmdecay.util import ppmdecay_default_instructions_file_path, ppmdecay_default_results_file_path
 from cmme.visualization.data_frame import DataFrame
 from cmme.visualization.plot import MatlabPlot, MatplotlibPlot
 from cmme.visualization.util.util import cmme_default_plot_output_file_path, cmme_default_plot_instructions_file_path

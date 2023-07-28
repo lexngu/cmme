@@ -5,7 +5,7 @@ from .binding import *
 from .util import *
 from ..lib.instructions_file import InstructionsFile
 from ..lib.model import ModelBuilder, Model
-from ..util import flatten_list
+from cmme.lib.util import flatten_list
 
 
 class IDYOMInstructionBuilder(ModelBuilder):
@@ -130,7 +130,8 @@ class IDYOMInstructionBuilder(ModelBuilder):
             }
         return self
 
-    def output_options(self, output_path=tempfile.gettempdir(), detail=3, overwrite=False, separator=" "):
+    def output_options(self, output_path: Union[str, Path] = tempfile.gettempdir(), detail=3,
+                       overwrite=False, separator=" "):
         if output_path is None:
             raise ValueError("None is not an allowed value for output_path!")
 
@@ -257,7 +258,7 @@ class IDYOMInstructionBuilder(ModelBuilder):
         # [:pretraining-ids ... :k ... :resampling-indices ...] [:basis ... :dp ... :max-links ... :min-links ... :viewpoint-selection-output ...]
         # :detail [:output-path ... :overwrite ... :separator ...] ...)
         if self._output_options["output_path"]:
-            leb.add(":output-path").add_string(self._output_options["output_path"])
+            leb.add(":output-path").add_string(path_as_string_with_trailing_slash(self._output_options["output_path"]))
         else:
             leb.add(":output-path").add("nil")
         leb.add(":overwrite").add("t" if self._output_options["overwrite"] else "nil")
@@ -298,15 +299,15 @@ class IDYOMInstructionBuilder(ModelBuilder):
 
 class IDYOMModel(Model):
     @staticmethod
-    def run_instructions_file_at_path(file_path) -> ResultsFile:
-        pass
+    def run_instructions_file_at_path(file_path: Union[str, Path]) -> ResultsFile:
+        raise NotImplementedError
 
     def __init__(self, idyom_root_path: Path = Config().idyom_root_path(),
                  idyom_database_path: Path = Config().idyom_database_path()):
         super().__init__()
         self.idyom_binding = IDYOMBinding(str(idyom_root_path.resolve()), str(idyom_database_path.resolve()))
 
-    def import_midi(self, midi_files_directory_path: str, description: str, dataset_id: int = None,
+    def import_midi(self, midi_files_directory_path: Union[str, Path], description: str, dataset_id: int = None,
                     timebase: int = 96) -> Dataset:
         """
 
@@ -319,9 +320,9 @@ class IDYOMModel(Model):
         if dataset_id is None:
             dataset_id = self.idyom_binding.next_free_dataset_id()
 
-        return self.idyom_binding.import_midi(midi_files_directory_path, description, dataset_id, timebase)
+        return self.idyom_binding.import_midi(path_as_string_with_trailing_slash(midi_files_directory_path), description, dataset_id, timebase)
 
-    def import_kern(self, krn_files_directory_path: str, description: str, dataset_id: int = None,
+    def import_kern(self, krn_files_directory_path: Union[str, Path], description: str, dataset_id: int = None,
                     timebase: int = 96) -> Dataset:
         """
 
@@ -334,13 +335,13 @@ class IDYOMModel(Model):
         if dataset_id is None:
             dataset_id = self.idyom_binding.next_free_dataset_id()
 
-        return self.idyom_binding.import_kern(krn_files_directory_path, description, dataset_id, timebase)
+        return self.idyom_binding.import_kern(path_as_string_with_trailing_slash(krn_files_directory_path), description, dataset_id, timebase)
 
     def all_datasets(self) -> List[Dataset]:
         return self.idyom_binding.all_datasets()
 
     def run(self, instruction_builder: IDYOMInstructionBuilder,
-            instructions_file_path=idyom_default_instructions_file_path()) -> IDYOMResultsFile:
+            instructions_file_path: Union[str, Path]=idyom_default_instructions_file_path()) -> IDYOMResultsFile:
         # log execution string
         results_file_path = os.path.join(instruction_builder._output_options["output_path"], self.idyom_binding.eval(
             instruction_builder.build_for_cl4py_filename_inference()))
@@ -355,7 +356,7 @@ class IDYOMModel(Model):
                 csvwriter = csv.DictWriter(f, fieldnames=instructions_file_data.keys())
                 csvwriter.writeheader()
                 csvwriter.writerow(instructions_file_data)
-            print("This run is documented in {}.".format(str(instructions_file_path)))
+            print("This run is documented in {}.".format(instructions_file_path))
 
         self.idyom_binding.eval(instruction_builder.build_for_cl4py())
 

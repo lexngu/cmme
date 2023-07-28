@@ -1,9 +1,12 @@
 import numbers
 from abc import ABC
+from pathlib import Path
+from typing import Union
 
 from .base import Prior
 from .binding import DREXInstructionsFile
-from .util import auto_convert_input_sequence, drex_default_results_file_path
+from ..lib.input_data import auto_convert_input_sequence
+from ..lib.util import drex_default_results_file_path
 import numpy as np
 
 from ..lib.model import ModelBuilder
@@ -31,7 +34,7 @@ class DREXInstructionBuilder(ModelBuilder, ABC):
         self._prior = prior
         return self
 
-    def input_sequence(self, input_sequence):
+    def input_sequence(self, input_sequence: Union[list, np.ndarray]):
         """
         Sets the input sequence to process
         :param input_sequence: np.array of shape (time, feature)
@@ -120,8 +123,8 @@ class DREXInstructionBuilder(ModelBuilder, ABC):
         self._change_decision_threshold = change_decision_threshold
         return self
 
-    def build_instructions_file(self, results_file_path=drex_default_results_file_path()) -> DREXInstructionsFile:
-        return DREXInstructionsFile(results_file_path,
+    def build_instructions_file(self, results_file_path: Union[str, Path] = drex_default_results_file_path()) -> DREXInstructionsFile:
+        return DREXInstructionsFile(str(results_file_path),
                                     self._input_sequence, self._prior,
                                     self._hazard, self._memory,
                                     self._maxhyp, self._obsnz,

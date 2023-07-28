@@ -1,5 +1,4 @@
 import tempfile
-from pathlib import Path
 
 from cmme.ppmdecay.model import *
 from cmme.ppmdecay.util import str_to_list, list_to_str, auto_convert_input_sequence

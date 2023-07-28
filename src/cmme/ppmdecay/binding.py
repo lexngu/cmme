@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from abc import ABC
 from pathlib import Path
+from typing import Union
 
 import pandas as pd
 
@@ -21,7 +22,7 @@ PPM_RUN_FILEPATH = (Path(
     __file__).parent.parent.parent.parent.absolute() / "./res/wrappers/ppm-decay/ppmdecay_intermediate_script.R").resolve()
 
 
-def invoke_model(instructions_file_path: Path) -> str:
+def invoke_model(instructions_file_path: Union[str, Path]) -> str:
     """
 
     :param instructions_file_path:
@@ -38,10 +39,11 @@ def invoke_model(instructions_file_path: Path) -> str:
 
 class PPMInstructionsFile(InstructionsFile, ABC):
     @staticmethod
-    def _generate_instructions_file_path() -> str:
-        pass
+    def _generate_instructions_file_path() -> Path:
+        return Path("ppmdecay-instructionsfile.feather")
 
-    def __init__(self, model_type: ModelType, alphabet_levels, order_bound, input_sequence, results_file_path: str):
+    def __init__(self, model_type: ModelType, alphabet_levels, order_bound, input_sequence,
+                 results_file_path: Union[str, Path]):
         super().__init__()
         self._model_type = model_type
         self._alphabet_levels = alphabet_levels
@@ -50,14 +52,14 @@ class PPMInstructionsFile(InstructionsFile, ABC):
         self._input_sequence = input_sequence
         self._results_file_path = results_file_path
 
-    def write_instructions_file(self, instructions_file_path: Path):
+    def write_instructions_file(self, instructions_file_path: Union[str, Path]):
         # TODO use generator for instructions_file_path
         data = {
             "model_type": [self._model_type.value],
             "alphabet_levels": [list_to_str(self._alphabet_levels)],
             "order_bound": [self._order_bound],
             "input_sequence": [self._input_sequence],
-            "results_file_path": [self._results_file_path]
+            "results_file_path": [str(self._results_file_path)]
         }
         if isinstance(self, PPMSimpleInstructionsFile):
             data.update({
@@ -86,18 +88,16 @@ class PPMInstructionsFile(InstructionsFile, ABC):
         df = pd.DataFrame.from_dict(data)
         df.to_feather(instructions_file_path)
 
-        return instructions_file_path
-
 
 class PPMSimpleInstructionsFile(PPMInstructionsFile):
     @classmethod
-    def _save(cls, instructions_file: PPMSimpleInstructionsFile, file_path):
+    def _save(cls, instructions_file: PPMSimpleInstructionsFile, file_path: Union[str, Path]):
         data = {
             "model_type": [instructions_file._model_type.value],
             "alphabet_levels": [list_to_str(instructions_file._alphabet_levels)],
             "order_bound": [instructions_file._order_bound],
             "input_sequence": [instructions_file._input_sequence],
-            "results_file_path": [instructions_file._results_file_path]
+            "results_file_path": [str(instructions_file._results_file_path)]
         }
 
         data.update({
@@ -112,16 +112,16 @@ class PPMSimpleInstructionsFile(PPMInstructionsFile):
 
     @classmethod
     def save(cls, instructions_file: PPMSimpleInstructionsFile,
-             file_path: str = PPMInstructionsFile._generate_instructions_file_path()):
+             file_path: Union[str, Path] = PPMInstructionsFile._generate_instructions_file_path()):
         cls._save(instructions_file, file_path)
     @staticmethod
-    def load(file_path) -> PPMSimpleInstructionsFile:
+    def load(file_path: Union[str, Path]) -> PPMSimpleInstructionsFile:
         df = pd.read_feather(file_path)
 
         alphabet_levels = df["alphabet_levels"]
         order_bound = df["order_bound"]
         input_sequence = df["input_sequence"]
-        results_file_path = df["results_file_path"]
+        results_file_path = str(df["results_file_path"])
         shortest_deterministic = df["shortest_deterministic"]
         exclusion = df["exclusion"]
         update_exclusion = df["update_exclusion"]
@@ -144,13 +144,13 @@ class PPMSimpleInstructionsFile(PPMInstructionsFile):
 
 class PPMDecayInstructionsFile(PPMInstructionsFile):
     @classmethod
-    def _save(cls, instructions_file: PPMDecayInstructionsFile, file_path):
+    def _save(cls, instructions_file: PPMDecayInstructionsFile, file_path: Union[str, Path]):
         data = {
             "model_type": [instructions_file._model_type.value],
             "alphabet_levels": [list_to_str(instructions_file._alphabet_levels)],
             "order_bound": [instructions_file._order_bound],
             "input_sequence": [instructions_file._input_sequence],
-            "results_file_path": [instructions_file._results_file_path]
+            "results_file_path": [str(instructions_file._results_file_path)]
         }
 
         data.update({
@@ -174,18 +174,18 @@ class PPMDecayInstructionsFile(PPMInstructionsFile):
 
     @classmethod
     def save(cls, instructions_file: PPMDecayInstructionsFile,
-             file_path: str = PPMInstructionsFile._generate_instructions_file_path()):
+             file_path: Union[str, Path] = PPMInstructionsFile._generate_instructions_file_path()):
         cls._save(instructions_file, file_path)
 
     @staticmethod
-    def load(file_path) -> InstructionsFile:
+    def load(file_path: Union[str, Path]) -> InstructionsFile:
         df = pd.read_feather(file_path)
 
         alphabet_levels = df["alphabet_levels"]
         order_bound = df["order_bound"]
         input_sequence = df["input_sequence"]
         input_time_sequence = df["input_time_sequence"]
-        results_file_path = df["results_file_path"]
+        results_file_path = str(df["results_file_path"])
         buffer_weight = df["buffer_weight"]
         buffer_length_time = df["buffer_length_time"]
         buffer_length_items = df["buffer_length_items"]
@@ -258,30 +258,30 @@ class PPMDecayResultsFileData(ResultsFileData):
 
 class PPMResultsMetaFile(ResultsFile):
     @staticmethod
-    def _generate_results_file_path() -> str:
-        return "results-file.feather"
+    def _generate_results_file_path() -> Path:
+        return Path("results-file.feather")
 
     @staticmethod
-    def _save(results_file: PPMResultsMetaFile, file_path: str):
+    def _save(results_file: PPMResultsMetaFile, file_path: Union[str, Path]):
         meta_df = pd.DataFrame.from_dict({
             "model_type": results_file._model_type,
             "alphabet_levels": results_file._alphabet_levels,
-            "instructions_file_path": results_file._instructions_file_path,
-            "results_file_data_path": results_file._results_file_data_path
+            "instructions_file_path": str(results_file._instructions_file_path),
+            "results_file_data_path": str(results_file._results_file_data_path)
         })
         data_df = results_file.results_file_data
 
         meta_df.to_feather(file_path)
-        data_df.df.to_feather(file_path.replace(".feather", ".data.feather"))
+        data_df.df.to_feather(str(file_path).replace(".feather", ".data.feather"))
 
     @staticmethod
-    def load(file_path: str) -> PPMResultsMetaFile:
+    def load(file_path: Union[str, Path]) -> PPMResultsMetaFile:
         df = pd.read_feather(file_path)
 
         model_type = ModelType(df["model_type"][0])
         alphabet_levels = str_to_list(df["alphabet_levels"][0])
-        instructions_file_path = df["instructions_file_path"][0]
-        results_file_data_path = df["results_file_data_path"][0]
+        instructions_file_path = str(df["instructions_file_path"][0])
+        results_file_data_path = str(df["results_file_data_path"][0])
 
         if not os.path.exists(results_file_data_path):
             results_file_data_filename = os.path.basename(results_file_data_path)
@@ -293,7 +293,7 @@ class PPMResultsMetaFile(ResultsFile):
         return PPMResultsMetaFile(file_path, model_type, alphabet_levels, instructions_file_path,
                                   results_file_data_path)
 
-    def __init__(self, results_file_meta_path, model_type: ModelType, alphabet_levels, instructions_file_path,
+    def __init__(self, results_file_meta_path: Path, model_type: ModelType, alphabet_levels, instructions_file_path,
                  results_file_data_path):
         super().__init__()
         self.results_file_meta_path = results_file_meta_path

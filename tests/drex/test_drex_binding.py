@@ -5,8 +5,9 @@ from numpy import array
 
 from cmme.drex.base import UnprocessedPrior, DistributionType, GaussianPrior
 from cmme.drex.binding import from_mat, to_mat, DREXInstructionsFile, DREXResultsFile, ResultsFilePsi
-from cmme.drex.util import auto_convert_input_sequence, trialtimefeature_sequence_as_singletrial_array, \
+from cmme.drex.util import trialtimefeature_sequence_as_singletrial_array, \
     trialtimefeature_sequence_as_multitrial_cell
+from cmme.lib.input_data import auto_convert_input_sequence
 
 
 def prior_input_sequence_from_mat_to_trialtimefeature_sequence(prior_input_sequence_from_mat):

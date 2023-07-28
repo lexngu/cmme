@@ -1,7 +1,4 @@
 import numbers
-from pathlib import Path
-
-from cmme.config import Config
 
 
 def list_to_str(lst, sep=", "):
@@ -10,21 +7,6 @@ def list_to_str(lst, sep=", "):
 
 def str_to_list(s, sep=", "):
     return s.split(sep)
-
-
-def ppmdecay_default_instructions_file_path(alias: str = None, io_path: Path = Config().model_io_path()) -> str:
-    instructions_file_filename = "ppmdecay-instructionsfile"
-    instructions_file_filename = instructions_file_filename + "-" + alias if alias is not None \
-        else instructions_file_filename
-    instructions_file_filename = instructions_file_filename + ".feather"
-    return str(io_path / instructions_file_filename)
-
-
-def ppmdecay_default_results_file_path(alias: str = None, io_path: Path = Path(".")) -> str:
-    results_file_filename = "ppmdecay-resultsfile"
-    results_file_filename = results_file_filename + "-" + alias if alias is not None else results_file_filename
-    results_file_filename = results_file_filename + ".feather"
-    return str(io_path / results_file_filename)
 
 
 def auto_convert_input_sequence(input_sequence: list):

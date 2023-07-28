@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from cmme.util import flatten_list, path_as_string_with_trailing_slash
+from cmme.lib.util import flatten_list, path_as_string_with_trailing_slash
 
 
 def test_flatten_list_always_returns_a_list():

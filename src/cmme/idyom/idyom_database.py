@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Union, List
 
 from .base import Dataset, Composition, Viewpoint
@@ -7,7 +8,7 @@ class IdyomDatabase:
     def __init__(self):
         pass
 
-    def import_midi_dataset(self, path: str) -> int:
+    def import_midi_dataset(self, path: Union[str, Path]) -> int:
         """
         Call IDyOM's import function of MIDI files using the specified path.
 
@@ -22,7 +23,7 @@ class IdyomDatabase:
         """
         pass
 
-    def import_kern_dataset(self, path: str) -> int:
+    def import_kern_dataset(self, path: Union[str, Path]) -> int:
         """
         Call IDyOM's import function of **kern files using the specified path.
 

@@ -3,13 +3,14 @@ from __future__ import annotations
 import random
 from abc import ABC
 from pathlib import Path
+from typing import Union
 
 from cmme.lib.model import ModelBuilder, Model
 from cmme.ppmdecay.base import EscapeMethod, ModelType
-from cmme.ppmdecay.binding import PPMInstructionsFile, PPMSimpleInstructionsFile, PPMDecayInstructionsFile, \
+from cmme.ppmdecay.binding import PPMSimpleInstructionsFile, PPMDecayInstructionsFile, \
     PPMResultsMetaFile, invoke_model
-from cmme.ppmdecay.util import ppmdecay_default_results_file_path, ppmdecay_default_instructions_file_path, \
-    auto_convert_input_sequence
+from cmme.ppmdecay.util import auto_convert_input_sequence
+from cmme.lib.util import ppmdecay_default_instructions_file_path, ppmdecay_default_results_file_path
 
 import os
 
@@ -233,18 +234,23 @@ class PPMModel(Model):
         super().__init__()
         self.instance = instance
 
-    def run(self, instructions_file_path: str = ppmdecay_default_instructions_file_path(),
-            results_file_path: str = ppmdecay_default_results_file_path()) -> PPMResultsMetaFile:
+    def run(self, instructions_file_path: Union[str] = ppmdecay_default_instructions_file_path(),
+            results_file_path: Union[str, Path] = ppmdecay_default_results_file_path()) -> PPMResultsMetaFile:
         instructions_file = self.instance.to_instructions_file(results_file_path)  #
         instructions_file.save_self(instructions_file_path)
         model_results_path = invoke_model(Path(instructions_file_path))   # TODO change results file path handling
 
-        if os.path.exists(results_file_path):
+        if not isinstance(instructions_file_path, Path):
+            instructions_file_path = Path(instructions_file_path)
+        if not isinstance(results_file_path, Path):
+            results_file_path = Path(results_file_path)
+
+        if results_file_path.exists():
             results_meta_file = PPMResultsMetaFile.load(results_file_path)
         else:
-            resolved_results_file_path = Path(instructions_file_path) / Path(results_file_path)
-            if os.path.exists(resolved_results_file_path):
-                results_meta_file = PPMResultsMetaFile.load(str(resolved_results_file_path))
+            resolved_results_file_path = instructions_file_path / results_file_path.name
+            if resolved_results_file_path.exists():
+                results_meta_file = PPMResultsMetaFile.load(resolved_results_file_path)
             else:
                 raise ValueError("results_file_path invalid! There exists no such file at {} nor {}."\
                                  .format(results_file_path, resolved_results_file_path))
@@ -252,5 +258,5 @@ class PPMModel(Model):
         return results_meta_file
 
     @staticmethod
-    def run_instructions_file_at_path(file_path) -> PPMResultsMetaFile:
-        pass
+    def run_instructions_file_at_path(file_path: Union[str, Path]) -> PPMResultsMetaFile:
+        raise NotImplementedError

@@ -8,7 +8,7 @@ import cl4py
 import re
 
 from .base import *
-from cmme.util import path_as_string_with_trailing_slash
+from cmme.lib.util import path_as_string_with_trailing_slash
 from .util import cl4py_cons_to_list
 from ..lib.results_file import ResultsFile
 
@@ -203,15 +203,15 @@ def infer_target_viewpoints_target_viewpoint_values_and_used_source_viewpoints(
 
 class IDYOMResultsFile(ResultsFile):
     @staticmethod
-    def _generate_results_file_path() -> str:
-        pass
+    def _generate_results_file_path() -> Path:
+        raise NotImplementedError
 
     @staticmethod
-    def _save(results_file: ResultsFile, file_path: str):
-        pass
+    def _save(results_file: ResultsFile, file_path: Union[str, Path]):
+        raise NotImplementedError
 
     @staticmethod
-    def load(file_path: str) -> IDYOMResultsFile:
+    def load(file_path: Union[str, Path]) -> IDYOMResultsFile:
         df = pd.read_csv(file_path, sep=" ")
 
         unnamed_columns = df.columns.str.match("Unnamed")

@@ -7,7 +7,7 @@ from pathlib import Path
 import matlab.engine
 from pymatbridge import pymatbridge
 
-from .binding import DREXResultsFile, DREXInstructionsFile
+from .binding import DREXResultsFile
 from ..config import Config
 from ..lib.model import Model
 
