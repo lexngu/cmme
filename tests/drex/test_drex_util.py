@@ -1,6 +1,6 @@
 import pytest
 
-from cmme.lib.input_data import auto_convert_input_sequence
+from cmme.drex.util import auto_convert_input_sequence
 
 
 def test_auto_convert_input_sequence():

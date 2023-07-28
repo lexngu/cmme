@@ -2,7 +2,7 @@ import pytest
 from numpy import array, nan, ndarray
 
 from cmme.drex.base import UnprocessedPrior, DistributionType, GaussianPrior, GmmPrior
-from cmme.lib.input_data import auto_convert_input_sequence
+from cmme.drex.util import auto_convert_input_sequence
 
 
 def test_unprocessed_prior_with_prior_input_sequence_none_fails():

@@ -5,7 +5,7 @@ from typing import Union
 
 from .base import Prior
 from .binding import DREXInstructionsFile
-from ..lib.input_data import auto_convert_input_sequence
+from .util import auto_convert_input_sequence
 from ..lib.util import drex_default_results_file_path
 import numpy as np
 

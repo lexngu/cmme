@@ -9,8 +9,7 @@ import scipy.io as sio
 
 from .base import DistributionType, Prior, UnprocessedPrior, GaussianPrior, LognormalPrior, GmmPrior, PoissonPrior
 from .util import trialtimefeature_sequence_as_multitrial_cell, \
-    trialtimefeature_sequence_as_singletrial_array
-from ..lib.input_data import auto_convert_input_sequence
+    trialtimefeature_sequence_as_singletrial_array, auto_convert_input_sequence
 from ..lib.instructions_file import InstructionsFile
 from ..lib.results_file import ResultsFile
 

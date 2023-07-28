@@ -3,7 +3,7 @@ from enum import Enum
 
 import numpy as np
 
-from ..lib.input_data import auto_convert_input_sequence
+from .util import auto_convert_input_sequence
 
 
 class DistributionType(Enum):
