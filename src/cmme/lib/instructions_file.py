@@ -7,21 +7,21 @@ class InstructionsFile(ABC):
     def __init__(self):
         pass
 
-    @classmethod
+    @staticmethod
     @abstractmethod
-    def _generate_instructions_file_path(cls) -> str:
+    def _generate_instructions_file_path() -> str:
         """
-        Generate a default value of the file path where to store an instruction file.
+        Generate a default value of the file path where to store an instructions file.
 
         Returns
         -------
         File path
         """
-        pass
+        raise NotImplementedError
 
     @classmethod
     @abstractmethod
-    def _save(cls, instructions_file: InstructionsFile, file_path):
+    def _save(cls, instructions_file: InstructionsFile, file_path: str):
         """
         Write to disk.
 
@@ -32,34 +32,48 @@ class InstructionsFile(ABC):
         file_path
             File path where to write to
         """
-        pass
+        raise NotImplementedError
 
     @classmethod
-    def save(cls, instructions_file: InstructionsFile, file_path=_generate_instructions_file_path()):
+    @abstractmethod
+    def save(cls, instructions_file: InstructionsFile, file_path: str):
         """
-        Write the instruction file to disk.
+        Write the result file to disk.
 
         Parameters
         ----------
         instructions_file
-            Instruction file object to write to disk
+            result file object to write to disk
         file_path
             File path where to write to
         """
-        return InstructionsFile._save(instructions_file, file_path)
+        cls._save(instructions_file, file_path)
 
     def save_self(self, file_path: str):
         """
-        Save this instruction file object to the disk.
+        Save this result file object as file.
 
         Parameters
         ----------
         file_path
-            Where to store the instruction file
+            Where to store the result file
         """
-        return InstructionsFile.save(self, file_path)
+        self.save(self, file_path)
 
-    @classmethod
+    @staticmethod
     @abstractmethod
-    def load(cls, file_path) -> InstructionsFile:
-        pass
+    def load(file_path: str) -> InstructionsFile:
+        """
+        Load an instructions file.
+
+        Parameters
+        ----------
+        file_path
+            Where the instructions file to load is stored
+
+        Returns
+        -------
+        ResultsFile
+            Loaded instructions file
+        """
+        raise NotImplementedError

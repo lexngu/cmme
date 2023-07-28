@@ -6,7 +6,7 @@ from .binding import DREXInstructionsFile
 from .util import auto_convert_input_sequence, drex_default_results_file_path
 import numpy as np
 
-from ..lib.model import ModelBuilder, Model
+from ..lib.model import ModelBuilder
 
 
 # TODO GMM has a paramater "beta", which is not a prior parameter, but a main function's parameter
@@ -15,6 +15,7 @@ from ..lib.model import ModelBuilder, Model
 class DREXInstructionBuilder(ModelBuilder, ABC):
     def __init__(self):
         # Use original default values
+        super().__init__()
         self._input_sequence = None
         self._hazard = 0.01
         self._memory = np.inf
@@ -37,7 +38,7 @@ class DREXInstructionBuilder(ModelBuilder, ABC):
         :return: self
         """
         iseq = auto_convert_input_sequence(input_sequence)
-        [input_sequence_times, input_sequence_features] = iseq[0].shape
+        [_, input_sequence_features] = iseq[0].shape
 
         # Check correspondence to prior (if present)
         if self._prior is not None:
@@ -66,7 +67,8 @@ class DREXInstructionBuilder(ModelBuilder, ABC):
             # Check correspondence to input sequence (if present)
             if len(hazard) > 1 and len(self._input_sequence) > 0:
                 if len(self._input_sequence) != len(hazard_times):
-                    raise ValueError("hazard invalid! There must be either one or as much as len(input_sequence) elements.")
+                    raise ValueError("hazard invalid! There must be either one or as much as "
+                                     "len(input_sequence) elements.")
 
             # Check value(s)
             if not ((hazard >= 0).all() and (hazard <= 1).all()):
@@ -75,9 +77,11 @@ class DREXInstructionBuilder(ModelBuilder, ABC):
         self._hazard = hazard
         return self
 
-    def obsnz(self, obsnz: float): # TODO per feature separate value?
+    def obsnz(self, obsnz: float):  # TODO per feature separate value?
         """
-        Sets the observation noise which is the square root value of the number added to the (co)variance D-REX's calculations.
+        Sets the observation noise which is the square root value of the number added to the (co)variance
+        D-REX's calculations.
+
         :param obsnz: float
         :return:
         """
@@ -116,7 +120,7 @@ class DREXInstructionBuilder(ModelBuilder, ABC):
         self._change_decision_threshold = change_decision_threshold
         return self
 
-    def build_instructions_file(self, results_file_path = drex_default_results_file_path()) -> DREXInstructionsFile:
+    def build_instructions_file(self, results_file_path=drex_default_results_file_path()) -> DREXInstructionsFile:
         return DREXInstructionsFile(results_file_path,
                                     self._input_sequence, self._prior,
                                     self._hazard, self._memory,
@@ -124,13 +128,10 @@ class DREXInstructionBuilder(ModelBuilder, ABC):
                                     self._predscale, self._change_decision_threshold)
 
     def to_instructions_file(self) -> DREXInstructionsFile:
-        return self.build_instructions_file() # TODO remove build_instructions_file()
+        return self.build_instructions_file()  # TODO remove build_instructions_file()
 
     def predscale(self, predscale: float):
         if not predscale > 0 and predscale <= 1:
             raise ValueError("predscale invalid! Value must be in range (0,1].")
         self._predscale = float(predscale)
         return self
-
-class DREXModel(Model):
-    pass

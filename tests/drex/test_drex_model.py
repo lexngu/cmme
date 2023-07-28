@@ -87,7 +87,9 @@ def test_run_succeeds():
         results_file_path = drex_default_results_file_path(None, Path(tmpdirname))
 
         drex_model = DREXModel()
-        drex_instance.build_instructions_file(results_file_path).write_to_mat(instructions_file_path)
+        drex_instance\
+            .build_instructions_file(results_file_path)\
+            .save_self(instructions_file_path)
         results_file = drex_model.run(instructions_file_path)
 
         assert results_file.instructions_file_path == str(instructions_file_path)

@@ -1,5 +1,4 @@
-from pathlib import Path
-from typing import Union, Optional, List
+from typing import Union, List
 
 from .base import Dataset, Composition, Viewpoint
 

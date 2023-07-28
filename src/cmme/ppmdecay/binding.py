@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 from abc import ABC
 from pathlib import Path
@@ -19,7 +21,7 @@ PPM_RUN_FILEPATH = (Path(
     __file__).parent.parent.parent.parent.absolute() / "./res/wrappers/ppm-decay/ppmdecay_intermediate_script.R").resolve()
 
 
-def invoke_model(instructions_file_path: Path):
+def invoke_model(instructions_file_path: Path) -> str:
     """
 
     :param instructions_file_path:
@@ -29,13 +31,18 @@ def invoke_model(instructions_file_path: Path):
         r_file_contents = f.read()
     package = SignatureTranslatedAnonymousPackage(r_file_contents, "ppm-python-bridge")
 
-    results_file_path = str(package.ppmdecay_intermediate_script(str(instructions_file_path)))
+    results_file_path = package.ppmdecay_intermediate_script(str(instructions_file_path))[0]
 
     return results_file_path
 
 
 class PPMInstructionsFile(InstructionsFile, ABC):
+    @staticmethod
+    def _generate_instructions_file_path() -> str:
+        pass
+
     def __init__(self, model_type: ModelType, alphabet_levels, order_bound, input_sequence, results_file_path: str):
+        super().__init__()
         self._model_type = model_type
         self._alphabet_levels = alphabet_levels
         self._order_bound = order_bound
@@ -83,6 +90,48 @@ class PPMInstructionsFile(InstructionsFile, ABC):
 
 
 class PPMSimpleInstructionsFile(PPMInstructionsFile):
+    @classmethod
+    def _save(cls, instructions_file: PPMSimpleInstructionsFile, file_path):
+        data = {
+            "model_type": [instructions_file._model_type.value],
+            "alphabet_levels": [list_to_str(instructions_file._alphabet_levels)],
+            "order_bound": [instructions_file._order_bound],
+            "input_sequence": [instructions_file._input_sequence],
+            "results_file_path": [instructions_file._results_file_path]
+        }
+
+        data.update({
+            "shortest_deterministic": [instructions_file._shortest_deterministic],
+            "exclusion": [instructions_file._exclusion],
+            "update_exclusion": [instructions_file._update_exclusion],
+            "escape": [instructions_file._escape_method.value]
+        })
+
+        df = pd.DataFrame.from_dict(data)
+        df.to_feather(file_path)
+
+    @classmethod
+    def save(cls, instructions_file: PPMSimpleInstructionsFile,
+             file_path: str = PPMInstructionsFile._generate_instructions_file_path()):
+        cls._save(instructions_file, file_path)
+    @staticmethod
+    def load(file_path) -> PPMSimpleInstructionsFile:
+        df = pd.read_feather(file_path)
+
+        alphabet_levels = df["alphabet_levels"]
+        order_bound = df["order_bound"]
+        input_sequence = df["input_sequence"]
+        results_file_path = df["results_file_path"]
+        shortest_deterministic = df["shortest_deterministic"]
+        exclusion = df["exclusion"]
+        update_exclusion = df["update_exclusion"]
+        escape_method = df["escape_method"]
+
+        obj = PPMSimpleInstructionsFile(alphabet_levels, order_bound, input_sequence, results_file_path,
+                                        shortest_deterministic, exclusion, update_exclusion, escape_method)
+
+        return obj
+
     def __init__(self, alphabet_levels, order_bound, input_sequence, results_file_path,
                  shortest_deterministic, exclusion, update_exclusion, escape_method):
         super().__init__(ModelType.SIMPLE, alphabet_levels, order_bound, input_sequence, results_file_path)
@@ -94,6 +143,71 @@ class PPMSimpleInstructionsFile(PPMInstructionsFile):
 
 
 class PPMDecayInstructionsFile(PPMInstructionsFile):
+    @classmethod
+    def _save(cls, instructions_file: PPMDecayInstructionsFile, file_path):
+        data = {
+            "model_type": [instructions_file._model_type.value],
+            "alphabet_levels": [list_to_str(instructions_file._alphabet_levels)],
+            "order_bound": [instructions_file._order_bound],
+            "input_sequence": [instructions_file._input_sequence],
+            "results_file_path": [instructions_file._results_file_path]
+        }
+
+        data.update({
+            "input_time_sequence": [instructions_file._input_time_sequence],
+            "buffer_weight": [instructions_file._buffer_weight],
+            "buffer_length_time": [instructions_file._buffer_length_time],
+            "buffer_length_items": [instructions_file._buffer_length_items],
+            "stm_weight": [instructions_file._stm_weight],
+            "stm_duration": [instructions_file._stm_duration],
+            "only_learn_from_buffer": [instructions_file._only_learn_from_buffer],
+            "only_predict_from_buffer": [instructions_file._only_predict_from_buffer],
+            "ltm_weight": [instructions_file._ltm_weight],
+            "ltm_half_life": [instructions_file._ltm_half_life],
+            "ltm_asymptote": [instructions_file._ltm_asymptote],
+            "noise": [instructions_file._noise],
+            "seed": [instructions_file._seed]
+        })
+
+        df = pd.DataFrame.from_dict(data)
+        df.to_feather(file_path)
+
+    @classmethod
+    def save(cls, instructions_file: PPMDecayInstructionsFile,
+             file_path: str = PPMInstructionsFile._generate_instructions_file_path()):
+        cls._save(instructions_file, file_path)
+
+    @staticmethod
+    def load(file_path) -> InstructionsFile:
+        df = pd.read_feather(file_path)
+
+        alphabet_levels = df["alphabet_levels"]
+        order_bound = df["order_bound"]
+        input_sequence = df["input_sequence"]
+        input_time_sequence = df["input_time_sequence"]
+        results_file_path = df["results_file_path"]
+        buffer_weight = df["buffer_weight"]
+        buffer_length_time = df["buffer_length_time"]
+        buffer_length_items = df["buffer_length_items"]
+        only_learn_from_buffer = df["only_learn_from_buffer"]
+        only_predict_from_buffer = df["only_predict_from_buffer"]
+        stm_weight = df["stm_weight"]
+        stm_duration = df["stm_duration"]
+        ltm_weight = df["ltm_weight"]
+        ltm_half_life = df["ltm_half_life"]
+        ltm_asymptote = df["ltm_asymptote"]
+        noise = df["noise"]
+        seed = df["seed"]
+
+        obj = PPMDecayInstructionsFile(alphabet_levels, order_bound, input_sequence, input_time_sequence,
+                                       results_file_path,
+                                       buffer_weight, buffer_length_time, buffer_length_items, only_learn_from_buffer,
+                                       only_predict_from_buffer,
+                                       stm_weight, stm_duration, ltm_weight, ltm_half_life, ltm_asymptote,
+                                       noise, seed)
+
+        return obj
+
     def __init__(self, alphabet_levels, order_bound, input_sequence, input_time_sequence, results_file_path,
                  buffer_weight, buffer_length_time, buffer_length_items, only_learn_from_buffer,
                  only_predict_from_buffer,
@@ -143,8 +257,45 @@ class PPMDecayResultsFileData(ResultsFileData):
 
 
 class PPMResultsMetaFile(ResultsFile):
+    @staticmethod
+    def _generate_results_file_path() -> str:
+        return "results-file.feather"
+
+    @staticmethod
+    def _save(results_file: PPMResultsMetaFile, file_path: str):
+        meta_df = pd.DataFrame.from_dict({
+            "model_type": results_file._model_type,
+            "alphabet_levels": results_file._alphabet_levels,
+            "instructions_file_path": results_file._instructions_file_path,
+            "results_file_data_path": results_file._results_file_data_path
+        })
+        data_df = results_file.results_file_data
+
+        meta_df.to_feather(file_path)
+        data_df.df.to_feather(file_path.replace(".feather", ".data.feather"))
+
+    @staticmethod
+    def load(file_path: str) -> PPMResultsMetaFile:
+        df = pd.read_feather(file_path)
+
+        model_type = ModelType(df["model_type"][0])
+        alphabet_levels = str_to_list(df["alphabet_levels"][0])
+        instructions_file_path = df["instructions_file_path"][0]
+        results_file_data_path = df["results_file_data_path"][0]
+
+        if not os.path.exists(results_file_data_path):
+            results_file_data_filename = os.path.basename(results_file_data_path)
+            original_results_file_data_path = results_file_data_path
+            results_file_data_path = os.path.join(os.path.dirname(file_path), results_file_data_filename)
+            if not os.path.exists(results_file_data_path):
+                raise ValueError("Could not locate {}!".format(original_results_file_data_path))
+
+        return PPMResultsMetaFile(file_path, model_type, alphabet_levels, instructions_file_path,
+                                  results_file_data_path)
+
     def __init__(self, results_file_meta_path, model_type: ModelType, alphabet_levels, instructions_file_path,
                  results_file_data_path):
+        super().__init__()
         self.results_file_meta_path = results_file_meta_path
         self._model_type = model_type
         self._alphabet_levels = alphabet_levels
@@ -162,25 +313,3 @@ class PPMResultsMetaFile(ResultsFile):
     def _parse_ppm_decay_results_file_data(self):
         df = pd.read_feather(self._results_file_data_path)
         return PPMDecayResultsFileData(self._results_file_data_path, df)
-
-
-import os
-
-
-def parse_results_meta_file(results_file_meta_path: Path):
-    df = pd.read_feather(results_file_meta_path)
-
-    model_type = ModelType(df["model_type"][0])
-    alphabet_levels = str_to_list(df["alphabet_levels"][0])
-    instructions_file_path = df["instructions_file_path"][0]
-    results_file_data_path = df["results_file_data_path"][0]
-
-    if not os.path.exists(results_file_data_path):
-        results_file_data_filename = os.path.basename(results_file_data_path)
-        original_results_file_data_path = results_file_data_path
-        results_file_data_path = os.path.join(os.path.dirname(results_file_meta_path), results_file_data_filename)
-        if not os.path.exists(results_file_data_path):
-            raise ValueError("Could not locate {}!".format(original_results_file_data_path))
-
-    return PPMResultsMetaFile(results_file_meta_path, model_type, alphabet_levels, instructions_file_path,
-                              results_file_data_path)

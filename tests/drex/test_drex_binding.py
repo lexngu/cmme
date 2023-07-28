@@ -4,7 +4,7 @@ import numpy as np
 from numpy import array
 
 from cmme.drex.base import UnprocessedPrior, DistributionType, GaussianPrior
-from cmme.drex.binding import from_mat, to_mat, DREXInstructionsFile, DREXResultsFile, ResultsFilePsi, parse_results_file
+from cmme.drex.binding import from_mat, to_mat, DREXInstructionsFile, DREXResultsFile, ResultsFilePsi
 from cmme.drex.util import auto_convert_input_sequence, trialtimefeature_sequence_as_singletrial_array, \
     trialtimefeature_sequence_as_multitrial_cell
 
@@ -44,12 +44,14 @@ def test_drex_instructions_file():
     memory = float('inf')
     maxhyp = 2
     obsnz = 0.1
+    predscale = 0.001
     change_decision_threshold = 0.1
-    instructions_file = DREXInstructionsFile(results_file_path, input_sequence, prior, hazard, memory, maxhyp, obsnz, change_decision_threshold)
+    instructions_file = DREXInstructionsFile(results_file_path, input_sequence, prior, hazard, memory, maxhyp, obsnz,
+                                             predscale, change_decision_threshold)
 
     tmp_file_path = tempfile.NamedTemporaryFile().name
 
-    instructions_file.write_to_mat(tmp_file_path)
+    instructions_file.save_self(tmp_file_path)
 
     data_after_read = from_mat(tmp_file_path)
     assert instructions_file.results_file_path == data_after_read["results_file_path"][0]
@@ -324,7 +326,7 @@ def test_drex_results_file():
                                          0.01760109, 0.01984637, 0.01550505, 0.01564076, 0.01661564,
                                          0.01762762, 0.01735887, 0.01711018, 0.01869726, 0.02136593])
     change_decision_threshold = 0.01
-    psi = ResultsFilePsi()  # TODO
+    psi = ResultsFilePsi({}, {})  # TODO
 
     rf = DREXResultsFile(results_file_path, instructions_file_path,
                          input_sequence, prior, surprisal, joint_surprisal,
@@ -335,7 +337,7 @@ def test_drex_results_file():
 
 
 def test_results_file_reads_file_without_error():
-    rf1 = parse_results_file(os.path.join(os.path.dirname(__file__), "../sample_files/drex-resultsfile-gaussian-D1.mat"))
-    rf2 = parse_results_file(os.path.join(os.path.dirname(__file__), "../sample_files/drex-resultsfile-gaussian-D2.mat"))
-    rf3 = parse_results_file(os.path.join(os.path.dirname(__file__), "../sample_files/drex-resultsfile-gmm-D1.mat"))
-    rf4 = parse_results_file(os.path.join(os.path.dirname(__file__), "../sample_files/drex-resultsfile-poisson-D3.mat"))
+    rf1 = DREXResultsFile.load(os.path.join(os.path.dirname(__file__), "../sample_files/drex-resultsfile-gaussian-D1.mat"))
+    rf2 = DREXResultsFile.load(os.path.join(os.path.dirname(__file__), "../sample_files/drex-resultsfile-gaussian-D2.mat"))
+    rf3 = DREXResultsFile.load(os.path.join(os.path.dirname(__file__), "../sample_files/drex-resultsfile-gmm-D1.mat"))
+    rf4 = DREXResultsFile.load(os.path.join(os.path.dirname(__file__), "../sample_files/drex-resultsfile-poisson-D3.mat"))

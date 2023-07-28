@@ -1,4 +1,3 @@
-from datetime import datetime
 from enum import Enum
 from pathlib import Path
 
@@ -14,6 +13,7 @@ class LispExpressionBuilderMode(Enum):
 
 class LispExpressionBuilder:
     def __init__(self, mode: LispExpressionBuilderMode):
+        self.components = None
         self._mode = mode
 
         self.reset()
@@ -39,7 +39,7 @@ class LispExpressionBuilder:
         else:
             for e in value:
                 if isinstance(e, list) or isinstance(e, tuple):
-                    result.append(self._as_nested_list_string(e)[1:]) # i.e. without '
+                    result.append(self._as_nested_list_string(e)[1:])  # i.e. without '
                 else:
                     result.append(str(e))
         return "'(" + " ".join(result) + ")"
@@ -95,6 +95,7 @@ def cl4py_cons_to_list(cons):
 
 def idyom_default_instructions_file_path(alias: str = None, io_path: Path = Config().model_io_path()):
     instructions_file_filename = "idyom-instructionsfile"
-    instructions_file_filename = (instructions_file_filename + "-" + alias) if alias is not None else instructions_file_filename
+    instructions_file_filename = (instructions_file_filename + "-" + alias) if alias is not None \
+        else instructions_file_filename
     instructions_file_filename = instructions_file_filename + ".csv"
     return io_path / instructions_file_filename

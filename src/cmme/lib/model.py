@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import tempfile
 from abc import ABC, abstractmethod
 from cmme.lib.instructions_file import InstructionsFile
 from cmme.lib.results_file import ResultsFile
@@ -11,7 +12,7 @@ class ModelBuilder(ABC):
 
     @abstractmethod
     def to_instructions_file(self) -> InstructionsFile:
-        pass
+        raise NotImplementedError
 
 
 class Model(ABC):
@@ -19,11 +20,12 @@ class Model(ABC):
         pass
 
     @classmethod
-    @abstractmethod
-    def run_instructions_file(instructions_file: InstructionsFile) -> ResultsFile:
-        pass
+    def run_instructions_file(cls, instructions_file: InstructionsFile) -> ResultsFile:
+        with tempfile.NamedTemporaryFile() as tmpfile:
+            instructions_file.save_self(tmpfile.name)
+            return cls.run_instructions_file_at_path(tmpfile.name)
 
-    @classmethod
+    @staticmethod
     @abstractmethod
     def run_instructions_file_at_path(file_path) -> ResultsFile:
-        pass
+        raise NotImplementedError

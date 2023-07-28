@@ -19,4 +19,4 @@ def as_multifeature_timeseries(data: Union[list, np.ndarray]) -> np.ndarray:
     -------
     A representation of the input data as numpy array with shape (time, feature).
     """
-    pass
+    raise NotImplementedError

@@ -20,7 +20,7 @@ For running IDyOM:
 
 For the comparison environment:
 * Any Python environment manager, e.g. Anaconda
-* Python 3.7 (starting with MATLAB R2022a: 3.8 or newer)
+* Python 3.10
 
 ## Installation
 * Install MATLAB, R, SBCL, Anaconda according to official guides (Note: On macOS, you may want to install SBCL via Brew or MacPorts though)

@@ -1,5 +1,4 @@
 import numbers
-from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -15,11 +14,12 @@ def trialtimefeature_sequence_as_multitrial_cell(input_sequence):
     """
     if input_sequence.dtype == object:
         res = np.empty((input_sequence.shape[0],), dtype=object)
-        for idx,e in enumerate(input_sequence):
-                res[idx] = e.tolist()
+        for idx, e in enumerate(input_sequence):
+            res[idx] = e.tolist()
         return res
     else:
         raise ValueError("input_sequence should be a np.array(dtype=object) of three dimensions.")
+
 
 def trialtimefeature_sequence_as_singletrial_array(input_sequence):
     """
@@ -30,12 +30,14 @@ def trialtimefeature_sequence_as_singletrial_array(input_sequence):
     if input_sequence.dtype == object and input_sequence.shape[0] == 1:
         return np.array(input_sequence[0].tolist(), dtype=float)
     else:
-        raise ValueError("input_sequence should be a np.array(dtype=object) of three dimensions, and with a single trial.")
+        raise ValueError("input_sequence should be a np.array(dtype=object) of three dimensions, "
+                         "and with a single trial.")
 
 
 def drex_default_instructions_file_path(alias: str = None, io_path: Path = Config().model_io_path()) -> str:
     instructions_file_filename = "drex-instructionsfile"
-    instructions_file_filename = (instructions_file_filename + "-" + alias) if alias is not None else instructions_file_filename
+    instructions_file_filename = (instructions_file_filename + "-" + alias) if alias is not None \
+        else instructions_file_filename
     instructions_file_filename = instructions_file_filename + ".mat"
     return str(io_path / instructions_file_filename)
 
@@ -82,6 +84,6 @@ def auto_convert_input_sequence(input_sequence):
             trials = list()
             for trial in input_sequence:
                 trials.append(np.array(trial, dtype=float).T)
-            return np.array(trials, dtype=object) # trial x time x feature
+            return np.array(trials, dtype=object)  # trial x time x feature
     else:
         raise ValueError("input_sequence invalid! List expected.")

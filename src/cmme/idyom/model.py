@@ -3,13 +3,25 @@ import tempfile
 
 from .binding import *
 from .util import *
+from ..lib.instructions_file import InstructionsFile
 from ..lib.model import ModelBuilder, Model
 from ..util import flatten_list
 
 
 class IDYOMInstructionBuilder(ModelBuilder):
+    def to_instructions_file(self) -> InstructionsFile:
+        pass
+
     def __init__(self):
-        self._dataset: Dataset = None
+        super().__init__()
+        self._caching_options = None
+        self._output_options = None
+        self._select_options = None
+        self._training_options = None
+        self._ltm_options = None
+        self._stm_options = None
+        self._dataset = None
+        self._dataset: Dataset
         self._target_viewpoints: List[Viewpoint] = []
         self._source_viewpoints: List[Viewpoint] = []
         self._model: IDYOMModelValue = IDYOMModelValue.BOTH_PLUS
@@ -38,7 +50,9 @@ class IDYOMInstructionBuilder(ModelBuilder):
 
     def source_viewpoints(self, source_viewpoints: List[Viewpoint]):
         """
-        Sets the source viewpoints. If you want to use IDyOM's automatic selection algorithm, ignore this function. Instead use #automatically_select_source_viewpoints(...)
+        Sets the source viewpoints. If you want to use IDyOM's automatic selection algorithm, ignore this function.
+        Instead, use #automatically_select_source_viewpoints(...)
+
         :param source_viewpoints:
         :return:
         """
@@ -51,7 +65,8 @@ class IDYOMInstructionBuilder(ModelBuilder):
         self._model = model
         return self
 
-    def stm_options(self, order_bound: int = None, mixtures=True, update_exclusion=True, escape=IDYOMEscape.X): # original default values
+    def stm_options(self, order_bound: int = None, mixtures=True, update_exclusion=True,
+                    escape=IDYOMEscape.X):  # original default values
         self._stm_options = {
             "order_bound": order_bound,
             "mixtures": mixtures,
@@ -60,7 +75,8 @@ class IDYOMInstructionBuilder(ModelBuilder):
         }
         return self
 
-    def ltm_options(self, order_bound = None, mixtures = True, update_exclusion = False, escape = IDYOMEscape.C): # original default values
+    def ltm_options(self, order_bound=None, mixtures=True, update_exclusion=False,
+                    escape=IDYOMEscape.C):  # original default values
         self._ltm_options = {
             "order_bound": order_bound,
             "mixtures": mixtures,
@@ -69,10 +85,12 @@ class IDYOMInstructionBuilder(ModelBuilder):
         }
         return self
 
-    def training_options(self, pretraining_dataset_ids = None, resampling_folds_count_k = 10, exclusively_to_be_used_resampling_fold_indices = None):
+    def training_options(self, pretraining_dataset_ids=None, resampling_folds_count_k=10,
+                         exclusively_to_be_used_resampling_fold_indices=None):
         """
         Training options affect all model configurations (STM, LTM, LTM+, BOTH, BOTH+).
-        If STM, there is no training, however, the pretraining datasets provide the "viewpoint domain" (i.e. PPM's "alphabet") for the STM model.
+        If STM, there is no training, however, the pretraining datasets provide the "viewpoint domain"
+        (i.e. PPM's "alphabet") for the STM model.
         For all the remaining configurations (LTM, ...), this pre-training happens before IDyOM's resampling procedure.
         :param pretraining_dataset_ids: If None, training options are reset.
         :param resampling_folds_count_k:
@@ -89,7 +107,8 @@ class IDYOMInstructionBuilder(ModelBuilder):
             }
         return self
 
-    def automatically_select_source_viewpoints(self, basis: IDYOMViewpointSelectionBasis = None, dp = None, max_links = 2, min_links = 2, viewpoint_selection_output = None):
+    def automatically_select_source_viewpoints(self, basis: IDYOMViewpointSelectionBasis = None, dp=None, max_links=2,
+                                               min_links=2, viewpoint_selection_output=None):
         """
 
         :param basis: If None, select options are reset.
@@ -99,7 +118,7 @@ class IDYOMInstructionBuilder(ModelBuilder):
         :param viewpoint_selection_output:
         :return:
         """
-        if basis == None:
+        if basis is None:
             self._select_options = {}
         else:
             self._select_options = {
@@ -111,7 +130,7 @@ class IDYOMInstructionBuilder(ModelBuilder):
             }
         return self
 
-    def output_options(self, output_path = tempfile.gettempdir(), detail = 3, overwrite = False, separator =" "):
+    def output_options(self, output_path=tempfile.gettempdir(), detail=3, overwrite=False, separator=" "):
         if output_path is None:
             raise ValueError("None is not an allowed value for output_path!")
 
@@ -123,7 +142,7 @@ class IDYOMInstructionBuilder(ModelBuilder):
         }
         return self
 
-    def caching_options(self, use_resampling_set_cache = True, use_ltms_cache = True):
+    def caching_options(self, use_resampling_set_cache=True, use_ltms_cache=True):
         self._caching_options = {
             "use_resampling_set_cache": use_resampling_set_cache,
             "use_ltms_cache": use_ltms_cache
@@ -149,7 +168,7 @@ class IDYOMInstructionBuilder(ModelBuilder):
         if not isinstance(self._model, IDYOMModelValue):
             msgs.append("model must be any value of IDYOMModelValue!")
 
-        return (is_valid, msgs)
+        return is_valid, msgs
 
     def assert_is_valid(self):
         builder_is_valid, builder_error_msgs = self._is_valid()
@@ -172,7 +191,8 @@ class IDYOMInstructionBuilder(ModelBuilder):
         # (CMD <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> ...)
         leb.add(":models").add(self._model.value)
         # (CMD <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] ...)
-        if self._model == IDYOMModelValue.STM or self._model == IDYOMModelValue.BOTH or self._model == IDYOMModelValue.BOTH_PLUS:
+        if self._model == IDYOMModelValue.STM or self._model == IDYOMModelValue.BOTH or \
+                self._model == IDYOMModelValue.BOTH_PLUS:
             order_bound = str(self._stm_options["order_bound"]) if self._stm_options[
                                                                        "order_bound"] is not None else "nil"
             mixtures = "t" if self._stm_options["mixtures"] else "nil"
@@ -182,7 +202,8 @@ class IDYOMInstructionBuilder(ModelBuilder):
                 [":order-bound", order_bound, ":mixtures", mixtures, ":update-exclusion", update_exclusion, ":escape",
                  escape])
         # (CMD <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...] ...)
-        if self._model == IDYOMModelValue.LTM or self._model == IDYOMModelValue.BOTH or self._model == IDYOMModelValue.BOTH_PLUS or self._model == IDYOMModelValue.LTM_PLUS:
+        if self._model == IDYOMModelValue.LTM or self._model == IDYOMModelValue.BOTH or \
+                self._model == IDYOMModelValue.BOTH_PLUS or self._model == IDYOMModelValue.LTM_PLUS:
             order_bound = str(self._ltm_options["order_bound"]) if self._ltm_options[
                                                                        "order_bound"] is not None else "nil"
             mixtures = "t" if self._ltm_options["mixtures"] else "nil"
@@ -276,10 +297,17 @@ class IDYOMInstructionBuilder(ModelBuilder):
 
 
 class IDYOMModel(Model):
-    def __init__(self, idyom_root_path: Path = Config().idyom_root_path(), idyom_database_path: Path = Config().idyom_database_path()):
+    @staticmethod
+    def run_instructions_file_at_path(file_path) -> ResultsFile:
+        pass
+
+    def __init__(self, idyom_root_path: Path = Config().idyom_root_path(),
+                 idyom_database_path: Path = Config().idyom_database_path()):
+        super().__init__()
         self.idyom_binding = IDYOMBinding(str(idyom_root_path.resolve()), str(idyom_database_path.resolve()))
 
-    def import_midi(self, midi_files_directory_path: str, description: str, dataset_id: int = None, timebase: int = 96) -> Dataset:
+    def import_midi(self, midi_files_directory_path: str, description: str, dataset_id: int = None,
+                    timebase: int = 96) -> Dataset:
         """
 
         :param midi_files_directory_path:
@@ -293,7 +321,8 @@ class IDYOMModel(Model):
 
         return self.idyom_binding.import_midi(midi_files_directory_path, description, dataset_id, timebase)
 
-    def import_kern(self, krn_files_directory_path: str, description: str, dataset_id: int = None, timebase: int = 96) -> Dataset:
+    def import_kern(self, krn_files_directory_path: str, description: str, dataset_id: int = None,
+                    timebase: int = 96) -> Dataset:
         """
 
         :param krn_files_directory_path:
@@ -310,9 +339,11 @@ class IDYOMModel(Model):
     def all_datasets(self) -> List[Dataset]:
         return self.idyom_binding.all_datasets()
 
-    def run(self, instruction_builder: IDYOMInstructionBuilder, instructions_file_path = idyom_default_instructions_file_path()) -> IDYOMResultsFile:
+    def run(self, instruction_builder: IDYOMInstructionBuilder,
+            instructions_file_path=idyom_default_instructions_file_path()) -> IDYOMResultsFile:
         # log execution string
-        results_file_path = os.path.join(instruction_builder._output_options["output_path"], self.idyom_binding.eval(instruction_builder.build_for_cl4py_filename_inference()))
+        results_file_path = os.path.join(instruction_builder._output_options["output_path"], self.idyom_binding.eval(
+            instruction_builder.build_for_cl4py_filename_inference()))
         instructions_file_data = {
             "cmd": instruction_builder.build_for_lisp(),
             "datasets": self.all_datasets(),
@@ -326,8 +357,8 @@ class IDYOMModel(Model):
                 csvwriter.writerow(instructions_file_data)
             print("This run is documented in {}.".format(str(instructions_file_path)))
 
-        self.idyom_binding.eval( instruction_builder.build_for_cl4py() )
+        self.idyom_binding.eval(instruction_builder.build_for_cl4py())
 
-        results = parse_idyom_results(results_file_path)
+        results = IDYOMResultsFile.load(results_file_path)
 
         return results

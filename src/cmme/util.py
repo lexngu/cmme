@@ -29,7 +29,8 @@ def flatten_list(obj: List, recursive=False) -> List:
 
 def path_as_string_with_trailing_slash(path) -> str:
     """
-    Takes a Path or any object that can be converted into a Path object and returns a Path for which a trailing slash is ensured.
+    Takes a Path or any object that can be converted into a Path object and returns a Path for which a trailing slash
+    is ensured.
     :param path:
     :return:
     """

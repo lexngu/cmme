@@ -1,18 +1,21 @@
-import os.path
-from abc import ABC
+from __future__ import annotations
+
 import random
+from abc import ABC
 from pathlib import Path
 
 from cmme.lib.model import ModelBuilder, Model
 from cmme.ppmdecay.base import EscapeMethod, ModelType
 from cmme.ppmdecay.binding import PPMInstructionsFile, PPMSimpleInstructionsFile, PPMDecayInstructionsFile, \
-    PPMResultsMetaFile, invoke_model, parse_results_meta_file
+    PPMResultsMetaFile, invoke_model
 from cmme.ppmdecay.util import ppmdecay_default_results_file_path, ppmdecay_default_instructions_file_path, \
     auto_convert_input_sequence
 
+import os
 
-class PPMInstance(ModelBuilder):
+class PPMInstance(ModelBuilder, ABC):
     def __init__(self, model_type: ModelType):
+        super().__init__()
         self._model_type = model_type
 
         self._order_bound = 10
@@ -44,11 +47,12 @@ class PPMInstance(ModelBuilder):
         self._alphabet_levels = alphabet_levels
         return self
 
-    def input_sequence(self, input_sequence, input_time_sequence = None):
+    def input_sequence(self, input_sequence, input_time_sequence=None):
         """
 
         :param input_sequence: a shallow list as single-trial input, or a list of lists
-        :param input_time_sequence: Relevant for PPMDecayInstance. If None, a default time sequence is generated: [1, 2, 3, ...]
+        :param input_time_sequence: Relevant for PPMDecayInstance. If None, a default time sequence
+        is generated: [1, 2, 3, ...]
         :return:
         """
         input_sequence = auto_convert_input_sequence(input_sequence)
@@ -68,7 +72,8 @@ class PPMInstance(ModelBuilder):
             input_time_sequence_counter = 0
             for trial in input_sequence:
                 trial_length = len(trial)
-                input_time_sequence.append(list(range(input_time_sequence_counter, input_time_sequence_counter+trial_length)))
+                input_time_sequence.append(
+                    list(range(input_time_sequence_counter, input_time_sequence_counter + trial_length)))
                 input_time_sequence_counter += trial_length
         else:
             input_time_sequence = auto_convert_input_sequence(input_time_sequence)
@@ -81,6 +86,7 @@ class PPMInstance(ModelBuilder):
         self._input_time_sequence = input_time_sequence
 
         return self
+
 
 class PPMSimpleInstance(PPMInstance):
     def __init__(self):
@@ -106,6 +112,12 @@ class PPMSimpleInstance(PPMInstance):
         self._escape_method = escape_method
         return self
 
+    def to_instructions_file(self, results_file_path: str) -> PPMSimpleInstructionsFile:
+        return PPMSimpleInstructionsFile(self._alphabet_levels, self._order_bound,
+                                         self._input_sequence, results_file_path,
+                                         self._shortest_deterministic, self._exclusion,
+                                         self._update_exclusion, self._escape_method)
+
 
 class PPMDecayInstance(PPMInstance):
     def __init__(self):
@@ -125,11 +137,12 @@ class PPMDecayInstance(PPMInstance):
         self._ltm_asymptote = 0
         self._noise = 0
 
-        self._seed = random.randint(1, pow(2, 31)-1)
+        self._seed = random.randint(1, pow(2, 31) - 1)
 
     def buffer_weight(self, buffer_weight):
         if not (buffer_weight >= self._stm_weight and buffer_weight >= self._ltm_weight):
-            raise ValueError("buffer_weight invalid! Value must be greater than or equal both stm_weight and ltm_weight.")
+            raise ValueError(
+                "buffer_weight invalid! Value must be greater than or equal both stm_weight and ltm_weight.")
         self._buffer_weight = buffer_weight
         return self
 
@@ -156,7 +169,9 @@ class PPMDecayInstance(PPMInstance):
 
     def stm_weight(self, stm_weight):
         if not (self._buffer_weight >= stm_weight >= self._ltm_weight):
-            raise ValueError("stm_weight invalid! Value must be less than or equal buffer_weight and greater than or equal ltm_weight.")
+            raise ValueError(
+                "stm_weight invalid! Value must be less than or equal buffer_weight and greater than or equal "
+                "ltm_weight.")
         self._stm_weight = stm_weight
         return self
 
@@ -200,27 +215,42 @@ class PPMDecayInstance(PPMInstance):
         self._seed = seed
         return self
 
+    def to_instructions_file(self, results_file_path: str) -> PPMDecayInstructionsFile:
+        return PPMDecayInstructionsFile(self._alphabet_levels, self._order_bound,
+                                        self._input_sequence, self._input_time_sequence,
+                                        results_file_path,
+                                        self._buffer_weight, self._buffer_length_time,
+                                        self._buffer_length_items, self._only_learn_from_buffer,
+                                        self._only_predict_from_buffer,
+                                        self._stm_weight, self._stm_duration,
+                                        self._ltm_weight, self._ltm_half_life,
+                                        self._ltm_asymptote,
+                                        self._noise, self._seed)
+
+
 class PPMModel(Model):
     def __init__(self, instance: PPMInstance):
+        super().__init__()
         self.instance = instance
-        self.model_type = instance._model_type
 
-    def to_instructions_file(self, results_file_path: str = ppmdecay_default_results_file_path()) -> PPMInstructionsFile:
-        if self.model_type == ModelType.SIMPLE:
-            return PPMSimpleInstructionsFile(self.instance._alphabet_levels, self.instance._order_bound, self.instance._input_sequence, results_file_path,
-                                             self.instance._shortest_deterministic, self.instance._exclusion, self.instance._update_exclusion, self.instance._escape_method)
-        elif self.model_type == ModelType.DECAY:
-            return PPMDecayInstructionsFile(self.instance._alphabet_levels, self.instance._order_bound, self.instance._input_sequence, self.instance._input_time_sequence, results_file_path,
-                                             self.instance._buffer_weight, self.instance._buffer_length_time, self.instance._buffer_length_items, self.instance._only_learn_from_buffer, self.instance._only_predict_from_buffer,
-                                             self.instance._stm_weight, self.instance._stm_duration,
-                                             self.instance._ltm_weight, self.instance._ltm_half_life, self.instance._ltm_asymptote,
-                                             self.instance._noise, self.instance._seed)
+    def run(self, instructions_file_path: str = ppmdecay_default_instructions_file_path(),
+            results_file_path: str = ppmdecay_default_results_file_path()) -> PPMResultsMetaFile:
+        instructions_file = self.instance.to_instructions_file(results_file_path)  #
+        instructions_file.save_self(instructions_file_path)
+        model_results_path = invoke_model(Path(instructions_file_path))   # TODO change results file path handling
 
-    def run(self, instructions_file_path: str = ppmdecay_default_instructions_file_path(), results_file_path: str = ppmdecay_default_results_file_path()) -> PPMResultsMetaFile:
-        instructions_file = self.to_instructions_file(results_file_path)
-        instructions_file.write_instructions_file(instructions_file_path)
-        model_output = invoke_model(instructions_file_path)
+        if os.path.exists(results_file_path):
+            results_meta_file = PPMResultsMetaFile.load(results_file_path)
+        else:
+            resolved_results_file_path = Path(instructions_file_path) / Path(results_file_path)
+            if os.path.exists(resolved_results_file_path):
+                results_meta_file = PPMResultsMetaFile.load(str(resolved_results_file_path))
+            else:
+                raise ValueError("results_file_path invalid! There exists no such file at {} nor {}."\
+                                 .format(results_file_path, resolved_results_file_path))
 
-        resolved_results_file_path = Path(instructions_file_path) / Path(results_file_path)
-        results_meta_file = parse_results_meta_file(resolved_results_file_path)
         return results_meta_file
+
+    @staticmethod
+    def run_instructions_file_at_path(file_path) -> PPMResultsMetaFile:
+        pass
