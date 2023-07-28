@@ -1,38 +1,38 @@
 import pytest
 
-from cmme.drex.util import auto_convert_input_sequence
+from cmme.drex.util import transform_to_unified_drex_input_sequence_representation
 
 
 def test_auto_convert_input_sequence():
     input_sequence = None
     with pytest.raises(ValueError):
-        auto_convert_input_sequence(input_sequence)
+        transform_to_unified_drex_input_sequence_representation(input_sequence)
 
     input_sequence = []
     with pytest.raises(ValueError):
-        auto_convert_input_sequence(input_sequence)
+        transform_to_unified_drex_input_sequence_representation(input_sequence)
 
     input_sequence = [1]
-    result = auto_convert_input_sequence(input_sequence)
+    result = transform_to_unified_drex_input_sequence_representation(input_sequence)
     assert result.shape == (1, 1, 1)
 
     input_sequence = [1, 2, 3]
-    result = auto_convert_input_sequence(input_sequence)
+    result = transform_to_unified_drex_input_sequence_representation(input_sequence)
     assert result.shape == (1, 3, 1)
 
     input_sequence = [[[1, 2, 3]], [[11, 12, 13]]]  # 2 trials, 3 times, 1 feature
-    result = auto_convert_input_sequence(input_sequence)
+    result = transform_to_unified_drex_input_sequence_representation(input_sequence)
     assert result.shape == (2, 3, 1)
 
     input_sequence = [[[1, 2, 3], [11, 12, 13]]]  # 1 trial, 3 times, 2 features
-    result = auto_convert_input_sequence(input_sequence)
+    result = transform_to_unified_drex_input_sequence_representation(input_sequence)
     assert result.shape == (1, 3, 2)
 
     input_sequence = [  # 2 trials, 3 times, 2 features
         [[1, 2, 3], [11, 12, 13]],  # trial 1
         [[11, 12, 13], [111, 112, 113]]  # trial 2
     ]
-    result = auto_convert_input_sequence(input_sequence)
+    result = transform_to_unified_drex_input_sequence_representation(input_sequence)
     assert result.shape == (2, 3, 2)
 
     input_sequence = [
@@ -56,5 +56,5 @@ def test_auto_convert_input_sequence():
         [71, 80, 80, 78, 76, 78, 81, 81, 83, 80, 81, 78, 71, 78, 80, 81, 78, 80, 76, 78, 75, 76, 71, 68, 64, 68, 71, 76, 80, 69, 80, 78, 76, 78, 80, 81, 78, 81, 71, 80, 73, 78, 66, 75, 76, 71, 80, 80, 78, 76, 78, 81, 81, 83, 80, 81, 78, 71, 78, 80, 81, 78, 80, 76, 78, 75, 76, 71, 68, 64, 68, 71, 76, 80, 69, 80, 78, 76, 78, 80, 81, 78, 81, 71, 80, 73, 78, 66, 75, 76, 71, 80, 73, 73, 72, 73, 76, 75, 72, 72, 73, 73, 75, 76, 80, 73, 75, 76, 81, 75, 78, 76, 73, 72, 75, 68, 66, 64, 68, 73, 76, 80, 81, 83, 73, 65, 73, 80, 83, 83, 80, 81, 78, 69, 72, 75, 78, 78, 76, 78, 75, 68, 72, 61, 71, 80, 80, 78, 76, 78, 81, 81, 83, 80, 81, 78, 71, 78, 80, 81, 78, 80, 76, 78, 75, 76, 71, 68, 64, 68, 71, 76, 80, 69, 80, 78, 76, 78, 80, 81, 78, 81, 71, 80, 73, 78, 66, 75, 76, 64, 66, 68, 69, 71, 71, 71, 76, 71, 73, 69, 75, 76, 71, 68, 75, 76, 69, 66, 75, 76, 68, 66, 64, 66, 68, 71, 76, 80, 78, 78, 78, 83, 78, 80, 76, 82, 83, 78, 75, 82, 83, 76, 73, 82, 83, 76, 75, 73, 71, 73, 75, 76, 75, 73, 71, 70, 71, 73,
          75, 76, 73, 66, 82, 76, 85, 76, 66, 76, 82, 76, 82, 76, 85, 76, 76, 66, 75, 75, 73, 71, 73, 76, 76, 75, 73, 75, 76, 78, 75, 71, 68, 64, 76, 73, 71, 71, 71, 80, 80, 78, 76, 78, 81, 81, 83, 80, 81, 78, 71, 78, 80, 81, 78, 80, 76, 78, 75, 76, 71, 68, 64, 68, 71, 76, 80, 69, 80, 78, 76, 78, 80, 81, 78, 81, 71, 80, 73, 78, 66, 75, 76, 64, 68, 71, 76, 66, 76, 74, 73, 74, 66, 68, 74, 73, 71, 69, 68, 66, 73, 78, 81, 71, 81, 80, 78, 80, 77, 78, 72, 73, 78, 77, 78, 80, 81, 83, 80, 81, 73, 66, 68, 69, 71, 73, 76, 74, 66, 59, 61, 62, 64, 66, 69, 68, 71, 64, 66, 68, 69, 71, 74, 73, 71, 69, 73, 78, 77, 78, 73, 70, 73, 76, 79, 78, 76, 74, 73, 74, 73, 71, 78, 83, 82, 83, 74, 65, 73, 83, 86, 85, 83, 81, 80, 81, 80, 78, 81, 71, 74, 81, 80, 69, 73, 80, 78, 68, 71, 78, 76, 66, 69, 76, 74, 65, 74, 73, 71, 69, 73, 78, 80, 80, 78, 78, 76, 80, 80, 78, 76, 78, 81, 81, 83, 80, 81, 78, 71, 78, 80, 81, 78, 80, 76, 78, 75, 76, 71, 68, 64, 68, 71, 76, 80, 69, 80, 78, 76, 78, 80, 81, 78, 81, 71, 80, 73, 78,
          66, 75, 76, 80, 78, 80, 73, 72, 73, 78, 76, 78, 72, 64, 68, 73, 76, 66, 69, 75, 78, 68, 71, 77, 80, 80, 78, 76, 75, 76, 73, 75, 71, 76, 75, 73, 78, 76, 75, 73, 71, 75, 73, 75, 80, 79, 80, 73, 72, 73, 82, 80, 79, 80, 83, 80, 79, 80, 83, 80, 79, 80, 83, 80, 76, 63, 65, 67, 68, 70, 71, 73, 75, 76, 75, 74, 75, 76, 75, 74, 75, 67, 70, 73, 76, 75, 79, 82, 85, 83, 82, 80, 79, 80, 71, 73, 75, 73, 71, 70, 68, 71, 80, 80, 78, 76, 78, 81, 81, 83, 80, 81, 78, 71, 78, 80, 81, 78, 80, 76, 78, 75, 76, 71, 68, 64, 68, 71, 76, 80, 69, 80, 78, 76, 78, 80, 81, 78, 81, 71, 80, 73, 78, 66, 75, 76]]
-    result = auto_convert_input_sequence(input_sequence)
+    result = transform_to_unified_drex_input_sequence_representation(input_sequence)
     assert result.shape == (9,)

@@ -7,34 +7,8 @@ class ResultsFile(ABC):
     def __init__(self):
         pass
 
-    @staticmethod
-    @abstractmethod
-    def _generate_results_file_path() -> str:
-        """
-        Generate a default value of the file path where to store a result file.
-
-        Returns
-        -------
-        File path
-        """
-        raise NotImplementedError
-
-    @staticmethod
-    @abstractmethod
-    def _save(results_file: ResultsFile, file_path: str):
-        """
-        Write to disk.
-
-        Parameters
-        ----------
-        results_file
-            Object to write to disk
-        file_path
-            File path where to write to
-        """
-        raise NotImplementedError
-
     @classmethod
+    @abstractmethod
     def save(cls, results_file: ResultsFile, file_path: str):
         """
         Write the result file to disk.
@@ -42,11 +16,11 @@ class ResultsFile(ABC):
         Parameters
         ----------
         results_file
-            result file object to write to disk
+            Result file object to write to disk
         file_path
             File path where to write to
         """
-        return cls._save(results_file, file_path)
+        return NotImplementedError
 
     def save_self(self, file_path: str):
         """

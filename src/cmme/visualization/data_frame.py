@@ -1,3 +1,6 @@
+from pathlib import Path
+from typing import Union
+
 import numpy as np
 import pandas as pd
 import scipy.io as sio
@@ -9,15 +12,19 @@ from cmme.visualization.util.util import cmme_default_plot_instructions_file_pat
 class DataFrame:
     """Aggregates ResultsFiles into a single dataframe (if the contained input sequence is commensurable)"""
 
-    def __init__(self, ppm_results_file: PPMResultsMetaFile, drex_results_file: DREXResultsFile, input_sequence):
+    def __init__(self, ppm_results_file_path: Union[str, Path], drex_results_file_path: Union[str, Path],
+                 input_sequence):
         """
-        :param ppm_results_file:
-        :param drex_results_file:
+        :param ppm_results_file_path:
+        :param drex_results_file_path:
         :param input_sequence: Input sequence to use (in D-REX: the feature index is automatically detected)
         """
-        self.ppm_results_file = ppm_results_file
-        self.drex_results_file = drex_results_file
+        self.ppm_results_file_path = ppm_results_file_path
+        self.drex_results_file_path = drex_results_file_path
         self.drex_feature_index = None
+
+        self.ppm_results_file = PPMResultsMetaFile.load(self.ppm_results_file_path)
+        self.drex_results_file = DREXResultsFile.load(self.drex_results_file_path)
 
         self.df = self._build_data_frame()
 
@@ -86,8 +93,8 @@ class DataFrame:
 
     def write_to_mat(self, instructions_file_path = cmme_default_plot_instructions_file_path()):
         data = {
-            "ppm_results_file_path": str(self.ppm_results_file.results_file_meta_path),
-            "drex_results_file_path": str(self.drex_results_file.results_file_path),
+            "ppm_results_file_path": str(self.ppm_results_file_path),
+            "drex_results_file_path": str(self.drex_results_file_path),
             "data_frame": {name: col.values for name, col in self.df.items()}
         }
 

@@ -202,12 +202,9 @@ def infer_target_viewpoints_target_viewpoint_values_and_used_source_viewpoints(
 
 
 class IDYOMResultsFile(ResultsFile):
-    @staticmethod
-    def _generate_results_file_path() -> Path:
-        raise NotImplementedError
 
     @staticmethod
-    def _save(results_file: ResultsFile, file_path: Union[str, Path]):
+    def save(results_file: ResultsFile, file_path: Union[str, Path]):
         raise NotImplementedError
 
     @staticmethod

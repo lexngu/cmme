@@ -4,9 +4,9 @@ import numpy as np
 from numpy import array
 
 from cmme.drex.base import UnprocessedPrior, DistributionType, GaussianPrior
-from cmme.drex.binding import from_mat, to_mat, DREXInstructionsFile, DREXResultsFile, ResultsFilePsi
-from cmme.drex.util import trialtimefeature_sequence_as_singletrial_array, \
-    trialtimefeature_sequence_as_multitrial_cell, auto_convert_input_sequence
+from cmme.drex.binding import from_mat, to_mat, DREXInstructionsFile, DREXResultsFile, ResultsFilePsi, \
+    transform_to_estimatesuffstat_representation, transform_to_rundrexmodel_representation
+from cmme.drex.util import transform_to_unified_drex_input_sequence_representation
 
 
 def prior_input_sequence_from_mat_to_trialtimefeature_sequence(prior_input_sequence_from_mat):
@@ -15,7 +15,7 @@ def prior_input_sequence_from_mat_to_trialtimefeature_sequence(prior_input_seque
     res = list()
     for trial_idx in range(trial_count):
         res.append(data[trial_idx].T.tolist())
-    return auto_convert_input_sequence(res)
+    return transform_to_unified_drex_input_sequence_representation(res)
 
 
 def test_to_mat_and_from_mat():
@@ -36,9 +36,8 @@ def test_to_mat_and_from_mat():
 
 
 def test_drex_instructions_file():
-    results_file_path = "abc123.mat"
-    input_sequence = auto_convert_input_sequence([1, 2, 3, 4, 5])
-    prior_input_sequence = auto_convert_input_sequence([[[11, 12, 13, 14, 15]], [[21, 22, 23, 24, 25]]])
+    input_sequence = transform_to_unified_drex_input_sequence_representation([1, 2, 3, 4, 5])
+    prior_input_sequence = transform_to_unified_drex_input_sequence_representation([[[11, 12, 13, 14, 15]], [[21, 22, 23, 24, 25]]])
     prior = UnprocessedPrior(DistributionType.GMM, prior_input_sequence)
     hazard = 0.1
     memory = float('inf')
@@ -46,7 +45,7 @@ def test_drex_instructions_file():
     obsnz = 0.1
     predscale = 0.001
     change_decision_threshold = 0.1
-    instructions_file = DREXInstructionsFile(results_file_path, input_sequence, prior, hazard, memory, maxhyp, obsnz,
+    instructions_file = DREXInstructionsFile(input_sequence, prior, hazard, memory, maxhyp, obsnz,
                                              predscale, change_decision_threshold)
 
     tmp_file_path = tempfile.NamedTemporaryFile().name
@@ -54,12 +53,11 @@ def test_drex_instructions_file():
     instructions_file.save_self(tmp_file_path)
 
     data_after_read = from_mat(tmp_file_path)
-    assert instructions_file.results_file_path == data_after_read["results_file_path"][0]
-    assert np.array_equal(trialtimefeature_sequence_as_multitrial_cell(prior_input_sequence), trialtimefeature_sequence_as_multitrial_cell(prior_input_sequence_from_mat_to_trialtimefeature_sequence(data_after_read["estimate_suffstat"]["xs"][0])))
+    assert np.array_equal(transform_to_estimatesuffstat_representation(prior_input_sequence), transform_to_estimatesuffstat_representation(prior_input_sequence_from_mat_to_trialtimefeature_sequence(data_after_read["estimate_suffstat"]["xs"][0])))
     assert prior.distribution_type().value == data_after_read["estimate_suffstat"]["params"][0][0][0]["distribution"][0][0]
     assert prior.D_value() == data_after_read["estimate_suffstat"]["params"][0][0][0]["D"][0][0][0]
     assert prior.max_n_comp == data_after_read["estimate_suffstat"]["params"][0][0][0]["max_ncomp"][0][0][0]
-    assert np.array_equal(trialtimefeature_sequence_as_singletrial_array(instructions_file.input_sequence), data_after_read["run_DREX_model"]["x"][0][0])
+    assert np.array_equal(transform_to_rundrexmodel_representation(instructions_file.input_sequence), data_after_read["run_DREX_model"]["x"][0][0])
     assert prior.distribution_type().value == data_after_read["run_DREX_model"]["params"][0][0][0]["distribution"][0][0]
     assert prior.D_value() == data_after_read["run_DREX_model"]["params"][0][0][0]["D"][0][0][0]
     assert instructions_file.hazard == data_after_read["run_DREX_model"]["params"][0][0][0]["hazard"][0][0][0]
@@ -71,7 +69,6 @@ def test_drex_instructions_file():
 
 
 def test_drex_results_file():
-    results_file_path = "drex-resultsfile-gaussian-D2.mat"
     instructions_file_path = "drex-instructionsfile-gaussian-D2.mat"
     input_sequence = array([[1., 1., 1.],
                             [1., 1., 2.],
@@ -328,7 +325,7 @@ def test_drex_results_file():
     change_decision_threshold = 0.01
     psi = ResultsFilePsi({}, {})  # TODO
 
-    rf = DREXResultsFile(results_file_path, instructions_file_path,
+    rf = DREXResultsFile(instructions_file_path,
                          input_sequence, prior, surprisal, joint_surprisal,
                          context_beliefs, belief_dynamics, change_decision_changepoint,
                          change_decision_probability, change_decision_threshold, psi)

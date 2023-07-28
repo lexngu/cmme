@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from pathlib import Path
+from typing import Union
 
 
 class InstructionsFile(ABC):
@@ -9,60 +11,40 @@ class InstructionsFile(ABC):
 
     @staticmethod
     @abstractmethod
-    def _generate_instructions_file_path() -> str:
+    def save(instructions_file: InstructionsFile, instructions_file_path: Union[str, Path],
+             results_file_path: Union[str, Path] = None):
         """
-        Generate a default value of the file path where to store an instructions file.
-
-        Returns
-        -------
-        File path
-        """
-        raise NotImplementedError
-
-    @classmethod
-    @abstractmethod
-    def _save(cls, instructions_file: InstructionsFile, file_path: str):
-        """
-        Write to disk.
+        Write the instructions file to disk.
 
         Parameters
         ----------
         instructions_file
-            Object to write to disk
-        file_path
+            instructions file object to write to disk
+        instructions_file_path
             File path where to write to
+        results_file_path
+            File path where to write the results to. If None, the external intermediate scripts will provide a value
+            by their own when processing the instructions file.
         """
         raise NotImplementedError
 
-    @classmethod
-    @abstractmethod
-    def save(cls, instructions_file: InstructionsFile, file_path: str):
-        """
-        Write the result file to disk.
-
-        Parameters
-        ----------
-        instructions_file
-            result file object to write to disk
-        file_path
-            File path where to write to
-        """
-        cls._save(instructions_file, file_path)
-
-    def save_self(self, file_path: str):
+    def save_self(self, instructions_file_path: Union[str, Path], results_file_path: Union[str, Path] = None):
         """
         Save this result file object as file.
 
         Parameters
         ----------
-        file_path
+        instructions_file_path
             Where to store the result file
+        results_file_path
+            File path where to write the results to. If None, the external intermediate scripts will provide a value
+            by their own when processing the instructions file.
         """
-        self.save(self, file_path)
+        self.save(self, instructions_file_path, results_file_path)
 
     @staticmethod
     @abstractmethod
-    def load(file_path: str) -> InstructionsFile:
+    def load(file_path: Union[str, Path]) -> InstructionsFile:
         """
         Load an instructions file.
 

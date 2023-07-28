@@ -27,14 +27,15 @@ class MatlabWorker:
         :return: dictionary with MATLAB output
         """
         MatlabEngineWorker.autostart_matlab()
-        MatlabEngineWorker.matlab_work_in_progress += 1
+        try:
+            MatlabEngineWorker.matlab_work_in_progress += 1
 
-        MatlabEngineWorker.matlab_engine\
-            .addpath(str(MatlabWorker.DREX_INTERMEDIATE_SCRIPT_PATH.parent))  # load script
-        result = MatlabEngineWorker.matlab_engine\
-            .drex_intermediate_script(str(instructions_file_path))  # execute script
-
-        MatlabEngineWorker.matlab_work_in_progress -= 1
+            MatlabEngineWorker.matlab_engine\
+                .addpath(str(MatlabWorker.DREX_INTERMEDIATE_SCRIPT_PATH.parent))  # load script
+            result = MatlabEngineWorker.matlab_engine\
+                .drex_intermediate_script(str(instructions_file_path))  # execute script
+        finally:
+            MatlabEngineWorker.matlab_work_in_progress -= 1
         return result
 
     @staticmethod
@@ -151,8 +152,8 @@ class DREXModel(Model):
         super().__init__()
 
     def run(self, instructions_file_path) -> DREXResultsFile:
-        results = MatlabWorker.run_model(instructions_file_path)
-        results_file = DREXResultsFile.load(results['results_file_path'])
+        results_file_path = MatlabWorker.run_model(instructions_file_path)
+        results_file = DREXResultsFile.load(results_file_path)
         return results_file
 
     @staticmethod

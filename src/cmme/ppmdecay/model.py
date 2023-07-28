@@ -5,6 +5,8 @@ from abc import ABC
 from pathlib import Path
 from typing import Union
 
+import os
+
 from cmme.lib.model import ModelBuilder, Model
 from cmme.ppmdecay.base import EscapeMethod, ModelType
 from cmme.ppmdecay.binding import PPMSimpleInstructionsFile, PPMDecayInstructionsFile, \
@@ -12,7 +14,6 @@ from cmme.ppmdecay.binding import PPMSimpleInstructionsFile, PPMDecayInstruction
 from cmme.ppmdecay.util import auto_convert_input_sequence
 from cmme.lib.util import ppmdecay_default_instructions_file_path, ppmdecay_default_results_file_path
 
-import os
 
 class PPMInstance(ModelBuilder, ABC):
     def __init__(self, model_type: ModelType):
@@ -113,9 +114,8 @@ class PPMSimpleInstance(PPMInstance):
         self._escape_method = escape_method
         return self
 
-    def to_instructions_file(self, results_file_path: str) -> PPMSimpleInstructionsFile:
-        return PPMSimpleInstructionsFile(self._alphabet_levels, self._order_bound,
-                                         self._input_sequence, results_file_path,
+    def to_instructions_file(self) -> PPMSimpleInstructionsFile:
+        return PPMSimpleInstructionsFile(self._alphabet_levels, self._order_bound, self._input_sequence,
                                          self._shortest_deterministic, self._exclusion,
                                          self._update_exclusion, self._escape_method)
 
@@ -216,10 +216,9 @@ class PPMDecayInstance(PPMInstance):
         self._seed = seed
         return self
 
-    def to_instructions_file(self, results_file_path: str) -> PPMDecayInstructionsFile:
+    def to_instructions_file(self) -> PPMDecayInstructionsFile:
         return PPMDecayInstructionsFile(self._alphabet_levels, self._order_bound,
                                         self._input_sequence, self._input_time_sequence,
-                                        results_file_path,
                                         self._buffer_weight, self._buffer_length_time,
                                         self._buffer_length_items, self._only_learn_from_buffer,
                                         self._only_predict_from_buffer,
@@ -236,24 +235,14 @@ class PPMModel(Model):
 
     def run(self, instructions_file_path: Union[str] = ppmdecay_default_instructions_file_path(),
             results_file_path: Union[str, Path] = ppmdecay_default_results_file_path()) -> PPMResultsMetaFile:
-        instructions_file = self.instance.to_instructions_file(results_file_path)  #
-        instructions_file.save_self(instructions_file_path)
-        model_results_path = invoke_model(Path(instructions_file_path))   # TODO change results file path handling
+        instructions_file = self.instance.to_instructions_file()
+        instructions_file.save_self(instructions_file_path, results_file_path)
+        returned_results_file_path = invoke_model(Path(instructions_file_path))   # TODO change results file path handling
 
-        if not isinstance(instructions_file_path, Path):
-            instructions_file_path = Path(instructions_file_path)
-        if not isinstance(results_file_path, Path):
-            results_file_path = Path(results_file_path)
-
-        if results_file_path.exists():
-            results_meta_file = PPMResultsMetaFile.load(results_file_path)
-        else:
-            resolved_results_file_path = instructions_file_path / results_file_path.name
-            if resolved_results_file_path.exists():
-                results_meta_file = PPMResultsMetaFile.load(resolved_results_file_path)
-            else:
-                raise ValueError("results_file_path invalid! There exists no such file at {} nor {}."\
-                                 .format(results_file_path, resolved_results_file_path))
+        if not os.path.exists(returned_results_file_path):
+            raise ValueError("Unexpectedly, the results file could not be loaded. There exists no such file at {}."\
+                             .format(results_file_path))
+        results_meta_file = PPMResultsMetaFile.load(returned_results_file_path)
 
         return results_meta_file
 

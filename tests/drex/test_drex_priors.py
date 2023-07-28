@@ -2,7 +2,7 @@ import pytest
 from numpy import array, nan, ndarray
 
 from cmme.drex.base import UnprocessedPrior, DistributionType, GaussianPrior, GmmPrior
-from cmme.drex.util import auto_convert_input_sequence
+from cmme.drex.util import transform_to_unified_drex_input_sequence_representation
 
 
 def test_unprocessed_prior_with_prior_input_sequence_none_fails():
@@ -38,7 +38,7 @@ def test_unprocessed_prior_prior_input_sequence_should_be_nparray():
     assert p.feature_count() == 3
     assert p.trials_count() == 2
 
-    pis = auto_convert_input_sequence([[[1, 2, 3], [2, 3, 4]], [[11, 12, 13], [12, 13, 14]]])
+    pis = transform_to_unified_drex_input_sequence_representation([[[1, 2, 3], [2, 3, 4]], [[11, 12, 13], [12, 13, 14]]])
     p = UnprocessedPrior(DistributionType.GAUSSIAN, pis)
 
 

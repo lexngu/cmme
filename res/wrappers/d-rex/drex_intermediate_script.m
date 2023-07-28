@@ -1,7 +1,8 @@
 function out = drex_intermediate_script(instructions_file_path)
 
-if isfile(replace(instructions_file_path, "instructionsfile", "resultsfile"))
-    fprintf("Results file at %s already exists. Abort.\n", instructions_file_path);
+results_file_path = replace(instructions_file_path, "instructionsfile", "resultsfile");
+if isfile(results_file_path)
+    fprintf("Results file at %s already exists. Skip.\n", instructions_file_path);
     return;
 end
 
@@ -20,7 +21,7 @@ cd(fileparts(instructions_file_path));
 
 out.results_file_path = instructions_file.results_file_path;
 if isfile(instructions_file.results_file_path)
-    fprintf("Results file at %s already exists. Abort.\n", instructions_file.results_file_path);
+    fprintf("Results file at %s already exists. Skip.\n", instructions_file.results_file_path);
     cd(mfilepath);
     return;
 end
@@ -89,8 +90,14 @@ if isfield(instructions_file, "run_DREX_model")
     post_DREX_changedecision_results = post_DREX_changedecision(run_DREX_model_results, change_decision_threshold);
 
     distribution = rdm_instructions.params.distribution;
-    save(instructions_file.results_file_path, "-v7", "instructions_file_path", "input_sequence", "distribution", "estimate_suffstat_results", "run_DREX_model_results", "post_DREX_changedecision_results", "post_DREX_prediction_results", "post_DREX_beliefdynamics_results", "post_DREX_changedecision_results", "change_decision_threshold");
+
+    if ~strcmp(instructions_file.results_file_path, "")
+        results_file_path = instructions_file.results_file_path;
+    end
+    save(results_file_path, "-v7", "instructions_file_path", "input_sequence", "distribution", "estimate_suffstat_results", "run_DREX_model_results", "post_DREX_changedecision_results", "post_DREX_prediction_results", "post_DREX_beliefdynamics_results", "post_DREX_changedecision_results", "change_decision_threshold");
 end
 
 cd(mfilepath);
+
+out = results_file_path;
 end

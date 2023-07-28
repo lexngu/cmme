@@ -12,6 +12,14 @@ class ModelBuilder(ABC):
 
     @abstractmethod
     def to_instructions_file(self) -> InstructionsFile:
+        """
+        Return instruction file object representing the currently model builder configuration.
+
+        Returns
+        -------
+        InstructionsFile
+            Instruction file object
+        """
         raise NotImplementedError
 
 

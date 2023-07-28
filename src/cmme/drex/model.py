@@ -1,11 +1,13 @@
+from __future__ import annotations
+
 import numbers
 from abc import ABC
 from pathlib import Path
-from typing import Union
+from typing import Union, List
 
 from .base import Prior
 from .binding import DREXInstructionsFile
-from .util import auto_convert_input_sequence
+from .util import transform_to_unified_drex_input_sequence_representation
 from ..lib.util import drex_default_results_file_path
 import numpy as np
 
@@ -17,6 +19,22 @@ from ..lib.model import ModelBuilder
 
 class DREXInstructionBuilder(ModelBuilder, ABC):
     def __init__(self):
+        """
+        D-REX builder. Uses the default values, i.e.:
+
+        * hazard = 0.01
+        * memory = inf
+        * maxhyp = inf
+        * obsnz = 0
+        * predscale = 0.01
+        * change decision threshold = 0.01
+
+        Further required values:
+
+        * prior
+        * input sequence
+
+        """
         # Use original default values
         super().__init__()
         self._input_sequence = None
@@ -34,13 +52,21 @@ class DREXInstructionBuilder(ModelBuilder, ABC):
         self._prior = prior
         return self
 
-    def input_sequence(self, input_sequence: Union[list, np.ndarray]):
+    def input_sequence(self, input_sequence: Union[list, np.ndarray]) -> DREXInstructionBuilder:
         """
-        Sets the input sequence to process
-        :param input_sequence: np.array of shape (time, feature)
-        :return: self
+        Set the input sequence
+
+        Parameters
+        ----------
+        input_sequence
+            np.ndarray of shape (time, feature)
+
+        Returns
+        -------
+        DREXInstructionBuilder
+            self
         """
-        iseq = auto_convert_input_sequence(input_sequence)
+        iseq = transform_to_unified_drex_input_sequence_representation(input_sequence)
         [_, input_sequence_features] = iseq[0].shape
 
         # Check correspondence to prior (if present)
@@ -55,12 +81,23 @@ class DREXInstructionBuilder(ModelBuilder, ABC):
         self._input_sequence = iseq
         return self
 
-    def hazard(self, hazard):
+    def hazard(self, hazard: Union[float, List[float]]) -> DREXInstructionBuilder:
         """
-        Sets the hazard rate(s)
-        :param hazard: scalar, or np.array of shape (time,) matching the input sequence to process
-        :return:
+        Set the hazard rate(s)
+
+        Parameters
+        ----------
+        hazard
+            Value between [0,1], or list of such values (as much as the input sequence has elements)
+
+        Returns
+        -------
+        DREXInstructionBuilder
+            self
         """
+        if isinstance(hazard, list):
+            hazard = np.array(hazard)
+
         if type(hazard) is np.ndarray:
             # Check shape
             if len(hazard.shape) != 1:
@@ -80,22 +117,34 @@ class DREXInstructionBuilder(ModelBuilder, ABC):
         self._hazard = hazard
         return self
 
-    def obsnz(self, obsnz: float):  # TODO per feature separate value?
+    def obsnz(self, obsnz: Union[float, List[float]]) -> DREXInstructionBuilder:  # TODO per feature separate value
         """
-        Sets the observation noise which is the square root value of the number added to the (co)variance
-        D-REX's calculations.
+        Set the observation noise
 
-        :param obsnz: float
-        :return:
+        Parameters
+        ----------
+        obsnz
+            Single values used across features, or list of values (as much as the input sequence has features)
+
+        Returns
+        -------
+        DREXInstructionBuilder
+            self
         """
         self._obsnz = obsnz
         return self
 
-    def memory(self, memory: int):
+    def memory(self, memory: int) -> DREXInstructionBuilder:
         """
-        Sets the memory parameter which limits the number of previous hypotheses to process at each time step.
-        :param memory: int or np.inf
-        :return:
+        Set the memory parameter which limits the number of previous hypotheses to process at each time step.
+        Parameters
+        ----------
+        memory
+            positive int (greather than or equal 2) or np.inf
+        Returns
+        -------
+        DREXInstructionBuilder
+            self
         """
         if not memory >= 2:
             raise ValueError("memory invalid! Value must be greater than or equal 2.")
@@ -103,35 +152,46 @@ class DREXInstructionBuilder(ModelBuilder, ABC):
         self._memory = memory
         return self
 
-    def maxhyp(self, maxhyp: int):
+    def maxhyp(self, maxhyp: int) -> DREXInstructionBuilder:
         """
-        Sets the maxhyp parameter which limits the number of hypotheses to keep at every time step.
-        :param maxhyp: int or np.inf
-        :return:
+        Set the maxhyp parameter which limits the number of previous hypotheses to process at each time step.
+
+        Parameters
+        ----------
+        maxhyp
+            positive int or np.inf
+        Returns
+        -------
+        DREXInstructionBuilder
+            self
         """
         self._maxhyp = maxhyp
         return self
 
-    def change_decision_threshold(self, change_decision_threshold):
+    def change_decision_threshold(self, change_decision_threshold: float) -> DREXInstructionBuilder:
         """
         Sets the change decision threshold.
-        :param change_decision_threshold: float in range of [0,1].
-        :return:
+
+        Parameters
+        ----------
+        change_decision_threshold
+            float in range [0,1]
+
+        Returns
+        -------
+        DREXInstructionBuilder
+            self
         """
         if not change_decision_threshold >= 0 and change_decision_threshold <= 1:
             raise ValueError("change_decision_threshold invalid! Value must be in range of [0,1].")
         self._change_decision_threshold = change_decision_threshold
         return self
 
-    def build_instructions_file(self, results_file_path: Union[str, Path] = drex_default_results_file_path()) -> DREXInstructionsFile:
-        return DREXInstructionsFile(str(results_file_path),
-                                    self._input_sequence, self._prior,
+    def to_instructions_file(self) -> DREXInstructionsFile:
+        return DREXInstructionsFile(self._input_sequence, self._prior,
                                     self._hazard, self._memory,
                                     self._maxhyp, self._obsnz,
                                     self._predscale, self._change_decision_threshold)
-
-    def to_instructions_file(self) -> DREXInstructionsFile:
-        return self.build_instructions_file()  # TODO remove build_instructions_file()
 
     def predscale(self, predscale: float):
         if not predscale > 0 and predscale <= 1:

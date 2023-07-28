@@ -3,7 +3,7 @@ from enum import Enum
 
 import numpy as np
 
-from .util import auto_convert_input_sequence
+from .util import transform_to_unified_drex_input_sequence_representation
 
 
 class DistributionType(Enum):
@@ -211,7 +211,7 @@ class UnprocessedPrior(Prior):
         """
 
         super().__init__()
-        pis = auto_convert_input_sequence(prior_input_sequence)
+        pis = transform_to_unified_drex_input_sequence_representation(prior_input_sequence)
 
         # Check prior_input_sequence
         if len(pis.shape) == 3:
