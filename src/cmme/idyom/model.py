@@ -1,7 +1,9 @@
 import csv
 import tempfile
 
+from .base import *
 from .binding import *
+from .idyom_database import IdyomDatabase
 from .util import *
 from ..lib.instructions_file import InstructionsFile
 from ..lib.model import ModelBuilder, Model
@@ -305,49 +307,16 @@ class IDYOMModel(Model):
     def __init__(self, idyom_root_path: Path = Config().idyom_root_path(),
                  idyom_database_path: Path = Config().idyom_database_path()):
         super().__init__()
-        self.idyom_binding = IDYOMBinding(str(idyom_root_path.resolve()), str(idyom_database_path.resolve()))
-
-    def import_midi(self, midi_files_directory_path: Union[str, Path], description: str, dataset_id: int = None,
-                    timebase: int = 96) -> Dataset:
-        """
-
-        :param midi_files_directory_path:
-        :param description:
-        :param dataset_id: If None, a valid value will be determined automatically
-        :param timebase: Value of "kern2db::*default-timebase*" to use, MCCC requires 39473280.
-        :return:
-        """
-        if dataset_id is None:
-            dataset_id = self.idyom_binding.next_free_dataset_id()
-
-        return self.idyom_binding.import_midi(path_as_string_with_trailing_slash(midi_files_directory_path), description, dataset_id, timebase)
-
-    def import_kern(self, krn_files_directory_path: Union[str, Path], description: str, dataset_id: int = None,
-                    timebase: int = 96) -> Dataset:
-        """
-
-        :param krn_files_directory_path:
-        :param description:
-        :param dataset_id: If None, a valid value will be determined automatically
-        :param timebase: Value of "kern2db::*default-timebase*" to use, MCCC requires 39473280.
-        :return:
-        """
-        if dataset_id is None:
-            dataset_id = self.idyom_binding.next_free_dataset_id()
-
-        return self.idyom_binding.import_kern(path_as_string_with_trailing_slash(krn_files_directory_path), description, dataset_id, timebase)
-
-    def all_datasets(self) -> List[Dataset]:
-        return self.idyom_binding.all_datasets()
+        self.idyom_database = IdyomDatabase(str(idyom_root_path.resolve()), str(idyom_database_path.resolve()))
 
     def run(self, instruction_builder: IDYOMInstructionBuilder,
             instructions_file_path: Union[str, Path]=idyom_default_instructions_file_path()) -> IDYOMResultsFile:
         # log execution string
-        results_file_path = os.path.join(instruction_builder._output_options["output_path"], self.idyom_binding.eval(
-            instruction_builder.build_for_cl4py_filename_inference()))
+        filename, _ = self.idyom_database.eval(instruction_builder.build_for_cl4py_filename_inference())
+        results_file_path = os.path.join(instruction_builder._output_options["output_path"], filename)
         instructions_file_data = {
             "cmd": instruction_builder.build_for_lisp(),
-            "datasets": self.all_datasets(),
+            "datasets": self.idyom_database.get_all_datasets(),
             "results_file_path": results_file_path
         }
 
@@ -358,7 +327,7 @@ class IDYOMModel(Model):
                 csvwriter.writerow(instructions_file_data)
             print("This run is documented in {}.".format(instructions_file_path))
 
-        self.idyom_binding.eval(instruction_builder.build_for_cl4py())
+        self.idyom_database.eval(instruction_builder.build_for_cl4py())
 
         results = IDYOMResultsFile.load(results_file_path)
 

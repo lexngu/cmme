@@ -38,7 +38,7 @@ def test_idyom_run_succeeds():
         idyom_model = IDYOMModel(Config().idyom_root_path(), Path(tmpdir) / Path("./db/database.sqlite"))
 
         midi_dir_path = str(Path(__file__).parent.parent.resolve() / Path("sample_files/idyom-midi")) + "/"
-        dataset = idyom_model.import_midi(midi_dir_path, "test")
+        dataset = idyom_model.idyom_database.import_midi_dataset(midi_dir_path, "test")
 
         idyomib = IDYOMInstructionBuilder()
         idyomib.source_viewpoints([BasicViewpoint.CPITCH]).target_viewpoints([BasicViewpoint.CPITCH]).dataset(dataset)
