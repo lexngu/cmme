@@ -3,13 +3,15 @@ from __future__ import annotations
 import os
 from enum import Enum
 from pathlib import Path
-from typing import Union
+from typing import Union, Tuple
 
 import cl4py
 from cl4py import Cons
 
 from cmme.config import Config
 from cmme.lib.util import path_as_string_with_trailing_slash
+
+import subprocess
 
 
 class LispExpressionBuilderMode(Enum):
@@ -68,7 +70,7 @@ class LispExpressionBuilder:
             self.components.append(('quote', self._as_nested_tuple(value)))
         return self
 
-    def build(self):
+    def build(self) -> Union[str, tuple]:
         if self._mode == LispExpressionBuilderMode.LISP:
             return str(self)
         elif self._mode == LispExpressionBuilderMode.CL4PY:
@@ -141,3 +143,13 @@ def install_idyom(idyom_root_path: Union[str, Path], force_reset=False) -> Path:
     lisp.eval(('idyom-db:initialise-database',))
 
     return idyom_db_path
+
+
+def run_idyom_instructions_file(instructions_file_path: Union[str, Path]) -> Tuple[str, str]:
+    if not os.path.exists(instructions_file_path):
+        raise ValueError("instructions_file_path points to a non-existing file!")
+    process = subprocess.Popen(["sbcl", "--script", instructions_file_path],
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+    out, err = process.communicate()
+    return out, err

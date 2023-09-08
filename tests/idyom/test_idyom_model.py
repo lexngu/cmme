@@ -13,23 +13,23 @@ def test_default_idyom_instruction_builder_uses_default_values():
     output_options = idyomib._output_options
 
     assert model == IDYOMModelValue.BOTH_PLUS
-    assert stm_options['order_bound'] == None
-    assert stm_options['mixtures'] == True
-    assert stm_options['update_exclusion'] == True
-    assert stm_options['escape'] == IDYOMEscape.X
-    assert ltm_options['order_bound'] == None
-    assert ltm_options['mixtures'] == True
-    assert ltm_options['update_exclusion'] == False
-    assert ltm_options['escape'] == IDYOMEscape.C
+    assert stm_options['order_bound'] is None
+    assert stm_options['mixtures'] is None
+    assert stm_options['update_exclusion'] is None
+    assert stm_options['escape'] is None
+    assert ltm_options['order_bound'] is None
+    assert ltm_options['mixtures'] is None
+    assert ltm_options['update_exclusion'] is None
+    assert ltm_options['escape'] is None
     if len(training_options.keys()) > 0:
-        assert training_options['resampling_folds_count'] == 10
-        assert training_options['exclusively_to_be_used_resampling_fold_indices'] == None
+        assert training_options['resampling_folds_count'] is None
+        assert training_options['exclusively_to_be_used_resampling_fold_indices'] is None
     if len(select_options.keys()) > 0:
-        assert select_options['dp'] == 2
-        assert select_options['max_links'] == 2
-        assert select_options['min_links'] == 2
-    assert output_options['overwrite'] == False
-    assert output_options['separator'] == " "
+        assert select_options['dp'] is None
+        assert select_options['max_links'] is None
+        assert select_options['min_links'] is None
+    assert output_options['overwrite'] is None
+    assert output_options['separator'] is None
 
 
 def test_idyom_run_succeeds():
@@ -41,8 +41,13 @@ def test_idyom_run_succeeds():
         dataset = idyom_model.idyom_database.import_midi_dataset(midi_dir_path, "test")
 
         idyomib = IDYOMInstructionBuilder()
-        idyomib.source_viewpoints([BasicViewpoint.CPITCH]).target_viewpoints([BasicViewpoint.CPITCH]).dataset(dataset)
+        idyomib.model(IDYOMModelValue.STM).source_viewpoints([BasicViewpoint.CPITCH])\
+            .target_viewpoints([BasicViewpoint.CPITCH]).dataset(dataset)\
+            .idyom_root_path(idyom_model.idyom_root_path).idyom_database_path(idyom_model.idyom_database_path)\
+            .training_options(resampling_folds_count_k=1)
 
-        idyom_results_file = idyom_model.run(idyomib)
+        idyomif = idyomib.to_instructions_file()
+
+        idyom_results_file = idyom_model.run_instructions_file(idyomif)
 
         assert idyom_results_file.df is not None
