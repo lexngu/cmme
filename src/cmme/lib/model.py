@@ -29,9 +29,9 @@ class Model(ABC):
 
     @classmethod
     def run_instructions_file(cls, instructions_file: InstructionsFile) -> ResultsFile:
-        with tempfile.NamedTemporaryFile() as tmpfile:
-            instructions_file.save_self(tmpfile.name)
-            return cls.run_instructions_file_at_path(tmpfile.name)
+        tmpfile = tempfile.NamedTemporaryFile()
+        instructions_file.save_self(tmpfile.name)
+        return cls.run_instructions_file_at_path(tmpfile.name)
 
     @staticmethod
     @abstractmethod
