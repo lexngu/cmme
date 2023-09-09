@@ -15,7 +15,7 @@ from cmme.ppmdecay.util import auto_convert_input_sequence
 from cmme.lib.util import ppmdecay_default_instructions_file_path, ppmdecay_default_results_file_path
 
 
-class PPMInstance(ModelBuilder, ABC):
+class PPMInstance(ModelBuilder, ABC): # TODO rename to InstructionBuilder
     def __init__(self, model_type: ModelType):
         super().__init__()
         self._model_type = model_type

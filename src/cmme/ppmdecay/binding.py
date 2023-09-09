@@ -10,7 +10,8 @@ import pandas as pd
 from cmme.config import Config
 from cmme.lib.instructions_file import InstructionsFile
 from cmme.lib.results_file import ResultsFile
-from cmme.ppmdecay.base import ModelType
+from cmme.lib.util import nparray_to_list
+from cmme.ppmdecay.base import ModelType, EscapeMethod
 from cmme.ppmdecay.util import list_to_str, str_to_list
 
 # R_HOME specifies the R instance to use by rpy2.
@@ -40,11 +41,11 @@ def invoke_model(instructions_file_path: Union[str, Path]) -> str:
 class PPMInstructionsFile(InstructionsFile, ABC):
     def __init__(self, model_type: ModelType, alphabet_levels, order_bound, input_sequence):
         super().__init__()
-        self._model_type = model_type
-        self._alphabet_levels = alphabet_levels
-        self._order_bound = order_bound
+        self.model_type = model_type
+        self.alphabet_levels = alphabet_levels
+        self.order_bound = order_bound
 
-        self._input_sequence = input_sequence
+        self.input_sequence = input_sequence
 
 
 class PPMSimpleInstructionsFile(PPMInstructionsFile):
@@ -52,18 +53,18 @@ class PPMSimpleInstructionsFile(PPMInstructionsFile):
     def save(cls, instructions_file: PPMSimpleInstructionsFile, instructions_file_path: Union[str, Path],
              results_file_path: Union[str, Path] = None):
         data = {
-            "model_type": [instructions_file._model_type.value],
-            "alphabet_levels": [list_to_str(instructions_file._alphabet_levels)],
-            "order_bound": [instructions_file._order_bound],
-            "input_sequence": [instructions_file._input_sequence],
+            "model_type": [instructions_file.model_type.value],
+            "alphabet_levels": [list_to_str(instructions_file.alphabet_levels)],
+            "order_bound": [instructions_file.order_bound],
+            "input_sequence": [instructions_file.input_sequence],
             "results_file_path": [str(results_file_path)] if results_file_path is not None else [""]
         }
 
         data.update({
-            "shortest_deterministic": [instructions_file._shortest_deterministic],
-            "exclusion": [instructions_file._exclusion],
-            "update_exclusion": [instructions_file._update_exclusion],
-            "escape": [instructions_file._escape_method.value]
+            "shortest_deterministic": [instructions_file.shortest_deterministic],
+            "exclusion": [instructions_file.exclusion],
+            "update_exclusion": [instructions_file.update_exclusion],
+            "escape": [instructions_file.escape_method.value]
         })
 
         df = pd.DataFrame.from_dict(data)
@@ -73,16 +74,13 @@ class PPMSimpleInstructionsFile(PPMInstructionsFile):
     def load(file_path: Union[str, Path]) -> PPMSimpleInstructionsFile:
         df = pd.read_feather(file_path)
 
-        alphabet_levels = df["alphabet_levels"]
-        order_bound = df["order_bound"]
-        input_sequence = df["input_sequence"]
-        results_file_path = None
-        if "results_file_path" in df:
-            results_file_path = str(df["results_file_path"])
-        shortest_deterministic = df["shortest_deterministic"]
-        exclusion = df["exclusion"]
-        update_exclusion = df["update_exclusion"]
-        escape_method = df["escape_method"]
+        alphabet_levels = str_to_list(df["alphabet_levels"][0])
+        order_bound = int(df["order_bound"][0])
+        input_sequence = nparray_to_list(df["input_sequence"][0])
+        shortest_deterministic = df["shortest_deterministic"][0]
+        exclusion = df["exclusion"][0]
+        update_exclusion = df["update_exclusion"][0]
+        escape_method = EscapeMethod(df["escape"][0])
 
         obj = PPMSimpleInstructionsFile(alphabet_levels, order_bound, input_sequence,
                                         shortest_deterministic, exclusion, update_exclusion, escape_method)
@@ -93,10 +91,10 @@ class PPMSimpleInstructionsFile(PPMInstructionsFile):
                  shortest_deterministic, exclusion, update_exclusion, escape_method):
         super().__init__(ModelType.SIMPLE, alphabet_levels, order_bound, input_sequence)
 
-        self._shortest_deterministic = shortest_deterministic
-        self._exclusion = exclusion
-        self._update_exclusion = update_exclusion
-        self._escape_method = escape_method
+        self.shortest_deterministic = shortest_deterministic
+        self.exclusion = exclusion
+        self.update_exclusion = update_exclusion
+        self.escape_method = escape_method
 
 
 class PPMDecayInstructionsFile(PPMInstructionsFile):
@@ -104,27 +102,27 @@ class PPMDecayInstructionsFile(PPMInstructionsFile):
     def save(cls, instructions_file: PPMDecayInstructionsFile, instructions_file_path: Union[str, Path],
              results_file_path: Union[str, Path] = None):
         data = {
-            "model_type": [instructions_file._model_type.value],
-            "alphabet_levels": [list_to_str(instructions_file._alphabet_levels)],
-            "order_bound": [instructions_file._order_bound],
-            "input_sequence": [instructions_file._input_sequence],
+            "model_type": [instructions_file.model_type.value],
+            "alphabet_levels": [list_to_str(instructions_file.alphabet_levels)],
+            "order_bound": [instructions_file.order_bound],
+            "input_sequence": [instructions_file.input_sequence],
             "results_file_path": [str(results_file_path)] if results_file_path is not None else [""]
         }
 
         data.update({
-            "input_time_sequence": [instructions_file._input_time_sequence],
-            "buffer_weight": [instructions_file._buffer_weight],
-            "buffer_length_time": [instructions_file._buffer_length_time],
-            "buffer_length_items": [instructions_file._buffer_length_items],
-            "stm_weight": [instructions_file._stm_weight],
-            "stm_duration": [instructions_file._stm_duration],
-            "only_learn_from_buffer": [instructions_file._only_learn_from_buffer],
-            "only_predict_from_buffer": [instructions_file._only_predict_from_buffer],
-            "ltm_weight": [instructions_file._ltm_weight],
-            "ltm_half_life": [instructions_file._ltm_half_life],
-            "ltm_asymptote": [instructions_file._ltm_asymptote],
-            "noise": [instructions_file._noise],
-            "seed": [instructions_file._seed]
+            "input_time_sequence": [instructions_file.input_time_sequence],
+            "buffer_weight": [instructions_file.buffer_weight],
+            "buffer_length_time": [instructions_file.buffer_length_time],
+            "buffer_length_items": [instructions_file.buffer_length_items],
+            "stm_weight": [instructions_file.stm_weight],
+            "stm_duration": [instructions_file.stm_duration],
+            "only_learn_from_buffer": [instructions_file.only_learn_from_buffer],
+            "only_predict_from_buffer": [instructions_file.only_predict_from_buffer],
+            "ltm_weight": [instructions_file.ltm_weight],
+            "ltm_half_life": [instructions_file.ltm_half_life],
+            "ltm_asymptote": [instructions_file.ltm_asymptote],
+            "noise": [instructions_file.noise],
+            "seed": [instructions_file.seed]
         })
 
         df = pd.DataFrame.from_dict(data)
@@ -134,26 +132,24 @@ class PPMDecayInstructionsFile(PPMInstructionsFile):
     def load(file_path: Union[str, Path]) -> InstructionsFile:
         df = pd.read_feather(file_path)
 
-        alphabet_levels = df["alphabet_levels"]
-        order_bound = df["order_bound"]
-        input_sequence = df["input_sequence"]
-        input_time_sequence = df["input_time_sequence"]
-        results_file_path = str(df["results_file_path"])
-        buffer_weight = df["buffer_weight"]
-        buffer_length_time = df["buffer_length_time"]
-        buffer_length_items = df["buffer_length_items"]
-        only_learn_from_buffer = df["only_learn_from_buffer"]
-        only_predict_from_buffer = df["only_predict_from_buffer"]
-        stm_weight = df["stm_weight"]
-        stm_duration = df["stm_duration"]
-        ltm_weight = df["ltm_weight"]
-        ltm_half_life = df["ltm_half_life"]
-        ltm_asymptote = df["ltm_asymptote"]
-        noise = df["noise"]
-        seed = df["seed"]
+        alphabet_levels = str_to_list(df["alphabet_levels"][0])
+        order_bound = df["order_bound"][0]
+        input_sequence = nparray_to_list(df["input_sequence"][0])
+        input_time_sequence = nparray_to_list(df["input_time_sequence"][0])
+        buffer_weight = df["buffer_weight"][0]
+        buffer_length_time = df["buffer_length_time"][0]
+        buffer_length_items = df["buffer_length_items"][0]
+        only_learn_from_buffer = df["only_learn_from_buffer"][0]
+        only_predict_from_buffer = df["only_predict_from_buffer"][0]
+        stm_weight = df["stm_weight"][0]
+        stm_duration = df["stm_duration"][0]
+        ltm_weight = df["ltm_weight"][0]
+        ltm_half_life = df["ltm_half_life"][0]
+        ltm_asymptote = df["ltm_asymptote"][0]
+        noise = df["noise"][0]
+        seed = df["seed"][0]
 
         obj = PPMDecayInstructionsFile(alphabet_levels, order_bound, input_sequence, input_time_sequence,
-                                       results_file_path,
                                        buffer_weight, buffer_length_time, buffer_length_items, only_learn_from_buffer,
                                        only_predict_from_buffer,
                                        stm_weight, stm_duration, ltm_weight, ltm_half_life, ltm_asymptote,
@@ -168,20 +164,20 @@ class PPMDecayInstructionsFile(PPMInstructionsFile):
                  noise, seed):
         super().__init__(ModelType.DECAY, alphabet_levels, order_bound, input_sequence)
 
-        self._input_time_sequence = input_time_sequence
-        self._buffer_weight = buffer_weight
-        self._buffer_length_time = buffer_length_time
-        self._buffer_length_items = buffer_length_items
-        self._only_learn_from_buffer = only_learn_from_buffer
-        self._only_predict_from_buffer = only_predict_from_buffer
-        self._stm_weight = stm_weight
-        self._stm_duration = stm_duration
-        self._ltm_weight = ltm_weight
-        self._ltm_half_life = ltm_half_life
-        self._ltm_asymptote = ltm_asymptote
-        self._noise = noise
+        self.input_time_sequence = input_time_sequence
+        self.buffer_weight = buffer_weight
+        self.buffer_length_time = buffer_length_time
+        self.buffer_length_items = buffer_length_items
+        self.only_learn_from_buffer = only_learn_from_buffer
+        self.only_predict_from_buffer = only_predict_from_buffer
+        self.stm_weight = stm_weight
+        self.stm_duration = stm_duration
+        self.ltm_weight = ltm_weight
+        self.ltm_half_life = ltm_half_life
+        self.ltm_asymptote = ltm_asymptote
+        self.noise = noise
 
-        self._seed = seed
+        self.seed = seed
 
 
 class ResultsFileData(ABC):

@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 from pathlib import Path
 import os
 from typing import Union
+
+import numpy as np
 
 from cmme.config import Config
 
@@ -103,3 +107,24 @@ def ppmdecay_default_results_file_path(alias: str = None, io_path: Path = Path("
     results_file_filename = results_file_filename + ".feather"
 
     return io_path / Path(results_file_filename)
+
+
+def nparray_to_list(arr: np.ndarray) -> list:
+    """
+    Convert a (nested) numpy array to a Python list
+    Parameters
+    ----------
+    arr: np.ndarray
+        Input array to process
+    Returns
+    -------
+    list
+        Python list
+    """
+    result = []
+    for e in arr:
+        if type(e) is np.ndarray:
+            result.append(nparray_to_list(e))
+        else:
+            result.append(e)
+    return result

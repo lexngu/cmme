@@ -6,26 +6,6 @@ from typing import Union
 import numpy as np
 
 
-def nparray_to_list(arr: np.ndarray) -> list:
-    """
-    Convert a (nested) numpy array to a Python list
-    Parameters
-    ----------
-    arr: np.ndarray
-        Input array to process
-    Returns
-    -------
-    list
-        Python list
-    """
-    result = []
-    for e in arr:
-        if type(e) is np.ndarray:
-            result.append(nparray_to_list(e))
-        else:
-            result.append(e)
-    return result
-
 def transform_to_unified_drex_input_sequence_representation(data: Union[list, np.ndarray]) -> np.ndarray:
     """
     Transform the data sequence to a unified representation of multi-trial, multi-feature data.

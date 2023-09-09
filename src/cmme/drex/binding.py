@@ -8,7 +8,8 @@ import numpy as np
 import scipy.io as sio
 
 from .base import DistributionType, Prior, UnprocessedPrior, GaussianPrior, LognormalPrior, GmmPrior, PoissonPrior
-from .util import transform_to_unified_drex_input_sequence_representation, nparray_to_list
+from .util import transform_to_unified_drex_input_sequence_representation
+from ..lib.util import nparray_to_list
 from ..lib.instructions_file import InstructionsFile
 from ..lib.results_file import ResultsFile
 
