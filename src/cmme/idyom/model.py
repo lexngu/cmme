@@ -217,6 +217,7 @@ class IDYOMInstructionBuilder(ModelBuilder):
             "use_resampling_set_cache": use_resampling_set_cache,
             "use_ltms_cache": use_ltms_cache
         }
+        return self
 
     def _is_valid(self) -> tuple:
         """

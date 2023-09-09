@@ -3,8 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 import pandas as pd
 from typing import Union
+import re
 
-from .base import transform_viewpoints_list_to_string_list, IDYOMModelValue, IDYOMViewpointSelectionBasis
+from .base import transform_viewpoints_list_to_string_list, IDYOMModelValue, IDYOMViewpointSelectionBasis, \
+    transform_string_list_to_viewpoints_list, IDYOMEscape
 from .util import LispExpressionBuilder, LispExpressionBuilderMode
 from ..lib.instructions_file import InstructionsFile
 from ..lib.results_file import ResultsFile
@@ -109,7 +111,155 @@ class IDYOMInstructionsFile(InstructionsFile):
 
     @staticmethod
     def load(file_path: Union[str, Path]) -> IDYOMInstructionsFile:
-        raise NotImplementedError
+        with open(file_path, "r") as f:
+            instructions_file_content = f.read()
+
+        def extract_lisp_command(cmd_name, str):
+            start_index = str.find("(" + cmd_name)
+            open_parentheses = 1
+            end_index = start_index + 1
+            while open_parentheses != 0:
+                if str[end_index] == "(":
+                    open_parentheses += 1
+                elif str[end_index] == ")":
+                    open_parentheses -= 1
+                end_index += 1
+            return str[start_index:end_index]
+
+        def find_single_or_none(pattern, str, to_int=False, to_bool=False):
+            result = re.search(pattern, str)
+            if result:
+                assert len(result.groups()) == 1
+                if to_int:
+                    return int(result.groups()[0])
+                elif to_bool:
+                    if result.groups()[0] == "t":
+                        return True
+                    elif result.groups()[0] == "nil":
+                        return False
+                    else:
+                        raise ValueError("Could not determine bool value of {} (pattern: {})".format(result, pattern))
+                else:
+                    return result.groups()[0]
+            else:
+                return None
+
+        def lisp_list_to_python_list(str, to_int=False, tuple_to_list=False):
+            # (a, b, (c, d), e) => ["a", "b", ["c", "d"], "e"]
+            if str is None:
+                return None
+            if not to_int:
+                str_sub = re.sub(r"([^\s()]+)", r"'\1',", str)
+            else:
+                str_sub = re.sub(r"([^\s()]+)", r"\1,", str)
+            if tuple_to_list:
+                str_sub = re.sub(r"\(", r"[", str_sub)
+                str_sub = re.sub(r"\)", r"]", str_sub)
+
+            import ast
+            res = ast.literal_eval(str_sub)
+
+            return res
+
+        idyom_root_path     = find_single_or_none(r"\(defvar\s+\*idyom-root\*\s+\"(.+)\"\)", instructions_file_content)
+        idyom_database_path = find_single_or_none(r"\(clsql:connect '\(\"(.+)\"\)\s+:", instructions_file_content)
+        output_dir          = find_single_or_none(r"\(defvar output-dir \"(.+)\"\)", instructions_file_content)
+
+        # (idyom:idyom ...)
+        idyom_cmd = extract_lisp_command("idyom:idyom", instructions_file_content)
+        [dataset, search_target_viewpoints, search_source_viewpoints, models, search_stm_options,
+         search_ltm_options] = re.search(
+            r"\(idyom:idyom\s+(\d+)\s+'(\(.+?\))\s+(?:'(\(.+?\))|:select)(?:\s*:models\s+([^\s)]+))?(?:\s*:stmo\s+'(\(.+?\)))?(?:\s*:ltmo\s+'(\(.+?\)))?",
+            idyom_cmd).groups()
+        dataset = int(dataset)
+        search_pretraining_ids = find_single_or_none(r":pretraining-ids\s+'(\(.+?\))", idyom_cmd)
+        pretraining_ids = lisp_list_to_python_list(search_pretraining_ids, to_int=True, tuple_to_list=True)
+        k = find_single_or_none(r":k\s+(\d+)", idyom_cmd, to_int=True)
+        search_resampling_indices = find_single_or_none(r":resampling-indices\s+'(\(.+?\))", idyom_cmd)
+        search_basis = find_single_or_none(r":basis\s+'?(.+)", idyom_cmd)
+        dp = find_single_or_none(r":dp\s+(\d+)", idyom_cmd, to_int=True)
+        max_links = find_single_or_none(r":max-links\s+(\d+)", idyom_cmd, to_int=True)
+        min_links = find_single_or_none(r":min-links\s+(\d+)", idyom_cmd, to_int=True)
+        viewpoint_selection_output = find_single_or_none(r":viewpoint-selection-output\s+\"(.+)\"",
+                                                         idyom_cmd)
+        detail      = find_single_or_none(r":detail\s+(\d+)", idyom_cmd, to_int=True)
+        output_path = find_single_or_none(r":output-path\s+([^\s)]+|\"[^\s)]+\")", idyom_cmd)
+        overwrite   = find_single_or_none(r":overwrite\s+([^\s)]+)", idyom_cmd, to_bool=True)
+        separator   = find_single_or_none(r":separator\s+\"(.+)\"", idyom_cmd)
+        use_resampling_set_cache = find_single_or_none(r":use-resampling-set-cache\?\s+([^\s)]+)",
+                                                       idyom_cmd, to_bool=True)
+        use_ltms_cache = find_single_or_none(r":use-ltms-cache\?\s+([^\s)]+)", idyom_cmd, to_bool=True)
+        resampling_indices = lisp_list_to_python_list(search_resampling_indices, to_int=True, tuple_to_list=True)
+
+        target_viewpoints = transform_string_list_to_viewpoints_list(lisp_list_to_python_list(search_target_viewpoints))
+        source_viewpoints = transform_string_list_to_viewpoints_list(lisp_list_to_python_list(search_source_viewpoints))
+        if search_stm_options:
+            stm_order_bound = find_single_or_none(r":order-bound\s+(\d+)", search_stm_options, to_int=True)
+            stm_mixtures = find_single_or_none(r":mixtures\s+([^\s)]+)", search_stm_options, to_bool=True)
+            stm_update_exclusion = find_single_or_none(r":update-exclusion\s+([^\s)]+)", search_stm_options,
+                                                       to_bool=True)
+            stm_escape = find_single_or_none(r":escape\s+([^\s)]+)", search_stm_options)
+            if stm_escape is not None:
+                stm_escape = IDYOMEscape(stm_escape)
+        else:
+            stm_order_bound = stm_mixtures = stm_update_exclusion = stm_escape = None
+        stm_options = {
+            "order_bound": stm_order_bound,
+            "mixtures": stm_mixtures,
+            "update_exclusion": stm_update_exclusion,
+            "escape": stm_escape
+        }
+        if search_ltm_options:
+            ltm_order_bound = find_single_or_none(r":order-bound\s+(\d+)", search_ltm_options, to_int=True)
+            ltm_mixtures = find_single_or_none(r":mixtures\s+([^\s)]+)", search_ltm_options, to_bool=True)
+            ltm_update_exclusion = find_single_or_none(r":update-exclusion\s+([^\s)]+)", search_ltm_options,
+                                                       to_bool=True)
+            ltm_escape = find_single_or_none(r":escape\s+([^\s)]+)", search_ltm_options)
+            if ltm_escape is not None:
+                ltm_escape = IDYOMEscape(ltm_escape)
+        else:
+            ltm_order_bound = ltm_mixtures = ltm_update_exclusion = ltm_escape = None
+        ltm_options = {
+            "order_bound": ltm_order_bound,
+            "mixtures": ltm_mixtures,
+            "update_exclusion": ltm_update_exclusion,
+            "escape": ltm_escape
+        }
+
+        training_options = {
+            "pretraining_dataset_ids": pretraining_ids,
+            "resampling_folds_count_k": k,
+            "exclusively_to_be_used_resampling_fold_indices": resampling_indices
+        }
+
+        basis = lisp_list_to_python_list(search_basis)
+        select_options = {
+            "basis": basis,
+            "dp": dp,
+            "max_links": max_links,
+            "min_links": min_links,
+            "viewpoint_selection_output": viewpoint_selection_output
+        }
+
+        if output_path is "output-dir" and output_dir is None:
+            raise ValueError(":output-path is set to value 'output-dir', but output-dir could not be determined!")
+        output_options = {
+            "output_path": output_path if output_path != "output-dir" else output_dir,
+            "detail": detail,
+            "overwrite": overwrite,
+            "separator": separator
+        }
+
+        caching_options = {
+            "use_resampling_set_cache": use_resampling_set_cache,
+            "use_ltms_cache": use_ltms_cache
+        }
+
+        return IDYOMInstructionsFile(dataset, target_viewpoints, source_viewpoints, models,
+                                     stm_options, ltm_options, training_options,
+                                     select_options, output_options, caching_options,
+                                     idyom_root_path, idyom_database_path)
+
     
     def __init__(self, dataset, target_viewpoints, source_viewpoints, model, stm_options, ltm_options, training_options,
                  select_options, output_options, caching_options,

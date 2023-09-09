@@ -109,10 +109,11 @@ def idyom_default_instructions_file_path(alias: str = None, io_path: Path = Conf
     return io_path / instructions_file_filename
 
 
-def install_idyom(idyom_root_path: Union[str, Path], force_reset=False) -> Path:
+def install_idyom(idyom_root_path: Union[str, Path], idyom_database_path: Union[str, Path]=None, force_reset=False) -> Path:
     """
     Installs idyom as quicklisp project, and initializes the database
     :param idyom_root_path:
+    :param idyom_database_path
     :param force_reset:
     :return: Path to idyom database
     """
@@ -127,7 +128,8 @@ def install_idyom(idyom_root_path: Union[str, Path], force_reset=False) -> Path:
     lisp = cl4py.Lisp(quicklisp=True)
 
     idyom_root_path = path_as_string_with_trailing_slash(idyom_root_path)
-    idyom_db_path = Path(os.path.join(idyom_root_path, "db/database.sqlite"))
+    idyom_db_path = Path(os.path.join(idyom_root_path, "db/database.sqlite")) if idyom_database_path is None \
+        else Path(idyom_database_path)
 
     if idyom_db_path.exists() and not force_reset:
         print(

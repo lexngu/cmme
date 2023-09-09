@@ -341,3 +341,41 @@ def test_results_file_reads_file_without_error():
     rf2 = DREXResultsFile.load(os.path.join(os.path.dirname(__file__), "../sample_files/drex-resultsfile-gaussian-D2.mat"))
     rf3 = DREXResultsFile.load(os.path.join(os.path.dirname(__file__), "../sample_files/drex-resultsfile-gmm-D1.mat"))
     rf4 = DREXResultsFile.load(os.path.join(os.path.dirname(__file__), "../sample_files/drex-resultsfile-poisson-D3.mat"))
+
+
+def test_load_drex_instructions_file():
+    input_sequence = transform_to_unified_drex_input_sequence_representation([1, 2, 3, 4, 5])
+    prior_input_sequence = transform_to_unified_drex_input_sequence_representation(
+        [[[11, 12, 13, 14, 15]], [[21, 22, 23, 24, 25]]])
+    prior = UnprocessedPrior(DistributionType.GMM, prior_input_sequence)
+    hazard = 0.1
+    memory = float('inf')
+    maxhyp = 2
+    obsnz = 0.1
+    predscale = 0.001
+    beta = 0.002
+    max_ncomp = 11
+    change_decision_threshold = 0.1
+    instructions_file = DREXInstructionsFile(input_sequence, prior, hazard, memory, maxhyp, obsnz,
+                                             max_ncomp, beta,
+                                             predscale, change_decision_threshold)
+
+    tmp_file_path = tempfile.NamedTemporaryFile().name
+
+    instructions_file.save_self(tmp_file_path)
+
+    test_instructions_file = DREXInstructionsFile.load(tmp_file_path)
+    assert (test_instructions_file.input_sequence == input_sequence).all()
+    assert (test_instructions_file.prior.prior_input_sequence == prior.prior_input_sequence).all()
+    assert test_instructions_file.prior.distribution_type() == prior.distribution_type()
+    assert test_instructions_file.prior.D_value() == prior.D_value()
+    assert test_instructions_file.prior.feature_count() == prior.feature_count()
+    assert test_instructions_file.prior.trials_count() == prior.trials_count()
+    assert test_instructions_file.hazard == hazard
+    assert test_instructions_file.memory == memory
+    assert test_instructions_file.maxhyp == maxhyp
+    assert test_instructions_file.obsnz == [obsnz]
+    assert test_instructions_file.max_ncomp == max_ncomp
+    assert test_instructions_file.beta == beta
+    assert test_instructions_file.predscale == predscale
+    assert test_instructions_file.change_decision_threshold == change_decision_threshold

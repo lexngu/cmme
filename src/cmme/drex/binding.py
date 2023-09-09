@@ -8,7 +8,7 @@ import numpy as np
 import scipy.io as sio
 
 from .base import DistributionType, Prior, UnprocessedPrior, GaussianPrior, LognormalPrior, GmmPrior, PoissonPrior
-from .util import transform_to_unified_drex_input_sequence_representation
+from .util import transform_to_unified_drex_input_sequence_representation, nparray_to_list
 from ..lib.instructions_file import InstructionsFile
 from ..lib.results_file import ResultsFile
 
@@ -41,7 +41,7 @@ def from_mat(file_path: Union[str, Path]) -> dict:
     dict
         Content of the MATLAB file
     """
-    mat_data = sio.loadmat(str(file_path))
+    mat_data = sio.loadmat(str(file_path), simplify_cells=True)
 
     return mat_data
 
@@ -143,7 +143,7 @@ class DREXInstructionsFile(InstructionsFile):
     def load(file_path: Union[str, Path]) -> DREXInstructionsFile:
         data = from_mat(file_path)
 
-        input_sequence = data["run_DREX_model"]["x"]
+        input_sequence = nparray_to_list(data["run_DREX_model"]["x"])
         data_rundrexmodel_params = data["run_DREX_model"]["params"]
         distribution = DistributionType(data_rundrexmodel_params["distribution"])
         hazard = data_rundrexmodel_params["hazard"]
@@ -163,12 +163,12 @@ class DREXInstructionsFile(InstructionsFile):
             change_decision_threshold = data["post_DREX_changedecision"]["threshold"]
 
         if "estimate_suffstat" in data:
-            prior_input_sequence = data["estimate_suffstat"]["xs"]
+            prior_input_sequence = nparray_to_list(data["estimate_suffstat"]["xs"])
             data_estimatesuffstat_params = data["estimate_suffstat"]["params"]
             prior_distribution = DistributionType(data_estimatesuffstat_params["distribution"])
             prior_D = data_estimatesuffstat_params["D"]
 
-            prior = UnprocessedPrior(prior_distribution, prior_input_sequence, prior_D, max_ncomp)
+            prior = UnprocessedPrior(prior_distribution, prior_input_sequence, prior_D)
         else:
             raise NotImplementedError("Processed priors not implemented yet.")
 

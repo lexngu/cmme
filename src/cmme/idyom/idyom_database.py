@@ -31,9 +31,14 @@ class IdyomDatabase:
 
     def _setup_lisp(self):
         self.eval(('defvar', 'common-lisp-user::*idyom-root*', '"' + self.idyom_root_path + '"'))
-        self.eval(('ql:quickload', '"idyom"', ':silent', 't'))
         self.eval(('with-open-file', ('*standard-output**', '"/dev/null"', ':direction', ':output',
                                       ':if-exists', ':supersede'),
+                   ('load', ('SB-IMPL::USERINIT-PATHNAME',))
+                   ))
+        self.eval(('with-open-file', ('*standard-output**', '"/dev/null"', ':direction', ':output',
+                                      ':if-exists', ':supersede'),
+                   ('ql:quickload', '"clsql"'),
+                   ('ql:quickload', '"idyom"'),
                    ('clsql:connect', ('list', '"' + self.idyom_sqlite_database_path + '"'), ':if-exists', ':old',
                     ':database-type', ':sqlite3')
                    ))
@@ -151,7 +156,7 @@ class IdyomDatabase:
         result = list()
 
         try:
-            (_, console_output) = self.lisp.eval(('idyom-db:describe-database',))
+            (_, console_output) = self.eval(('idyom-db:describe-database',))
 
             for line in console_output.split("\n"):
                 id, description = re.split(r"\s+", line, maxsplit=1)
@@ -189,7 +194,7 @@ class IdyomDatabase:
                 elif isinstance(e, Dataset):
                     _tmp.append(e.id)
                 else:
-                    raise ValueError("datasets invalid! If list, each elment must be either of type int or Dataset.")
+                    raise ValueError("datasets invalid! If list, each element must be either of type int or Dataset.")
             datasets = _tmp
         else:
             raise ValueError("datasets invalid! Value must either be of type int, Dataset, or a list of these types.")
@@ -228,7 +233,8 @@ class IdyomDatabase:
 
         return result
 
-    def encode_composition(self, composition: Union[int, Composition], viewpoint_spec: List[Viewpoint],
+    def encode_composition(self, composition: Union[int, Composition],
+                           viewpoint_spec: Union[Viewpoint, List[Viewpoint]],
                            dataset: Union[int, Dataset] = None) -> list:
         """
         Transform a composition into a (or multiple) viewpoint sequence(s).
@@ -247,8 +253,8 @@ class IdyomDatabase:
         A list of transformations of the specified composition.
         """
         if isinstance(composition, Composition):
-            composition = composition.id
-            dataset = dataset.id
+            dataset = composition.dataset_id
+            composition = composition.id # intentionally set composition to id
         else:
             if dataset is not None:
                 if isinstance(dataset, Dataset):

@@ -270,7 +270,14 @@ class UnprocessedPrior(Prior):
             [prior_input_sequence_trials, prior_input_sequence_times, prior_input_sequence_features] = pis.shape
         elif len(pis.shape) == 1:
             [prior_input_sequence_trials] = pis.shape
-            [prior_input_sequence_times, prior_input_sequence_features] = pis[0].shape
+            pis_first_element = pis[0]
+            if len(pis_first_element.shape) == 1:
+                [prior_input_sequence_times] = pis[0].shape
+                prior_input_sequence_features = 1
+            elif len(pis_first_element.shape) == 2:
+                [prior_input_sequence_times, prior_input_sequence_features] = pis[0].shape
+            else:
+                raise ValueError("Prior input sequence has an invalid shape!")
         else:
             raise ValueError("Could not convert input sequence.")
 

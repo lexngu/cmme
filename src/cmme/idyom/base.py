@@ -178,3 +178,45 @@ def transform_viewpoints_list_to_string_list(viewpoints: List[Viewpoint]) -> Lis
         raise ValueError("Invalid element: " + str(viewpoints))
 
     return result
+
+def transform_string_list_to_viewpoints_list(viewpoints: List[str]) -> List[Viewpoint]:
+    """
+    Transform a (possibly nested) list of viewpoint-strings to a list of corresponding viewpoints.
+
+    Parameters
+    ----------
+    viewpoints
+        List of viewpoint-strings
+
+    Returns
+    -------
+    List[str]
+        List of viewpoints
+    """
+    result = []
+
+    if isinstance(viewpoints, str):
+        viewpoint = None
+        for cls in [BasicViewpoint, DerivedViewpoint, TestViewpoint, ThreadedViewpoint]:
+            try:
+                viewpoint = cls(viewpoints)
+                break
+            except:
+                pass
+        if viewpoint is not None:
+            result.append(viewpoint)
+        else:
+            raise ValueError("Could not determine corresponding enum for viewpoint {}".format(viewpoints))
+    elif isinstance(viewpoints, list) or isinstance(viewpoints, tuple):
+        if len(viewpoints) == 0:
+            raise ValueError("viewpoints invalid! Length must be greater than zero.")
+        for viewpoint in viewpoints:
+            recursion_result = transform_string_list_to_viewpoints_list(viewpoint)
+            if len(recursion_result) == 1:
+                result.append(recursion_result[0])
+            else:
+                result.append(recursion_result)
+    else:
+        raise ValueError("Invalid element: " + str(viewpoints))
+
+    return result
