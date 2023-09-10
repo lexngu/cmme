@@ -278,7 +278,7 @@ class IDYOMInstructionsFile(InstructionsFile):
         self.idyom_root_path = idyom_root_path
         self.idyom_database_path = idyom_database_path
         
-    def _set_idyom_boilerplate(self, leb: LispExpressionBuilder):
+    def _set_idyom_boilerplate(self, leb: LispExpressionBuilder, use_check_model_defaults=False):
         """
         Set shared values across IDyOM commands like (idyom:idyom ...). 
         
@@ -286,7 +286,8 @@ class IDYOMInstructionsFile(InstructionsFile):
         ----------
         leb
             LispExpressionBuilder
-
+        use_check_model_defaults
+            Whether to use resampling::check-model-defaults (necessary for filename inference)
         Returns
         -------
 
@@ -322,7 +323,18 @@ class IDYOMInstructionsFile(InstructionsFile):
             if escape:
                 stmo.extend([":escape", escape])
             if len(stmo) > 0:
-                leb.add(":stmo").add_list(stmo)
+                leb.add(":stmo")
+                if use_check_model_defaults:
+                    leb2 = LispExpressionBuilder(leb._mode)
+                    leb2.add("apply")\
+                        .add("#'resampling::check-model-defaults")\
+                        .add(LispExpressionBuilder(leb._mode)
+                             .add("cons")
+                             .add("mvs::*stm-params*")
+                             .add_list(stmo))
+                    leb.add(leb2)
+                else:
+                    leb.add_list(stmo)
         # (... <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...] ...)
         if self.model == IDYOMModelValue.LTM or self.model == IDYOMModelValue.BOTH or \
                 self.model == IDYOMModelValue.BOTH_PLUS or self.model == IDYOMModelValue.LTM_PLUS:
@@ -341,7 +353,18 @@ class IDYOMInstructionsFile(InstructionsFile):
             if escape:
                 ltmo.extend([":escape", escape])
             if len(ltmo) > 0:
-                leb.add(":ltmo").add_list(ltmo)
+                leb.add(":ltmo")
+                if use_check_model_defaults:
+                    leb2 = LispExpressionBuilder(leb._mode)
+                    leb2.add("apply")\
+                        .add("#'resampling::check-model-defaults")\
+                        .add(LispExpressionBuilder(leb._mode)
+                             .add("cons")
+                             .add("mvs::*ltm-params*")
+                             .add_list(ltmo))
+                    leb.add(leb2)
+                else:
+                    leb.add_list(ltmo)
         # (... <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...]
         # [:pretraining-ids ... :k ... :resampling-indices ...] ...)
         if self.training_options:
@@ -471,7 +494,7 @@ class IDYOMInstructionsFile(InstructionsFile):
         # (... <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...]
         # [:pretraining-ids ... :k ... :resampling-indices ...] [:basis ... :dp ... :max-links ... :min-links ...
         # :viewpoint-selection-output ...] :detail ...)
-        self._set_idyom_boilerplate(leb)
+        self._set_idyom_boilerplate(leb, use_check_model_defaults=True)
 
         # Set detail = 3 if not present (due to a bug of IDyOM, where this must set explicitly)
         if ":detail" not in leb.components:
