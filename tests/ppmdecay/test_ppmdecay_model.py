@@ -37,21 +37,18 @@ def test_run_ppm_simple_succeeds():
     shortest_deterministic = False
     update_exclusion = False
     exclusion = False
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        instructions_file_path = ppmdecay_default_instructions_file_path(None, Path(tmpdirname))
-        results_file_path = ppmdecay_default_results_file_path(None, Path(tmpdirname))
 
-        ppmsimple_instance = PPMSimpleInstance()
-        ppmsimple_instance.alphabet_levels(alphabet_levels)\
-            .order_bound(order_bound).input_sequence(input_sequence)\
-            .escape_method(escape_method).shortest_deterministic(shortest_deterministic).update_exclusion(update_exclusion).exclusion(exclusion)
+    ppmsimple_instance = PPMSimpleInstance()
+    ppmsimple_instance.alphabet_levels(alphabet_levels)\
+        .order_bound(order_bound).input_sequence(input_sequence)\
+        .escape_method(escape_method).shortest_deterministic(shortest_deterministic).update_exclusion(update_exclusion).exclusion(exclusion)
+    ppmif = ppmsimple_instance.to_instructions_file()
+    
+    ppm_model = PPMModel()
+    results_meta_file = ppm_model.run_instructions_file(ppmif)
 
-        ppm_model = PPMModel()
-        results_meta_file = ppm_model.run(instructions_file_path, results_file_path)
-
-        assert results_meta_file.model_type == ModelType.SIMPLE
-        assert results_meta_file.alphabet_levels == str_to_list(list_to_str(alphabet_levels))
-        assert results_meta_file.instructions_file_path == str(instructions_file_path)
+    assert results_meta_file.model_type == ModelType.SIMPLE
+    assert results_meta_file.alphabet_levels == str_to_list(list_to_str(alphabet_levels))
 
 
 
@@ -73,47 +70,39 @@ def test_run_ppm_decay_succeeds():
     noise = 0.05
     seed = 999
 
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        instructions_file_path = ppmdecay_default_instructions_file_path(None, Path(tmpdirname))
-        results_file_path = ppmdecay_default_results_file_path(None, Path(tmpdirname))
 
-        ppmdecay_instance = PPMDecayInstance()
-        ppmdecay_instance.alphabet_levels(alphabet_levels) \
-            .order_bound(order_bound).input_sequence(input_sequence, input_time_sequence)\
-            .buffer_weight(buffer_weight).buffer_length_time(buffer_length_time).buffer_length_items(buffer_length_items)\
-            .only_learn_from_buffer(only_learn_from_buffer).only_predict_from_buffer(only_predict_from_buffer)\
-            .stm_weight(stm_weight).stm_duration(stm_duration)\
-            .ltm_weight(ltm_weight).ltm_half_life(ltm_half_life).ltm_asymptote(ltm_asymptote)\
-            .noise(noise).seed(seed)
+    ppmdecay_instance = PPMDecayInstance()
+    ppmdecay_instance.alphabet_levels(alphabet_levels) \
+        .order_bound(order_bound).input_sequence(input_sequence, input_time_sequence)\
+        .buffer_weight(buffer_weight).buffer_length_time(buffer_length_time).buffer_length_items(buffer_length_items)\
+        .only_learn_from_buffer(only_learn_from_buffer).only_predict_from_buffer(only_predict_from_buffer)\
+        .stm_weight(stm_weight).stm_duration(stm_duration)\
+        .ltm_weight(ltm_weight).ltm_half_life(ltm_half_life).ltm_asymptote(ltm_asymptote)\
+        .noise(noise).seed(seed)
+    ppmif = ppmdecay_instance.to_instructions_file()
+    ppm_model = PPMModel()
+    results_meta_file = ppm_model.run_instructions_file(ppmif)
 
-        ppm_model = PPMModel()
-        results_meta_file = ppm_model.run(instructions_file_path, results_file_path)
-
-        assert results_meta_file.model_type == ModelType.DECAY
-        assert results_meta_file.alphabet_levels == str_to_list(list_to_str(alphabet_levels))
-        assert results_meta_file.instructions_file_path == str(instructions_file_path)
+    assert results_meta_file.model_type == ModelType.DECAY
+    assert results_meta_file.alphabet_levels == str_to_list(list_to_str(alphabet_levels))
 
 def test_run_ppm_simple_with_multitrial_input_succeeds():
     alphabet_levels = [1, 2, 3, 4, 5, 6]
     input_sequence = [[1, 2, 3, 4, 5], [1, 1, 3, 2]]
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        instructions_file_path = ppmdecay_default_instructions_file_path(None, Path(tmpdirname))
-        results_file_path = ppmdecay_default_results_file_path(None, Path(tmpdirname))
 
-        ppmsimple_instance = PPMSimpleInstance()
-        ppmsimple_instance.alphabet_levels(alphabet_levels)\
-            .input_sequence(input_sequence)
+    ppmsimple_instance = PPMSimpleInstance()
+    ppmsimple_instance.alphabet_levels(alphabet_levels)\
+        .input_sequence(input_sequence)
+    ppmif = ppmsimple_instance.to_instructions_file()
+    ppm_model = PPMModel()
+    results_meta_file = ppm_model.run_instructions_file(ppmif)
+    results_file_data = results_meta_file.results_file_data
 
-        ppm_model = PPMModel()
-        results_meta_file = ppm_model.run(instructions_file_path, results_file_path)
-        results_file_data = results_meta_file.results_file_data
-
-        assert results_meta_file.model_type == ModelType.SIMPLE
-        assert results_meta_file.alphabet_levels == str_to_list(list_to_str(alphabet_levels))
-        assert results_meta_file.instructions_file_path == str(instructions_file_path)
-        assert list(set(results_file_data.df["trial_idx"].tolist())) == [1, 2]
-        assert results_file_data.df[results_file_data.df["trial_idx"] == 1]["symbol"].tolist() == list(map(str, input_sequence[0]))
-        assert results_file_data.df[results_file_data.df["trial_idx"] == 2]["symbol"].tolist() == list(map(str, input_sequence[1]))
+    assert results_meta_file.model_type == ModelType.SIMPLE
+    assert results_meta_file.alphabet_levels == str_to_list(list_to_str(alphabet_levels))
+    assert list(set(results_file_data.df["trial_idx"].tolist())) == [1, 2]
+    assert results_file_data.df[results_file_data.df["trial_idx"] == 1]["symbol"].tolist() == list(map(str, input_sequence[0]))
+    assert results_file_data.df[results_file_data.df["trial_idx"] == 2]["symbol"].tolist() == list(map(str, input_sequence[1]))
 
 def test_input_sequence():
     iseq = ["a", "b", "c", "d"]
