@@ -8,7 +8,11 @@ ppmdecay_intermediate_script <- function(instructions_file_path) {
   if (instructions_file$results_file_path != "") {
     results_file_path <- paste(dirname(instructions_file_path), "/", basename(instructions_file$results_file_path), sep="")
   } else {
-    results_file_path <- paste(dirname(instructions_file_path), "/", gsub("instructionsfile", "resultsfile", basename(instructions_file_path)), sep="")
+    if (grepl("instructionsfile", basename(instructions_file_path))) {
+        results_file_path <- paste(dirname(instructions_file_path), "/", gsub("instructionsfile", "resultsfile", basename(instructions_file_path)), sep="")
+    } else {
+        results_file_path <- paste(dirname(instructions_file_path), "/", "resultsfile-", basename(instructions_file_path), sep="")
+    }
   }
 
   # Set working directory

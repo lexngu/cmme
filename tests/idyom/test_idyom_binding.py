@@ -1,6 +1,8 @@
 import tempfile
 from pathlib import Path
 
+from cmme.config import Config
+from cmme.idyom import IDYOMModel, IdyomDatabase
 from cmme.idyom.base import IDYOMModelValue, BasicViewpoint, transform_string_list_to_viewpoints_list, IDYOMEscape
 from cmme.idyom.binding import IDYOMInstructionsFile
 from cmme.idyom.model import IDYOMInstructionBuilder
@@ -135,3 +137,45 @@ def test_load_idyom_instructions_file_with_more_parameters():
         assert test_idyom_if.ltm_options == ltm_options
         assert test_idyom_if.training_options == training_options
         assert test_idyom_if.output_options == output_options
+
+def test_load_results_file():
+    idyom_root_path = Config().idyom_root_path()
+    sample_midi_files_dir_path = "../sample_files/idyom-midi/"
+    with tempfile.TemporaryDirectory() as tmpdir:
+        idyom_database_path = path_as_string_with_trailing_slash(tmpdir) + "db/database.sqlite"
+
+        install_idyom(idyom_root_path, idyom_database_path)
+
+        idb = IdyomDatabase(idyom_root_path, idyom_database_path)
+
+        description = "test"
+        dataset_id = idb.import_midi_dataset(sample_midi_files_dir_path, description=description)
+
+        source_viewpoints = "cpitch"
+        target_viewpoints = "cpitch"
+        output_path = path_as_string_with_trailing_slash(tempfile.TemporaryDirectory().name)
+        output_options = {
+            "output_path": output_path,
+            "detail": None,
+            "overwrite": None,
+            "separator": None
+        }
+        idyom_ib = IDYOMInstructionBuilder() \
+            .dataset(dataset_id) \
+            .source_viewpoints(source_viewpoints) \
+            .target_viewpoints(target_viewpoints) \
+            .training_options(resampling_folds_count_k=1) \
+            .output_options(**output_options) \
+            .idyom_root_path(idyom_root_path) \
+            .idyom_database_path(idyom_database_path)
+
+        with tempfile.NamedTemporaryFile() as tmpfile:
+            idyom_if = idyom_ib.to_instructions_file()
+            idyom_if.save_self(tmpfile.name)
+
+            idyom = IDYOMModel()
+            idyom_rf = idyom.run_instructions_file_at_path(tmpfile.name)
+
+            assert idyom_rf.df is not None
+            assert idyom_rf.targetViewpoints == transform_string_list_to_viewpoints_list(target_viewpoints)
+            assert idyom_rf.usedSourceViewpoints == transform_string_list_to_viewpoints_list(source_viewpoints)

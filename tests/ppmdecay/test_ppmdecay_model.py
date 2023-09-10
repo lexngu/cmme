@@ -49,9 +49,9 @@ def test_run_ppm_simple_succeeds():
         ppm_model = PPMModel(ppmsimple_instance)
         results_meta_file = ppm_model.run(instructions_file_path, results_file_path)
 
-        assert results_meta_file._model_type == ModelType.SIMPLE
-        assert results_meta_file._alphabet_levels == str_to_list(list_to_str(alphabet_levels))
-        assert results_meta_file._instructions_file_path == str(instructions_file_path)
+        assert results_meta_file.model_type == ModelType.SIMPLE
+        assert results_meta_file.alphabet_levels == str_to_list(list_to_str(alphabet_levels))
+        assert results_meta_file.instructions_file_path == str(instructions_file_path)
 
 
 
@@ -89,9 +89,9 @@ def test_run_ppm_decay_succeeds():
         ppm_model = PPMModel(ppmdecay_instance)
         results_meta_file = ppm_model.run(instructions_file_path, results_file_path)
 
-        assert results_meta_file._model_type == ModelType.DECAY
-        assert results_meta_file._alphabet_levels == str_to_list(list_to_str(alphabet_levels))
-        assert results_meta_file._instructions_file_path == str(instructions_file_path)
+        assert results_meta_file.model_type == ModelType.DECAY
+        assert results_meta_file.alphabet_levels == str_to_list(list_to_str(alphabet_levels))
+        assert results_meta_file.instructions_file_path == str(instructions_file_path)
 
 def test_run_ppm_simple_with_multitrial_input_succeeds():
     alphabet_levels = [1, 2, 3, 4, 5, 6]
@@ -108,9 +108,9 @@ def test_run_ppm_simple_with_multitrial_input_succeeds():
         results_meta_file = ppm_model.run(instructions_file_path, results_file_path)
         results_file_data = results_meta_file.results_file_data
 
-        assert results_meta_file._model_type == ModelType.SIMPLE
-        assert results_meta_file._alphabet_levels == str_to_list(list_to_str(alphabet_levels))
-        assert results_meta_file._instructions_file_path == str(instructions_file_path)
+        assert results_meta_file.model_type == ModelType.SIMPLE
+        assert results_meta_file.alphabet_levels == str_to_list(list_to_str(alphabet_levels))
+        assert results_meta_file.instructions_file_path == str(instructions_file_path)
         assert list(set(results_file_data.df["trial_idx"].tolist())) == [1, 2]
         assert results_file_data.df[results_file_data.df["trial_idx"] == 1]["symbol"].tolist() == list(map(str, input_sequence[0]))
         assert results_file_data.df[results_file_data.df["trial_idx"] == 2]["symbol"].tolist() == list(map(str, input_sequence[1]))

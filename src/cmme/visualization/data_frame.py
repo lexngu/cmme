@@ -63,7 +63,7 @@ class DataFrame:
         drex_belief_dynamics = drex_data.belief_dynamics
         drex_changedecision_probability = drex_data.change_decision_probability
         # Constants
-        ppm_alphabet_size = len(self.ppm_results_file._alphabet_levels)
+        ppm_alphabet_size = len(self.ppm_results_file.alphabet_levels)
         drex_positions = self.drex_results_file.psi.positions_by_feature(self.drex_feature_index)
         drex_changedecision_threshold = drex_data.change_decision_threshold  # TODO
         drex_changedecision_changepoint = drex_data.change_decision_changepoint

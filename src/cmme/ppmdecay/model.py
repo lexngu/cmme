@@ -229,23 +229,14 @@ class PPMDecayInstance(PPMInstance):
 
 
 class PPMModel(Model):
-    def __init__(self, instance: PPMInstance):
+    def __init__(self):
         super().__init__()
-        self.instance = instance
-
-    def run(self, instructions_file_path: Union[str] = ppmdecay_default_instructions_file_path(),
-            results_file_path: Union[str, Path] = ppmdecay_default_results_file_path()) -> PPMResultsMetaFile:
-        instructions_file = self.instance.to_instructions_file()
-        instructions_file.save_self(instructions_file_path, results_file_path)
-        returned_results_file_path = invoke_model(Path(instructions_file_path))   # TODO change results file path handling
-
-        if not os.path.exists(returned_results_file_path):
-            raise ValueError("Unexpectedly, the results file could not be loaded. There exists no such file at {}."\
-                             .format(results_file_path))
-        results_meta_file = PPMResultsMetaFile.load(returned_results_file_path)
-
-        return results_meta_file
 
     @staticmethod
     def run_instructions_file_at_path(file_path: Union[str, Path]) -> PPMResultsMetaFile:
-        raise NotImplementedError
+        results_file_path = invoke_model(file_path)
+        if not os.path.exists(results_file_path):
+            raise ValueError("Unexpectedly, the results file could not be loaded. There exists no such file at {}."\
+                             .format(results_file_path))
+        results_meta_file = PPMResultsMetaFile.load(results_file_path)
+        return results_meta_file

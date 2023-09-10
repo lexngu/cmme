@@ -28,7 +28,7 @@ def to_mat(data: dict, file_path: Union[str, Path]):
     sio.savemat(str(file_path), data)
 
 
-def from_mat(file_path: Union[str, Path]) -> dict:
+def from_mat(file_path: Union[str, Path], simplify_cells=True) -> dict:
     """
     Return the content of a MATLAB file (.mat)
 
@@ -36,13 +36,14 @@ def from_mat(file_path: Union[str, Path]) -> dict:
     ----------
     file_path
         Path where the file is stored
-
+    simplify_cells
+        Wheter to use sio.loadmat(...)'s simplify_cells feature
     Returns
     -------
     dict
         Content of the MATLAB file
     """
-    mat_data = sio.loadmat(str(file_path), simplify_cells=True)
+    mat_data = sio.loadmat(str(file_path), simplify_cells=simplify_cells)
 
     return mat_data
 
@@ -442,7 +443,7 @@ class DREXResultsFile(ResultsFile):
 
     @staticmethod
     def load(file_path: Union[str, Path]) -> Union[DREXResultsFile, Prior]:
-        data = from_mat(file_path)
+        data = from_mat(file_path, simplify_cells=False) # TODO adapt code for "simplify_cells=True"
 
         prior = DREXResultsFile._load_processed_prior(data)
         if "run_DREX_model_results" not in data:

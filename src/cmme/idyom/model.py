@@ -269,9 +269,5 @@ class IDYOMModel(Model):
 
         return IDYOMResultsFile.load(results_file_path)
 
-    def __init__(self, idyom_root_path: Path = Config().idyom_root_path(),
-                 idyom_database_path: Path = Config().idyom_database_path()):
+    def __init__(self):
         super().__init__()
-        self.idyom_root_path = idyom_root_path
-        self.idyom_database_path = idyom_database_path
-        self.idyom_database = IdyomDatabase(str(idyom_root_path.resolve()), str(idyom_database_path.resolve()))

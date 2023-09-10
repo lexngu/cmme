@@ -209,10 +209,10 @@ class PPMResultsMetaFile(ResultsFile):
     @staticmethod
     def save(results_file: PPMResultsMetaFile, file_path: Union[str, Path]):
         meta_df = pd.DataFrame.from_dict({
-            "model_type": results_file._model_type,
-            "alphabet_levels": results_file._alphabet_levels,
-            "instructions_file_path": str(results_file._instructions_file_path),
-            "results_file_data_path": str(results_file._results_file_data_path)
+            "model_type": results_file.model_type,
+            "alphabet_levels": results_file.alphabet_levels,
+            "instructions_file_path": str(results_file.instructions_file_path),
+            "results_file_data_path": str(results_file.results_file_data_path)
         })
         data_df = results_file.results_file_data
 
@@ -242,19 +242,19 @@ class PPMResultsMetaFile(ResultsFile):
                  results_file_data_path):
         super().__init__()
         self.results_file_meta_path = results_file_meta_path
-        self._model_type = model_type
-        self._alphabet_levels = alphabet_levels
-        self._instructions_file_path = instructions_file_path
-        self._results_file_data_path = results_file_data_path
+        self.model_type = model_type
+        self.alphabet_levels = alphabet_levels
+        self.instructions_file_path = instructions_file_path
+        self.results_file_data_path = results_file_data_path
         if model_type == ModelType.SIMPLE:
             self.results_file_data = self._parse_ppm_simple_results_file_data()
         else:
             self.results_file_data = self._parse_ppm_decay_results_file_data()
 
     def _parse_ppm_simple_results_file_data(self):
-        df = pd.read_feather(self._results_file_data_path)
-        return PPMSimpleResultsFileData(self._results_file_data_path, df)
+        df = pd.read_feather(self.results_file_data_path)
+        return PPMSimpleResultsFileData(self.results_file_data_path, df)
 
     def _parse_ppm_decay_results_file_data(self):
-        df = pd.read_feather(self._results_file_data_path)
-        return PPMDecayResultsFileData(self._results_file_data_path, df)
+        df = pd.read_feather(self.results_file_data_path)
+        return PPMDecayResultsFileData(self.results_file_data_path, df)

@@ -1,12 +1,17 @@
 import tempfile
 import os
+from pathlib import Path
+
 import numpy as np
 from numpy import array
 
 from cmme.drex.base import UnprocessedPrior, DistributionType, GaussianPrior
 from cmme.drex.binding import from_mat, to_mat, DREXInstructionsFile, DREXResultsFile, ResultsFilePsi, \
     transform_to_estimatesuffstat_representation, transform_to_rundrexmodel_representation
+from cmme.drex.model import DREXInstructionBuilder
 from cmme.drex.util import transform_to_unified_drex_input_sequence_representation
+from cmme.drex.worker import DREXModel
+from cmme.lib.util import drex_default_instructions_file_path, drex_default_results_file_path
 
 
 def prior_input_sequence_from_mat_to_trialtimefeature_sequence(prior_input_sequence_from_mat):
@@ -379,3 +384,71 @@ def test_load_drex_instructions_file():
     assert test_instructions_file.beta == beta
     assert test_instructions_file.predscale == predscale
     assert test_instructions_file.change_decision_threshold == change_decision_threshold
+
+def test_load_results_file_GMM():
+    prior_distribution_type = DistributionType.GMM
+    prior_input_sequence = [1, 1, 1, 1, 4, 4, 4, 4, 1, 2, 3, 4, 2, 2, 2, 2, 1, 1, 1, 1]
+    prior_D = 1
+    prior = UnprocessedPrior(prior_distribution_type, prior_input_sequence, prior_D)
+    drex_instance = DREXInstructionBuilder()
+
+    input_sequence = transform_to_unified_drex_input_sequence_representation([1, 2, 3])
+    hazard = 0.12
+    memory = 22
+    maxhyp = 11
+    obsnz = 0.03
+    change_decision_threshold = 0.5
+    drex_instance.input_sequence(input_sequence)
+    drex_instance.hazard(hazard)
+    drex_instance.memory(memory)
+    drex_instance.maxhyp(maxhyp)
+    drex_instance.obsnz(obsnz)
+    drex_instance.change_decision_threshold(change_decision_threshold)
+    drex_instance.prior(prior)
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        instructions_file_path = drex_default_instructions_file_path(None, Path(tmpdirname))
+        results_file_path = drex_default_results_file_path(None, Path(tmpdirname))
+
+        drex_model = DREXModel()
+        drex_instance.to_instructions_file() \
+            .save_self(instructions_file_path, results_file_path)
+        results_file = drex_model.run(instructions_file_path)
+
+        assert results_file.prior.distribution_type() == DistributionType.GMM
+        assert results_file.prior.D_value() == prior_D
+        assert results_file.prior.feature_count() == 1
+        assert (results_file.input_sequence == input_sequence).all()
+
+def test_load_results_file_Gaussian():
+    prior_distribution_type = DistributionType.GAUSSIAN
+    prior_input_sequence = [1, 1, 1, 1, 4, 4, 4, 4, 1, 2, 3, 4, 2, 2, 2, 2, 1, 1, 1, 1]
+    prior_D = 2
+    prior = UnprocessedPrior(prior_distribution_type, prior_input_sequence, prior_D)
+    drex_instance = DREXInstructionBuilder()
+
+    input_sequence = transform_to_unified_drex_input_sequence_representation([1, 2, 3])
+    hazard = 0.12
+    memory = 22
+    maxhyp = 11
+    obsnz = 0.03
+    change_decision_threshold = 0.5
+    drex_instance.input_sequence(input_sequence)
+    drex_instance.hazard(hazard)
+    drex_instance.memory(memory)
+    drex_instance.maxhyp(maxhyp)
+    drex_instance.obsnz(obsnz)
+    drex_instance.change_decision_threshold(change_decision_threshold)
+    drex_instance.prior(prior)
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        instructions_file_path = drex_default_instructions_file_path(None, Path(tmpdirname))
+        results_file_path = drex_default_results_file_path(None, Path(tmpdirname))
+
+        drex_model = DREXModel()
+        drex_instance.to_instructions_file() \
+            .save_self(instructions_file_path, results_file_path)
+        results_file = drex_model.run(instructions_file_path)
+
+        assert results_file.prior.distribution_type() == DistributionType.GAUSSIAN
+        assert results_file.prior.D_value() == prior_D
+        assert results_file.prior.feature_count() == 1
+        assert (results_file.input_sequence == input_sequence).all()
