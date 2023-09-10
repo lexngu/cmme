@@ -241,7 +241,7 @@ class IDYOMInstructionsFile(InstructionsFile):
             "viewpoint_selection_output": viewpoint_selection_output
         }
 
-        if output_path is "output-dir" and output_dir is None:
+        if output_path == "output-dir" and output_dir is None:
             raise ValueError(":output-path is set to value 'output-dir', but output-dir could not be determined!")
         output_options = {
             "output_path": output_path if output_path != "output-dir" else output_dir,
@@ -516,18 +516,20 @@ class IDYOMResultsFile(ResultsFile):
                                 '']
         remaining_fieldnames = [o for o in fieldnames if o not in unrelated_fieldnames]
 
-        target_viewpoints = list(set(list(map(lambda o: o.split(".", 1)[0], remaining_fieldnames))))
+        target_viewpoints = transform_string_list_to_viewpoints_list(list(set(map(lambda o: o.split(".", 1)[0], remaining_fieldnames))))
 
         target_viewpoint_values = dict()  # target viewpoint => list of values
         for tv in target_viewpoints:
-            candidates = [o for o in remaining_fieldnames if o.startswith(tv) and not any(
+            tv_value = tv.value
+            candidates = [o for o in remaining_fieldnames if o.startswith(tv_value) and not any(
                 target in o for target in ["weight", "ltm", "stm", "probability", "information.content", "entropy"])]
             values = list(map(lambda o: o.split(".")[1], candidates))  # note: leave it unsorted?
             target_viewpoint_values[tv] = values
 
         used_source_viewpoints = dict()  # target viewpoint => list of source viewpoints
         for tv in target_viewpoints:
-            candidates = [o for o in remaining_fieldnames if o.startswith(tv + ".order.stm.")]
+            tv_value = tv.value
+            candidates = [o for o in remaining_fieldnames if o.startswith(tv_value + ".order.stm.")]
             used_source_viewpoints[tv] = list(set(list(map(lambda o: o.split(".")[3], candidates))))
 
         return target_viewpoints, target_viewpoint_values, used_source_viewpoints

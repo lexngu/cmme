@@ -207,7 +207,7 @@ def transform_string_list_to_viewpoints_list(viewpoints: List[str]) -> List[View
             result.append(viewpoint)
         else:
             raise ValueError("Could not determine corresponding enum for viewpoint {}".format(viewpoints))
-    elif isinstance(viewpoints, list) or isinstance(viewpoints, tuple):
+    elif isinstance(viewpoints, list) or isinstance(viewpoints, tuple) or isinstance(viewpoints, set):
         if len(viewpoints) == 0:
             raise ValueError("viewpoints invalid! Length must be greater than zero.")
         for viewpoint in viewpoints:

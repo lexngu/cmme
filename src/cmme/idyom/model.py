@@ -1,11 +1,8 @@
-import re
 import tempfile
 
 from .base import *
 from .binding import *
-from .idyom_database import IdyomDatabase
 from .util import *
-from ..lib.instructions_file import InstructionsFile
 from ..lib.model import ModelBuilder, Model
 
 

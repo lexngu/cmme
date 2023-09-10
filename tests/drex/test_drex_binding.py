@@ -33,7 +33,7 @@ def test_to_mat_and_from_mat():
     tmp_file_path = tempfile.NamedTemporaryFile().name
 
     to_mat(data, tmp_file_path)
-    data_after_save_and_read = from_mat(tmp_file_path)
+    data_after_save_and_read = from_mat(tmp_file_path, simplify_cells=False)
 
     assert data["a"] == data_after_save_and_read["a"][0]
     assert data["c"] == data_after_save_and_read["c"][0].tolist()
@@ -60,7 +60,7 @@ def test_drex_instructions_file():
 
     instructions_file.save_self(tmp_file_path)
 
-    data_after_read = from_mat(tmp_file_path)
+    data_after_read = from_mat(tmp_file_path, simplify_cells=False)
     assert np.array_equal(transform_to_estimatesuffstat_representation(prior_input_sequence), transform_to_estimatesuffstat_representation(prior_input_sequence_from_mat_to_trialtimefeature_sequence(data_after_read["estimate_suffstat"]["xs"][0])))
     assert prior.distribution_type().value == data_after_read["estimate_suffstat"]["params"][0][0][0]["distribution"][0][0]
     assert prior.D_value() == data_after_read["estimate_suffstat"]["params"][0][0][0]["D"][0][0][0]

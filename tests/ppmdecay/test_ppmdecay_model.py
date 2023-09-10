@@ -46,7 +46,7 @@ def test_run_ppm_simple_succeeds():
             .order_bound(order_bound).input_sequence(input_sequence)\
             .escape_method(escape_method).shortest_deterministic(shortest_deterministic).update_exclusion(update_exclusion).exclusion(exclusion)
 
-        ppm_model = PPMModel(ppmsimple_instance)
+        ppm_model = PPMModel()
         results_meta_file = ppm_model.run(instructions_file_path, results_file_path)
 
         assert results_meta_file.model_type == ModelType.SIMPLE
@@ -86,7 +86,7 @@ def test_run_ppm_decay_succeeds():
             .ltm_weight(ltm_weight).ltm_half_life(ltm_half_life).ltm_asymptote(ltm_asymptote)\
             .noise(noise).seed(seed)
 
-        ppm_model = PPMModel(ppmdecay_instance)
+        ppm_model = PPMModel()
         results_meta_file = ppm_model.run(instructions_file_path, results_file_path)
 
         assert results_meta_file.model_type == ModelType.DECAY
@@ -104,7 +104,7 @@ def test_run_ppm_simple_with_multitrial_input_succeeds():
         ppmsimple_instance.alphabet_levels(alphabet_levels)\
             .input_sequence(input_sequence)
 
-        ppm_model = PPMModel(ppmsimple_instance)
+        ppm_model = PPMModel()
         results_meta_file = ppm_model.run(instructions_file_path, results_file_path)
         results_file_data = results_meta_file.results_file_data
 

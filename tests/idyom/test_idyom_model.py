@@ -1,3 +1,4 @@
+from cmme.idyom import IdyomDatabase
 from cmme.idyom.model import *
 from cmme.idyom.util import install_idyom
 
@@ -34,31 +35,36 @@ def test_default_idyom_instruction_builder_uses_default_values():
 
 def test_idyom_stm_run_succeeds():
     with tempfile.TemporaryDirectory() as tmpdir:
-        install_idyom(tmpdir)
-        idyom_model = IDYOMModel(Config().idyom_root_path(), Path(tmpdir) / Path("./db/database.sqlite"))
+        idyom_root_path = Config().idyom_root_path()
+        idyom_database_path = Path(tmpdir) / Path("./db/database.sqlite")
+        install_idyom(idyom_root_path, idyom_database_path)
 
         midi_dir_path = str(Path(__file__).parent.parent.resolve() / Path("sample_files/idyom-midi")) + "/"
-        dataset = idyom_model.idyom_database.import_midi_dataset(midi_dir_path, "test")
+        idyom_database = IdyomDatabase(idyom_root_path, idyom_database_path)
+        dataset = idyom_database.import_midi_dataset(midi_dir_path, "test")
 
         idyomib = IDYOMInstructionBuilder()
         idyomib.model(IDYOMModelValue.STM).source_viewpoints([BasicViewpoint.CPITCH])\
             .target_viewpoints([BasicViewpoint.CPITCH]).dataset(dataset)\
-            .idyom_root_path(idyom_model.idyom_root_path).idyom_database_path(idyom_model.idyom_database_path)\
+            .idyom_root_path(idyom_root_path).idyom_database_path(idyom_database_path)\
             .training_options(resampling_folds_count_k=1)
 
         idyomif = idyomib.to_instructions_file()
 
+        idyom_model = IDYOMModel()
         idyom_results_file = idyom_model.run_instructions_file(idyomif)
 
         assert idyom_results_file.df is not None
 
 def test_idyom_both_run_succeeds():
     with tempfile.TemporaryDirectory() as tmpdir:
-        install_idyom(tmpdir)
-        idyom_model = IDYOMModel(Config().idyom_root_path(), Path(tmpdir) / Path("./db/database.sqlite"))
+        idyom_root_path = Config().idyom_root_path()
+        idyom_database_path = Path(tmpdir) / Path("./db/database.sqlite")
+        install_idyom(idyom_root_path, idyom_database_path)
 
         midi_dir_path = str(Path(__file__).parent.parent.resolve() / Path("sample_files/idyom-midi")) + "/"
-        dataset = idyom_model.idyom_database.import_midi_dataset(midi_dir_path, "test")
+        idyom_database = IdyomDatabase(idyom_root_path, idyom_database_path)
+        dataset = idyom_database.import_midi_dataset(midi_dir_path, "test")
 
         idyomib = IDYOMInstructionBuilder()
         idyomib.source_viewpoints([BasicViewpoint.CPITCH])\
@@ -66,11 +72,12 @@ def test_idyom_both_run_succeeds():
             .dataset(dataset)\
             .model(IDYOMModelValue.BOTH)\
             .ltm_options(order_bound=2)\
-            .idyom_root_path(idyom_model.idyom_root_path).idyom_database_path(idyom_model.idyom_database_path)\
+            .idyom_root_path(idyom_root_path).idyom_database_path(idyom_database_path)\
             .training_options(resampling_folds_count_k=1)
 
         idyomif = idyomib.to_instructions_file()
 
+        idyom_model = IDYOMModel()
         idyom_results_file = idyom_model.run_instructions_file(idyomif)
 
         assert idyom_results_file.df is not None

@@ -178,4 +178,4 @@ def test_load_results_file():
 
             assert idyom_rf.df is not None
             assert idyom_rf.targetViewpoints == transform_string_list_to_viewpoints_list(target_viewpoints)
-            assert idyom_rf.usedSourceViewpoints == transform_string_list_to_viewpoints_list(source_viewpoints)
+            assert list(idyom_rf.usedSourceViewpoints.keys()) == transform_string_list_to_viewpoints_list(source_viewpoints)
