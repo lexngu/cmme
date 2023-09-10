@@ -1,5 +1,6 @@
 import tempfile
 import numpy as np
+import os
 
 from cmme.config import Config
 from cmme.idyom import IdyomDatabase
@@ -10,7 +11,8 @@ from cmme.lib.util import path_as_string_with_trailing_slash
 
 def test_get_all_dataset():
     idyom_root_path = Config().idyom_root_path()
-    sample_midi_files_dir_path = "../sample_files/idyom-midi/"
+    sample_midi_files_dir_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../sample_files/idyom-midi/"))
+    print(sample_midi_files_dir_path)
     with tempfile.TemporaryDirectory() as tmpdir:
         idyom_database_path = path_as_string_with_trailing_slash(tmpdir) + "db/database.sqlite"
 
@@ -26,7 +28,7 @@ def test_get_all_dataset():
 
 def test_import_midi_dataset():
     idyom_root_path = Config().idyom_root_path()
-    sample_midi_files_dir_path = "../sample_files/idyom-midi/"
+    sample_midi_files_dir_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../sample_files/idyom-midi/"))
     with tempfile.TemporaryDirectory() as tmpdir:
         idyom_database_path = path_as_string_with_trailing_slash(tmpdir) + "db/database.sqlite"
 
@@ -44,7 +46,7 @@ def test_import_midi_dataset():
 
 def test_import_kern_dataset():
     idyom_root_path = Config().idyom_root_path()
-    sample_midi_files_dir_path = "../sample_files/idyom-kern/"
+    sample_kern_files_dir_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../sample_files/idyom-kern/"))
     with tempfile.TemporaryDirectory() as tmpdir:
         idyom_database_path = path_as_string_with_trailing_slash(tmpdir) + "db/database.sqlite"
 
@@ -53,7 +55,7 @@ def test_import_kern_dataset():
         idb = IdyomDatabase(idyom_root_path, idyom_database_path)
 
         description = "test"
-        dataset_id = idb.import_kern_dataset(sample_midi_files_dir_path, description=description, timebase=39473280)
+        dataset_id = idb.import_kern_dataset(sample_kern_files_dir_path, description=description, timebase=39473280)
 
         all_datasets = idb.get_all_datasets()
         assert len(all_datasets) == 1
@@ -62,7 +64,7 @@ def test_import_kern_dataset():
 
 def test_get_dataset_alphabet():
     idyom_root_path = Config().idyom_root_path()
-    sample_midi_files_dir_path = "../sample_files/idyom-midi/"
+    sample_midi_files_dir_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../sample_files/idyom-midi/"))
     with tempfile.TemporaryDirectory() as tmpdir:
         idyom_database_path = path_as_string_with_trailing_slash(tmpdir) + "db/database.sqlite"
 
@@ -79,7 +81,7 @@ def test_get_dataset_alphabet():
 
 def test_get_all_compositions():
     idyom_root_path = Config().idyom_root_path()
-    sample_midi_files_dir_path = "../sample_files/idyom-midi/"
+    sample_midi_files_dir_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../sample_files/idyom-midi/"))
     with tempfile.TemporaryDirectory() as tmpdir:
         idyom_database_path = path_as_string_with_trailing_slash(tmpdir) + "db/database.sqlite"
 
@@ -95,7 +97,7 @@ def test_get_all_compositions():
 
 def test_encode_composition():
     idyom_root_path = Config().idyom_root_path()
-    sample_midi_files_dir_path = "../sample_files/idyom-midi/"
+    sample_midi_files_dir_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../sample_files/idyom-midi/"))
     with tempfile.TemporaryDirectory() as tmpdir:
         idyom_database_path = path_as_string_with_trailing_slash(tmpdir) + "db/database.sqlite"
 

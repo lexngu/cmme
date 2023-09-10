@@ -1,5 +1,6 @@
 import tempfile
 from pathlib import Path
+import os
 
 from cmme.config import Config
 from cmme.idyom import IDYOMModel, IdyomDatabase
@@ -140,7 +141,7 @@ def test_load_idyom_instructions_file_with_more_parameters():
 
 def test_load_results_file():
     idyom_root_path = Config().idyom_root_path()
-    sample_midi_files_dir_path = "../sample_files/idyom-midi/"
+    sample_midi_files_dir_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../sample_files/idyom-midi/"))
     with tempfile.TemporaryDirectory() as tmpdir:
         idyom_database_path = path_as_string_with_trailing_slash(tmpdir) + "db/database.sqlite"
 
