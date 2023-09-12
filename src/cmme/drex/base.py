@@ -241,7 +241,7 @@ class PoissonPrior(Prior):
         return self._feature_count
 
     def D_value(self):
-        pass  # TODO
+        return NotImplementedError
 
 
 class UnprocessedPrior(Prior):
