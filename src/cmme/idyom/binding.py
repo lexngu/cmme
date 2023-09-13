@@ -103,7 +103,7 @@ class IDYOMInstructionsFile(InstructionsFile):
                 .format(results_file_path, idyom_cmd, filename_cmd)
         else:
             file_contents = IDYOMInstructionsFile.INSTRUCTIONS_FILE_CUSTOM_ROOT_AND_DATABASE_TEMPLATE \
-                .format(str(instructions_file.idyom_root_path), str(instructions_file.idyom_database_path),
+                .format(path_as_string_with_trailing_slash(instructions_file.idyom_root_path), str(instructions_file.idyom_database_path),
                         results_file_path, idyom_cmd, filename_cmd)
 
         with open(instructions_file_path, "w") as f:
