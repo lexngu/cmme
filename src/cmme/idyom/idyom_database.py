@@ -1,3 +1,4 @@
+import os.path
 from pathlib import Path
 from typing import Union, List
 
@@ -5,6 +6,7 @@ import cl4py
 from cl4py import Lisp
 from .base import Dataset, Composition, Viewpoint, BasicViewpoint, transform_viewpoints_list_to_string_list
 from .util import cl4py_cons_to_list
+from ..config import Config
 from ..lib.util import path_as_string_with_trailing_slash
 import re
 
@@ -12,7 +14,8 @@ import re
 class IDYOMDatabase:
     lisp: Lisp
 
-    def __init__(self, idyom_root_path: Union[str, Path], idyom_sqlite_database_path: Union[str, Path]):
+    def __init__(self, idyom_root_path: Union[str, Path]=Config().idyom_root_path(),
+                 idyom_sqlite_database_path: Union[str, Path]=Config().idyom_database_path()):
         """
         Class to execute commands within IDyOM
 
@@ -42,6 +45,14 @@ class IDYOMDatabase:
                    ('clsql:connect', ('list', '"' + self.idyom_sqlite_database_path + '"'), ':if-exists', ':old',
                     ':database-type', ':sqlite3')
                    ))
+
+    def _check_path_is_existing_and_nonempty_directory(self, path: Union[str, Path]) -> bool:
+        if not os.path.exists(path):
+            return False
+        elif len(os.listdir(path)) == 0:
+            return False
+        else:
+            return True
 
     def eval(self, expr) -> tuple:
         """
@@ -92,6 +103,10 @@ class IDYOMDatabase:
         -------
         Id of the imported dataset.
         """
+        if not self._check_path_is_existing_and_nonempty_directory(path):
+            print("Path is non-existing or a empty directory, abort.")
+            return
+        
         if dataset_id is None:
             dataset_id = self.next_free_dataset_id()
 
@@ -129,6 +144,10 @@ class IDYOMDatabase:
         -------
         Id of the imported dataset.
         """
+        if not self._check_path_is_existing_and_nonempty_directory(path):
+            print("Path is non-existing or a empty directory, abort.")
+            return
+
         if dataset_id is None:
             dataset_id = self.next_free_dataset_id()
 
