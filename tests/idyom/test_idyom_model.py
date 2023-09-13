@@ -1,4 +1,5 @@
-from cmme.idyom import IdyomDatabase
+from cmme.config import Config
+from cmme.idyom import IDYOMDatabase
 from cmme.idyom.model import *
 from cmme.idyom.util import install_idyom
 
@@ -13,7 +14,7 @@ def test_default_idyom_instruction_builder_uses_default_values():
     select_options = idyomib._select_options
     output_options = idyomib._output_options
 
-    assert model == IDYOMModelValue.BOTH_PLUS
+    assert model == IDYOMModelType.BOTH_PLUS
     assert stm_options['order_bound'] is None
     assert stm_options['mixtures'] is None
     assert stm_options['update_exclusion'] is None
@@ -40,11 +41,11 @@ def test_idyom_stm_run_succeeds():
         install_idyom(idyom_root_path, idyom_database_path)
 
         midi_dir_path = str(Path(__file__).parent.parent.resolve() / Path("sample_files/idyom-midi")) + "/"
-        idyom_database = IdyomDatabase(idyom_root_path, idyom_database_path)
+        idyom_database = IDYOMDatabase(idyom_root_path, idyom_database_path)
         dataset = idyom_database.import_midi_dataset(midi_dir_path, "test")
 
         idyomib = IDYOMInstructionBuilder()
-        idyomib.model(IDYOMModelValue.STM).source_viewpoints([BasicViewpoint.CPITCH])\
+        idyomib.model(IDYOMModelType.STM).source_viewpoints([BasicViewpoint.CPITCH])\
             .target_viewpoints([BasicViewpoint.CPITCH]).dataset(dataset)\
             .idyom_root_path(idyom_root_path).idyom_database_path(idyom_database_path)\
             .training_options(resampling_folds_count_k=1)
@@ -63,14 +64,14 @@ def test_idyom_both_run_succeeds():
         install_idyom(idyom_root_path, idyom_database_path)
 
         midi_dir_path = str(Path(__file__).parent.parent.resolve() / Path("sample_files/idyom-midi")) + "/"
-        idyom_database = IdyomDatabase(idyom_root_path, idyom_database_path)
+        idyom_database = IDYOMDatabase(idyom_root_path, idyom_database_path)
         dataset = idyom_database.import_midi_dataset(midi_dir_path, "test")
 
         idyomib = IDYOMInstructionBuilder()
         idyomib.source_viewpoints([BasicViewpoint.CPITCH])\
             .target_viewpoints([BasicViewpoint.CPITCH])\
             .dataset(dataset)\
-            .model(IDYOMModelValue.BOTH)\
+            .model(IDYOMModelType.BOTH)\
             .ltm_options(order_bound=2)\
             .idyom_root_path(idyom_root_path).idyom_database_path(idyom_database_path)\
             .training_options(resampling_folds_count_k=1)

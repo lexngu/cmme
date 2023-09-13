@@ -11,7 +11,7 @@ from cmme.config import Config
 from cmme.lib.instructions_file import InstructionsFile
 from cmme.lib.results_file import ResultsFile
 from cmme.lib.util import nparray_to_list
-from cmme.ppmdecay.base import ModelType, EscapeMethod
+from cmme.ppmdecay.base import PPMModelType, PPMEscapeMethod
 from cmme.ppmdecay.util import list_to_str, str_to_list
 
 # R_HOME specifies the R instance to use by rpy2.
@@ -39,7 +39,7 @@ def invoke_model(instructions_file_path: Union[str, Path]) -> str:
 
 
 class PPMInstructionsFile(InstructionsFile, ABC):
-    def __init__(self, model_type: ModelType, alphabet_levels, order_bound, input_sequence):
+    def __init__(self, model_type: PPMModelType, alphabet_levels, order_bound, input_sequence):
         super().__init__()
         self.model_type = model_type
         self.alphabet_levels = alphabet_levels
@@ -80,7 +80,7 @@ class PPMSimpleInstructionsFile(PPMInstructionsFile):
         shortest_deterministic = df["shortest_deterministic"][0]
         exclusion = df["exclusion"][0]
         update_exclusion = df["update_exclusion"][0]
-        escape_method = EscapeMethod(df["escape"][0])
+        escape_method = PPMEscapeMethod(df["escape"][0])
 
         obj = PPMSimpleInstructionsFile(alphabet_levels, order_bound, input_sequence,
                                         shortest_deterministic, exclusion, update_exclusion, escape_method)
@@ -89,7 +89,7 @@ class PPMSimpleInstructionsFile(PPMInstructionsFile):
 
     def __init__(self, alphabet_levels, order_bound, input_sequence,
                  shortest_deterministic, exclusion, update_exclusion, escape_method):
-        super().__init__(ModelType.SIMPLE, alphabet_levels, order_bound, input_sequence)
+        super().__init__(PPMModelType.SIMPLE, alphabet_levels, order_bound, input_sequence)
 
         self.shortest_deterministic = shortest_deterministic
         self.exclusion = exclusion
@@ -162,7 +162,7 @@ class PPMDecayInstructionsFile(PPMInstructionsFile):
                  only_predict_from_buffer,
                  stm_weight, stm_duration, ltm_weight, ltm_half_life, ltm_asymptote,
                  noise, seed):
-        super().__init__(ModelType.DECAY, alphabet_levels, order_bound, input_sequence)
+        super().__init__(PPMModelType.DECAY, alphabet_levels, order_bound, input_sequence)
 
         self.input_time_sequence = input_time_sequence
         self.buffer_weight = buffer_weight
@@ -180,7 +180,7 @@ class PPMDecayInstructionsFile(PPMInstructionsFile):
         self.seed = seed
 
 
-class ResultsFileData(ABC):
+class PPMResultsFileData(ABC):
     def __init__(self, results_file_data_path, df):
         self.results_file_data_path = results_file_data_path
         self.df = df
@@ -195,12 +195,12 @@ class ResultsFileData(ABC):
         return self.df_by_trial(self.trials[-1])
 
 
-class PPMSimpleResultsFileData(ResultsFileData):
+class PPMSimpleResultsFileData(PPMResultsFileData):
     def __init__(self, results_file_data_path, df):
         super().__init__(results_file_data_path, df)
 
 
-class PPMDecayResultsFileData(ResultsFileData):
+class PPMDecayResultsFileData(PPMResultsFileData):
     def __init__(self, results_file_data_path, df):
         super().__init__(results_file_data_path, df)
 
@@ -223,7 +223,7 @@ class PPMResultsMetaFile(ResultsFile):
     def load(file_path: Union[str, Path]) -> PPMResultsMetaFile:
         df = pd.read_feather(file_path)
 
-        model_type = ModelType(df["model_type"][0])
+        model_type = PPMModelType(df["model_type"][0])
         alphabet_levels = str_to_list(df["alphabet_levels"][0])
         instructions_file_path = str(df["instructions_file_path"][0])
         results_file_data_path = str(df["results_file_data_path"][0])
@@ -238,7 +238,7 @@ class PPMResultsMetaFile(ResultsFile):
         return PPMResultsMetaFile(file_path, model_type, alphabet_levels, instructions_file_path,
                                   results_file_data_path)
 
-    def __init__(self, results_file_meta_path: Path, model_type: ModelType, alphabet_levels, instructions_file_path,
+    def __init__(self, results_file_meta_path: Path, model_type: PPMModelType, alphabet_levels, instructions_file_path,
                  results_file_data_path):
         super().__init__()
         self.results_file_meta_path = results_file_meta_path
@@ -246,7 +246,7 @@ class PPMResultsMetaFile(ResultsFile):
         self.alphabet_levels = alphabet_levels
         self.instructions_file_path = instructions_file_path
         self.results_file_data_path = results_file_data_path
-        if model_type == ModelType.SIMPLE:
+        if model_type == PPMModelType.SIMPLE:
             self.results_file_data = self._parse_ppm_simple_results_file_data()
         else:
             self.results_file_data = self._parse_ppm_decay_results_file_data()

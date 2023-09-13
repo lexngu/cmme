@@ -1,8 +1,8 @@
 import tempfile
 
-from cmme.ppmdecay.base import EscapeMethod, ModelType
+from cmme.ppmdecay.base import PPMEscapeMethod, PPMModelType
 from cmme.ppmdecay.binding import PPMSimpleInstructionsFile, PPMDecayInstructionsFile, PPMResultsMetaFile
-from cmme.ppmdecay.model import PPMSimpleInstance, PPMDecayInstance, PPMModel
+from cmme.ppmdecay.model import PPMSimpleInstructionBuilder, PPMDecayInstructionBuilder, PPMModel
 from cmme.ppmdecay.util import auto_convert_input_sequence
 
 
@@ -11,10 +11,10 @@ def test_ppmsimple_instructions_file():
     input_sequence = [1, 1, 3, 2, 5, 5, 1, 3]
     order_bound = 3
     update_exclusion = True
-    escape_method = EscapeMethod.AX
+    escape_method = PPMEscapeMethod.AX
     exclusion = True
     shortest_deterministic = True
-    ppmib = PPMSimpleInstance() \
+    ppmib = PPMSimpleInstructionBuilder() \
         .alphabet_levels(alphabet_levels) \
         .input_sequence(input_sequence) \
         .order_bound(order_bound) \
@@ -38,10 +38,10 @@ def test_load_ppmsimple_instructions_file():
     input_sequence = list(map(str, [1, 1, 3, 2, 5, 5, 1, 3]))
     order_bound = 3
     update_exclusion = True
-    escape_method = EscapeMethod.AX
+    escape_method = PPMEscapeMethod.AX
     exclusion = True
     shortest_deterministic = True
-    ppmib = PPMSimpleInstance() \
+    ppmib = PPMSimpleInstructionBuilder() \
         .alphabet_levels(alphabet_levels) \
         .input_sequence(input_sequence) \
         .order_bound(order_bound) \
@@ -83,7 +83,7 @@ def test_ppmdecay_instructions_file():
     noise = 0.1
     seed = 1
 
-    ppmib = PPMDecayInstance() \
+    ppmib = PPMDecayInstructionBuilder() \
         .alphabet_levels(alphabet_levels) \
         .input_sequence(input_sequence, input_time_sequence) \
         .order_bound(order_bound) \
@@ -136,7 +136,7 @@ def test_load_ppmdecay_instructions_file():
     noise = 0.1
     seed = 1
 
-    ppmib = PPMDecayInstance() \
+    ppmib = PPMDecayInstructionBuilder() \
         .alphabet_levels(alphabet_levels) \
         .input_sequence(input_sequence, input_time_sequence) \
         .order_bound(order_bound) \
@@ -182,14 +182,14 @@ def test_load_ppmdecay_results_file():
     input_sequence = list(map(str, [1, 1, 3, 2, 5, 5, 1, 3]))
     input_time_sequence = [1, 2, 4, 5, 6, 8, 9, 10]
 
-    ppmib = PPMDecayInstance() \
+    ppmib = PPMDecayInstructionBuilder() \
         .alphabet_levels(alphabet_levels) \
         .input_sequence(input_sequence, input_time_sequence)
 
     ppmif = ppmib.to_instructions_file()
     ppmmodel = PPMModel()
     ppmrf = ppmmodel.run_instructions_file(ppmif)
-    assert ppmrf.model_type == ModelType.DECAY
+    assert ppmrf.model_type == PPMModelType.DECAY
     assert ppmrf.alphabet_levels == alphabet_levels
 
     ppmrf_data = ppmrf.results_file_data
@@ -201,14 +201,14 @@ def test_load_ppmsimple_results_file():
     alphabet_levels = list(map(str, [1, 2, 3, 5]))
     input_sequence = list(map(str, [1, 1, 3, 2, 5, 5, 1, 3]))
 
-    ppmib = PPMSimpleInstance() \
+    ppmib = PPMSimpleInstructionBuilder() \
         .alphabet_levels(alphabet_levels) \
         .input_sequence(input_sequence)
 
     ppmif = ppmib.to_instructions_file()
     ppmmodel = PPMModel()
     ppmrf = ppmmodel.run_instructions_file(ppmif)
-    assert ppmrf.model_type == ModelType.SIMPLE
+    assert ppmrf.model_type == PPMModelType.SIMPLE
     assert ppmrf.alphabet_levels == alphabet_levels
 
     ppmrf_data = ppmrf.results_file_data

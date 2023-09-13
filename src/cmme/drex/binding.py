@@ -248,7 +248,7 @@ class DREXInstructionsFile(InstructionsFile):
         self.change_decision_threshold = change_decision_threshold
 
 
-class ResultsFilePsi:
+class DREXResultsFilePsi:
     def __init__(self, predictions: dict, positions: dict):
         """
         Representation of D-REX's marginal predictive probability distribution (Psi)
@@ -331,7 +331,7 @@ class DREXResultsFile(ResultsFile):
         raise NotImplementedError  # TODO
 
     @staticmethod
-    def _load_prediction_results(prediction_results: dict) -> ResultsFilePsi:
+    def _load_prediction_results(prediction_results: dict) -> DREXResultsFilePsi:
         predictions = dict()
         positions = dict()
 
@@ -347,7 +347,7 @@ class DREXResultsFile(ResultsFile):
             elif isinstance(f_positions, np.ndarray):
                 positions[f] = np.array(f_positions)[0]
 
-        return ResultsFilePsi(predictions, positions)
+        return DREXResultsFilePsi(predictions, positions)
 
     @staticmethod
     def _load_processed_prior(estimate_suffstat_results) -> Prior:
@@ -468,7 +468,7 @@ class DREXResultsFile(ResultsFile):
         if prior.distribution_type() in [DistributionType.GAUSSIAN, DistributionType.LOGNORMAL, DistributionType.GMM]:
             psi = DREXResultsFile._load_prediction_results(pred_results)
         else:
-            psi = ResultsFilePsi({}, {})
+            psi = DREXResultsFilePsi({}, {})
 
         return DREXResultsFile(str(instructions_file_path), input_sequence, prior, surprisal,
                                joint_surprisal,
@@ -481,7 +481,7 @@ class DREXResultsFile(ResultsFile):
                  input_sequence: np.ndarray, prior: Prior,
                  surprisal: np.ndarray, joint_surprisal: np.ndarray, context_beliefs: np.ndarray,
                  belief_dynamics: np.ndarray, change_decision_changepoint: float,
-                 change_decision_probability: np.ndarray, change_decision_threshold: float, psi: ResultsFilePsi):
+                 change_decision_probability: np.ndarray, change_decision_threshold: float, psi: DREXResultsFilePsi):
         """
         Representation of a D-REX run.
 

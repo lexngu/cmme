@@ -5,8 +5,7 @@ from cmme.drex.base import UnprocessedPrior, DistributionType
 from cmme.drex.model import *
 from cmme.drex.binding import transform_to_rundrexmodel_representation
 from cmme.drex.util import transform_to_unified_drex_input_sequence_representation
-from cmme.lib.util import drex_default_instructions_file_path, drex_default_results_file_path
-from cmme.drex.worker import DREXModel
+from cmme.drex import DREXModel
 
 
 def test_default_drex_instance_uses_original_default_values():
@@ -84,8 +83,8 @@ def test_run_succeeds():
     drex_instance.change_decision_threshold(change_decision_threshold)
     drex_instance.prior(prior)
     with tempfile.TemporaryDirectory() as tmpdirname:
-        instructions_file_path = drex_default_instructions_file_path(None, Path(tmpdirname))
-        results_file_path = drex_default_results_file_path(None, Path(tmpdirname))
+        instructions_file_path = tmpdirname + "-instructionsfile"
+        results_file_path = tmpdirname + "-resultsfile"
 
         drex_model = DREXModel()
         drex_instance.to_instructions_file()\

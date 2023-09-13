@@ -122,7 +122,7 @@ class ThreadedViewpoint(Viewpoint):
     THR_CPINT_CPINTREF_FIB = 'thr-cpint_cpintref-fib'
 
 
-class IDYOMModelValue(Enum):
+class IDYOMModelType(Enum):
     STM = ':stm'
     LTM = ':ltm'
     LTM_PLUS = ':ltm+'
@@ -130,7 +130,7 @@ class IDYOMModelValue(Enum):
     BOTH_PLUS = ':both+'
 
 
-class IDYOMEscape(Enum):
+class IDYOMEscapeMethod(Enum):
     A = ':a'
     B = ':b'
     C = ':c'
@@ -178,6 +178,7 @@ def transform_viewpoints_list_to_string_list(viewpoints: List[Viewpoint]) -> Lis
         raise ValueError("Invalid element: " + str(viewpoints))
 
     return result
+
 
 def transform_string_list_to_viewpoints_list(viewpoints: List[str]) -> List[Viewpoint]:
     """

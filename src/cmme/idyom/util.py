@@ -8,7 +8,7 @@ from typing import Union, Tuple
 import cl4py
 from cl4py import Cons
 
-from cmme.config import Config
+from cmme.idyom.base import Viewpoint, BasicViewpoint, DerivedViewpoint, ThreadedViewpoint, TestViewpoint
 from cmme.lib.util import path_as_string_with_trailing_slash
 
 import subprocess
@@ -101,14 +101,6 @@ def cl4py_cons_to_list(cons):
     return result
 
 
-def idyom_default_instructions_file_path(alias: str = None, io_path: Path = Config().model_io_path()):
-    instructions_file_filename = "idyom-instructionsfile"
-    instructions_file_filename = (instructions_file_filename + "-" + alias) if alias is not None \
-        else instructions_file_filename
-    instructions_file_filename = instructions_file_filename + ".csv"
-    return io_path / instructions_file_filename
-
-
 def install_idyom(idyom_root_path: Union[str, Path], idyom_database_path: Union[str, Path]=None, force_reset=False) -> Path:
     """
     Installs idyom as quicklisp project, and initializes the database
@@ -155,3 +147,31 @@ def run_idyom_instructions_file(instructions_file_path: Union[str, Path]) -> Tup
                                stderr=subprocess.PIPE)
     out, err = process.communicate()
     return out, err
+
+
+def viewpoint_name_to_viewpoint(name: str) -> Viewpoint:
+    """
+    Return the associated viewpoint object.
+
+    Parameters
+    ----------
+    name
+        Viewpoint name
+
+    Returns
+    -------
+    Viewpoint
+        Viewpoint object, if viewpoint could be determined. ValueError otherwise.
+    """
+    candidates = [BasicViewpoint, DerivedViewpoint, ThreadedViewpoint, TestViewpoint]
+    result = None
+    for candidate in candidates:
+        try:
+            result = candidate(name)
+        except ValueError:
+            pass
+
+    if result is None:
+        raise ValueError("Viewpoint with name={} invalid!".format(name))
+
+    return result

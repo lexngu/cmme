@@ -3,8 +3,8 @@ from pathlib import Path
 import os
 
 from cmme.config import Config
-from cmme.idyom import IDYOMModel, IdyomDatabase
-from cmme.idyom.base import IDYOMModelValue, BasicViewpoint, transform_string_list_to_viewpoints_list, IDYOMEscape
+from cmme.idyom import IDYOMModel, IDYOMDatabase
+from cmme.idyom.base import IDYOMModelType, BasicViewpoint, transform_string_list_to_viewpoints_list, IDYOMEscapeMethod
 from cmme.idyom.binding import IDYOMInstructionsFile
 from cmme.idyom.model import IDYOMInstructionBuilder
 from cmme.idyom.util import install_idyom
@@ -23,7 +23,7 @@ def test_idyom_instructions_file():
     idyom_root_path = "/tmp/test123"
     idyom_database_path = "/tmp/test123/db/database.sqlite"
     dataset = 1
-    model = IDYOMModelValue.BOTH_PLUS
+    model = IDYOMModelType.BOTH_PLUS
     source_viewpoints = "cpitch"
     target_viewpoints = "cpitch"
     stm_ob = 3
@@ -84,14 +84,14 @@ def test_load_idyom_instructions_file_with_more_parameters():
     idyom_root_path = "/tmp/test123"
     idyom_database_path = "/tmp/test123/db/database.sqlite"
     dataset = 1
-    model = IDYOMModelValue.BOTH_PLUS
+    model = IDYOMModelType.BOTH_PLUS
     source_viewpoints = "cpitch"
     target_viewpoints = "cpitch"
     stm_options = {
         "order_bound": 3,
         "mixtures": False,
         "update_exclusion": None,
-        "escape": IDYOMEscape.A,
+        "escape": IDYOMEscapeMethod.A,
     }
     ltm_options = {
         "order_bound": 4,
@@ -133,7 +133,7 @@ def test_load_idyom_instructions_file_with_more_parameters():
         assert test_idyom_if.dataset == dataset
         assert test_idyom_if.source_viewpoints == transform_string_list_to_viewpoints_list(source_viewpoints)
         assert test_idyom_if.target_viewpoints == transform_string_list_to_viewpoints_list(target_viewpoints)
-        assert test_idyom_if.model == IDYOMModelValue(model).value
+        assert test_idyom_if.model == IDYOMModelType(model).value
         assert test_idyom_if.stm_options == stm_options
         assert test_idyom_if.ltm_options == ltm_options
         assert test_idyom_if.training_options == training_options
@@ -147,7 +147,7 @@ def test_load_results_file():
 
         install_idyom(idyom_root_path, idyom_database_path)
 
-        idb = IdyomDatabase(idyom_root_path, idyom_database_path)
+        idb = IDYOMDatabase(idyom_root_path, idyom_database_path)
 
         description = "test"
         dataset_id = idb.import_midi_dataset(sample_midi_files_dir_path, description=description)

@@ -29,9 +29,6 @@ class Config:
     def matlab_path(self) -> Path:
         return Path(self.config_parser[Config.CONFIG_SECTION_KEY][Config.CONFIG_MATLAB_PATH_KEY])
 
-    def model_io_path(self) -> Path:
-        return Path(self.config_file_path.parent / self.config_parser[Config.CONFIG_SECTION_KEY][Config.CONFIG_MODEL_IO_PATH_KEY]).resolve()
-
     def idyom_root_path(self) -> Path:
         return Path(self.config_parser[Config.CONFIG_SECTION_KEY][Config.CONFIG_IDYOM_ROOT])
 

@@ -6,9 +6,7 @@ from pathlib import Path
 import matlab.engine
 from pymatbridge import pymatbridge
 
-from .binding import DREXResultsFile
 from ..config import Config
-from ..lib.model import Model
 
 
 class MatlabWorker:
@@ -141,20 +139,3 @@ class PymatbridgeMatlabWorker:
             time.sleep(sleep_time)
 
 
-class DREXModel(Model):
-    """
-    High-level interface for using D-REX.
-    Using +instance+, one can hyper-parameterize D-REX.
-    """
-
-    def __init__(self):
-        super().__init__()
-
-    def run(self, instructions_file_path) -> DREXResultsFile:
-        results_file_path = MatlabWorker.run_model(instructions_file_path)
-        results_file = DREXResultsFile.load(results_file_path)
-        return results_file
-
-    @staticmethod
-    def run_instructions_file_at_path(file_path: str) -> DREXResultsFile:
-        return DREXModel().run(file_path)

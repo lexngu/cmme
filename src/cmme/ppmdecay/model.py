@@ -8,15 +8,14 @@ from typing import Union
 import os
 
 from cmme.lib.model import ModelBuilder, Model
-from cmme.ppmdecay.base import EscapeMethod, ModelType
+from cmme.ppmdecay.base import PPMEscapeMethod, PPMModelType
 from cmme.ppmdecay.binding import PPMSimpleInstructionsFile, PPMDecayInstructionsFile, \
     PPMResultsMetaFile, invoke_model
 from cmme.ppmdecay.util import auto_convert_input_sequence
-from cmme.lib.util import ppmdecay_default_instructions_file_path, ppmdecay_default_results_file_path
 
 
-class PPMInstance(ModelBuilder, ABC): # TODO rename to InstructionBuilder
-    def __init__(self, model_type: ModelType):
+class PPMInstructionBuilder(ModelBuilder, ABC): # TODO rename to InstructionBuilder
+    def __init__(self, model_type: PPMModelType):
         super().__init__()
         self._model_type = model_type
 
@@ -90,13 +89,13 @@ class PPMInstance(ModelBuilder, ABC): # TODO rename to InstructionBuilder
         return self
 
 
-class PPMSimpleInstance(PPMInstance):
+class PPMSimpleInstructionBuilder(PPMInstructionBuilder):
     def __init__(self):
-        super().__init__(ModelType.SIMPLE)
+        super().__init__(PPMModelType.SIMPLE)
         self._shortest_deterministic = True
         self._exclusion = True
         self._update_exclusion = True
-        self._escape_method = EscapeMethod.C
+        self._escape_method = PPMEscapeMethod.C
 
     def shortest_deterministic(self, shortest_deterministic):
         self._shortest_deterministic = shortest_deterministic
@@ -110,7 +109,7 @@ class PPMSimpleInstance(PPMInstance):
         self._update_exclusion = update_exclusion
         return self
 
-    def escape_method(self, escape_method: EscapeMethod):
+    def escape_method(self, escape_method: PPMEscapeMethod):
         self._escape_method = escape_method
         return self
 
@@ -120,9 +119,9 @@ class PPMSimpleInstance(PPMInstance):
                                          self._update_exclusion, self._escape_method)
 
 
-class PPMDecayInstance(PPMInstance):
+class PPMDecayInstructionBuilder(PPMInstructionBuilder):
     def __init__(self):
-        super().__init__(ModelType.DECAY)
+        super().__init__(PPMModelType.DECAY)
 
         self._buffer_weight = 1
         self._buffer_length_time = 0

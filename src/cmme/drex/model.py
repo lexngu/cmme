@@ -5,11 +5,12 @@ from abc import ABC
 from typing import Union, List
 
 from .base import Prior
-from .binding import DREXInstructionsFile
+from .binding import DREXInstructionsFile, DREXResultsFile
 from .util import transform_to_unified_drex_input_sequence_representation
 import numpy as np
 
-from ..lib.model import ModelBuilder
+from .worker import MatlabWorker
+from ..lib.model import ModelBuilder, Model
 
 
 class DREXInstructionBuilder(ModelBuilder, ABC):
@@ -267,3 +268,20 @@ class DREXInstructionBuilder(ModelBuilder, ABC):
                                     self._predscale, self._change_decision_threshold)
 
 
+class DREXModel(Model):
+    """
+    High-level interface for using D-REX.
+    Using +instance+, one can hyper-parameterize D-REX.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def run(self, instructions_file_path) -> DREXResultsFile:
+        results_file_path = MatlabWorker.run_model(instructions_file_path)
+        results_file = DREXResultsFile.load(results_file_path)
+        return results_file
+
+    @staticmethod
+    def run_instructions_file_at_path(file_path: str) -> DREXResultsFile:
+        return DREXModel().run(file_path)

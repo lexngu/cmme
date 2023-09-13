@@ -75,40 +75,6 @@ def path_as_string_with_trailing_slash(path: Union[str, Path], expand_and_resolv
     return path_with_trailing_slash
 
 
-def drex_default_instructions_file_path(alias: str = None, io_path: Path = Config().model_io_path()) -> Path:
-    instructions_file_filename = "drex-instructionsfile"
-    instructions_file_filename = (instructions_file_filename + "-" + alias) if alias is not None \
-        else instructions_file_filename
-    instructions_file_filename = instructions_file_filename + ".mat"
-
-    return io_path / Path(instructions_file_filename)
-
-
-def drex_default_results_file_path(alias: str = None, io_path: Path = Path(".")) -> Path:
-    results_file_filename = "drex-resultsfile"
-    results_file_filename = (results_file_filename + "-" + alias) if alias is not None else results_file_filename
-    results_file_filename = results_file_filename + ".mat"
-
-    return io_path / Path(results_file_filename)
-
-
-def ppmdecay_default_instructions_file_path(alias: str = None, io_path: Path = Config().model_io_path()) -> Path:
-    instructions_file_filename = "ppmdecay-instructionsfile"
-    instructions_file_filename = instructions_file_filename + "-" + alias if alias is not None \
-        else instructions_file_filename
-    instructions_file_filename = instructions_file_filename + ".feather"
-
-    return io_path / Path(instructions_file_filename)
-
-
-def ppmdecay_default_results_file_path(alias: str = None, io_path: Path = Path(".")) -> Path:
-    results_file_filename = "ppmdecay-resultsfile"
-    results_file_filename = results_file_filename + "-" + alias if alias is not None else results_file_filename
-    results_file_filename = results_file_filename + ".feather"
-
-    return io_path / Path(results_file_filename)
-
-
 def nparray_to_list(arr: np.ndarray) -> list:
     """
     Convert a (nested) numpy array to a Python list

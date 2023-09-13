@@ -1,2 +1,2 @@
-from .idyom_database import IdyomDatabase
-from .model import IDYOMModel
+from .idyom_database import *
+from .model import *

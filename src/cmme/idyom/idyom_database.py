@@ -9,7 +9,7 @@ from ..lib.util import path_as_string_with_trailing_slash
 import re
 
 
-class IdyomDatabase:
+class IDYOMDatabase:
     lisp: Lisp
 
     def __init__(self, idyom_root_path: Union[str, Path], idyom_sqlite_database_path: Union[str, Path]):

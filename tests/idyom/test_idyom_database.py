@@ -3,7 +3,7 @@ import numpy as np
 import os
 
 from cmme.config import Config
-from cmme.idyom import IdyomDatabase
+from cmme.idyom.idyom_database import IDYOMDatabase
 from cmme.idyom.base import BasicViewpoint
 from cmme.idyom.util import install_idyom
 from cmme.lib.util import path_as_string_with_trailing_slash
@@ -18,7 +18,7 @@ def test_get_all_dataset():
 
         install_idyom(idyom_root_path, idyom_database_path)
 
-        idb = IdyomDatabase(idyom_root_path, idyom_database_path)
+        idb = IDYOMDatabase(idyom_root_path, idyom_database_path)
 
         description = "test"
         dataset_id = idb.import_midi_dataset(sample_midi_files_dir_path, description=description)
@@ -34,7 +34,7 @@ def test_import_midi_dataset():
 
         install_idyom(idyom_root_path, idyom_database_path)
 
-        idb = IdyomDatabase(idyom_root_path, idyom_database_path)
+        idb = IDYOMDatabase(idyom_root_path, idyom_database_path)
 
         description = "test"
         dataset_id = idb.import_midi_dataset(sample_midi_files_dir_path, description=description)
@@ -52,7 +52,7 @@ def test_import_kern_dataset():
 
         install_idyom(idyom_root_path, idyom_database_path)
 
-        idb = IdyomDatabase(idyom_root_path, idyom_database_path)
+        idb = IDYOMDatabase(idyom_root_path, idyom_database_path)
 
         description = "test"
         dataset_id = idb.import_kern_dataset(sample_kern_files_dir_path, description=description, timebase=39473280)
@@ -70,7 +70,7 @@ def test_get_dataset_alphabet():
 
         install_idyom(idyom_root_path, idyom_database_path)
 
-        idb = IdyomDatabase(idyom_root_path, idyom_database_path)
+        idb = IDYOMDatabase(idyom_root_path, idyom_database_path)
 
         description = "test"
         dataset_id_one = idb.import_midi_dataset(sample_midi_files_dir_path, description=description)
@@ -87,7 +87,7 @@ def test_get_all_compositions():
 
         install_idyom(idyom_root_path, idyom_database_path)
 
-        idb = IdyomDatabase(idyom_root_path, idyom_database_path)
+        idb = IDYOMDatabase(idyom_root_path, idyom_database_path)
 
         description = "test"
         dataset_id = idb.import_midi_dataset(sample_midi_files_dir_path, description=description)
@@ -103,7 +103,7 @@ def test_encode_composition():
 
         install_idyom(idyom_root_path, idyom_database_path)
 
-        idb = IdyomDatabase(idyom_root_path, idyom_database_path)
+        idb = IDYOMDatabase(idyom_root_path, idyom_database_path)
 
         description = "test"
         dataset_id = idb.import_midi_dataset(sample_midi_files_dir_path, description=description)

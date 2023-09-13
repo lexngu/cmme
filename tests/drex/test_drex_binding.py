@@ -1,17 +1,15 @@
 import tempfile
 import os
-from pathlib import Path
 
 import numpy as np
 from numpy import array
 
 from cmme.drex.base import UnprocessedPrior, DistributionType, GaussianPrior
-from cmme.drex.binding import from_mat, to_mat, DREXInstructionsFile, DREXResultsFile, ResultsFilePsi, \
+from cmme.drex.binding import from_mat, to_mat, DREXInstructionsFile, DREXResultsFile, DREXResultsFilePsi, \
     transform_to_estimatesuffstat_representation, transform_to_rundrexmodel_representation
 from cmme.drex.model import DREXInstructionBuilder
 from cmme.drex.util import transform_to_unified_drex_input_sequence_representation
-from cmme.drex.worker import DREXModel
-from cmme.lib.util import drex_default_instructions_file_path, drex_default_results_file_path
+from cmme.drex import DREXModel
 
 
 def prior_input_sequence_from_mat_to_trialtimefeature_sequence(prior_input_sequence_from_mat):
@@ -331,7 +329,7 @@ def test_drex_results_file():
                                          0.01760109, 0.01984637, 0.01550505, 0.01564076, 0.01661564,
                                          0.01762762, 0.01735887, 0.01711018, 0.01869726, 0.02136593])
     change_decision_threshold = 0.01
-    psi = ResultsFilePsi({}, {})  # TODO
+    psi = DREXResultsFilePsi({}, {})  # TODO
 
     rf = DREXResultsFile(instructions_file_path,
                          input_sequence, prior, surprisal, joint_surprisal,
@@ -406,8 +404,8 @@ def test_load_results_file_GMM():
     drex_instance.change_decision_threshold(change_decision_threshold)
     drex_instance.prior(prior)
     with tempfile.TemporaryDirectory() as tmpdirname:
-        instructions_file_path = drex_default_instructions_file_path(None, Path(tmpdirname))
-        results_file_path = drex_default_results_file_path(None, Path(tmpdirname))
+        instructions_file_path = tmpdirname + "-instructionsfile"
+        results_file_path = tmpdirname + "-resultsfile"
 
         drex_model = DREXModel()
         drex_instance.to_instructions_file() \
@@ -440,8 +438,8 @@ def test_load_results_file_Gaussian():
     drex_instance.change_decision_threshold(change_decision_threshold)
     drex_instance.prior(prior)
     with tempfile.TemporaryDirectory() as tmpdirname:
-        instructions_file_path = drex_default_instructions_file_path(None, Path(tmpdirname))
-        results_file_path = drex_default_results_file_path(None, Path(tmpdirname))
+        instructions_file_path = tmpdirname + "-instructionsfile"
+        results_file_path = tmpdirname + "-resultsfile"
 
         drex_model = DREXModel()
         drex_instance.to_instructions_file() \
@@ -474,8 +472,8 @@ def test_load_results_file_Lognormal():
     drex_instance.change_decision_threshold(change_decision_threshold)
     drex_instance.prior(prior)
     with tempfile.TemporaryDirectory() as tmpdirname:
-        instructions_file_path = drex_default_instructions_file_path(None, Path(tmpdirname))
-        results_file_path = drex_default_results_file_path(None, Path(tmpdirname))
+        instructions_file_path = tmpdirname + "-instructionsfile"
+        results_file_path = tmpdirname + "-resultsfile"
 
         drex_model = DREXModel()
         drex_instance.to_instructions_file() \
@@ -508,8 +506,8 @@ def test_load_results_file_Lognormal():
     drex_instance.change_decision_threshold(change_decision_threshold)
     drex_instance.prior(prior)
     with tempfile.TemporaryDirectory() as tmpdirname:
-        instructions_file_path = drex_default_instructions_file_path(None, Path(tmpdirname))
-        results_file_path = drex_default_results_file_path(None, Path(tmpdirname))
+        instructions_file_path = tmpdirname + "-instructionsfile"
+        results_file_path = tmpdirname + "-resultsfile"
 
         drex_model = DREXModel()
         drex_instance.to_instructions_file() \

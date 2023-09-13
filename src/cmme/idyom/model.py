@@ -6,34 +6,6 @@ from .util import *
 from ..lib.model import ModelBuilder, Model
 
 
-def viewpoint_name_to_viewpoint(name: str) -> Viewpoint:
-    """
-    Return the associated viewpoint object.
-
-    Parameters
-    ----------
-    name
-        Viewpoint name
-
-    Returns
-    -------
-    Viewpoint
-        Viewpoint object, if viewpoint could be determined. ValueError otherwise.
-    """
-    candidates = [BasicViewpoint, DerivedViewpoint, ThreadedViewpoint, TestViewpoint]
-    result = None
-    for candidate in candidates:
-        try:
-            result = candidate(name)
-        except ValueError:
-            pass
-
-    if result is None:
-        raise ValueError("Viewpoint with name={} invalid!".format(name))
-
-    return result
-
-
 class IDYOMInstructionBuilder(ModelBuilder):
     def to_instructions_file(self) -> IDYOMInstructionsFile:
         self.assert_is_valid()
@@ -54,7 +26,7 @@ class IDYOMInstructionBuilder(ModelBuilder):
         self._dataset: Dataset
         self._target_viewpoints: List[Viewpoint] = []
         self._source_viewpoints: List[Viewpoint] = []
-        self._model: IDYOMModelValue = IDYOMModelValue.BOTH_PLUS
+        self._model: IDYOMModelType = IDYOMModelType.BOTH_PLUS
 
         self.stm_options()
         self.ltm_options()
@@ -127,7 +99,7 @@ class IDYOMInstructionBuilder(ModelBuilder):
         self._source_viewpoints = source_viewpoints
         return self
 
-    def model(self, model: IDYOMModelValue):
+    def model(self, model: IDYOMModelType):
         self._model = model
         return self
 
@@ -240,7 +212,7 @@ class IDYOMInstructionBuilder(ModelBuilder):
         if len(self._source_viewpoints) > 0 and self._select_options != {}:
             msgs.append("Only either source_viewpoints or the viewpoint selection must be used!")
             is_valid = False
-        if not isinstance(self._model, IDYOMModelValue):
+        if not isinstance(self._model, IDYOMModelType):
             msgs.append("model must be any value of IDYOMModelValue!")
             is_valid = False
         return is_valid, msgs
@@ -258,6 +230,7 @@ class IDYOMInstructionBuilder(ModelBuilder):
     def idyom_database_path(self, idyom_database_path):
         self._idyom_database_path = idyom_database_path
         return self
+
 
 class IDYOMModel(Model):
     @staticmethod

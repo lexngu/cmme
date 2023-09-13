@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class EscapeMethod(Enum):
+class PPMEscapeMethod(Enum):
     A = "a"
     B = "b"
     C = "c"
@@ -9,6 +9,6 @@ class EscapeMethod(Enum):
     AX = "ax"
 
 
-class ModelType(Enum):
+class PPMModelType(Enum):
     SIMPLE = "SIMPLE"
     DECAY = "DECAY"

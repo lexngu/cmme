@@ -5,8 +5,8 @@ import pandas as pd
 from typing import Union
 import re
 
-from .base import transform_viewpoints_list_to_string_list, IDYOMModelValue, IDYOMViewpointSelectionBasis, \
-    transform_string_list_to_viewpoints_list, IDYOMEscape
+from .base import transform_viewpoints_list_to_string_list, IDYOMModelType, IDYOMViewpointSelectionBasis, \
+    transform_string_list_to_viewpoints_list, IDYOMEscapeMethod
 from .util import LispExpressionBuilder, LispExpressionBuilderMode
 from ..lib.instructions_file import InstructionsFile
 from ..lib.results_file import ResultsFile
@@ -30,6 +30,7 @@ def bool_to_lisp(b: bool | None) -> str | None:
         return "nil"
     else:
         return None
+
 
 class IDYOMInstructionsFile(InstructionsFile):
 
@@ -200,7 +201,7 @@ class IDYOMInstructionsFile(InstructionsFile):
                                                        to_bool=True)
             stm_escape = find_single_or_none(r":escape\s+([^\s)]+)", search_stm_options)
             if stm_escape is not None:
-                stm_escape = IDYOMEscape(stm_escape)
+                stm_escape = IDYOMEscapeMethod(stm_escape)
         else:
             stm_order_bound = stm_mixtures = stm_update_exclusion = stm_escape = None
         stm_options = {
@@ -216,7 +217,7 @@ class IDYOMInstructionsFile(InstructionsFile):
                                                        to_bool=True)
             ltm_escape = find_single_or_none(r":escape\s+([^\s)]+)", search_ltm_options)
             if ltm_escape is not None:
-                ltm_escape = IDYOMEscape(ltm_escape)
+                ltm_escape = IDYOMEscapeMethod(ltm_escape)
         else:
             ltm_order_bound = ltm_mixtures = ltm_update_exclusion = ltm_escape = None
         ltm_options = {
@@ -306,8 +307,8 @@ class IDYOMInstructionsFile(InstructionsFile):
         # (... <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> ...)
         leb.add(":models").add(self.model.value)
         # (CMD <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] ...)
-        if self.model == IDYOMModelValue.STM or self.model == IDYOMModelValue.BOTH or \
-                self.model == IDYOMModelValue.BOTH_PLUS:
+        if self.model == IDYOMModelType.STM or self.model == IDYOMModelType.BOTH or \
+                self.model == IDYOMModelType.BOTH_PLUS:
             order_bound = self.stm_options["order_bound"]
             mixtures = bool_to_lisp(self.stm_options["mixtures"])
             update_exclusion = bool_to_lisp(self.stm_options["update_exclusion"])
@@ -336,8 +337,8 @@ class IDYOMInstructionsFile(InstructionsFile):
                 else:
                     leb.add_list(stmo)
         # (... <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...] ...)
-        if self.model == IDYOMModelValue.LTM or self.model == IDYOMModelValue.BOTH or \
-                self.model == IDYOMModelValue.BOTH_PLUS or self.model == IDYOMModelValue.LTM_PLUS:
+        if self.model == IDYOMModelType.LTM or self.model == IDYOMModelType.BOTH or \
+                self.model == IDYOMModelType.BOTH_PLUS or self.model == IDYOMModelType.LTM_PLUS:
             order_bound = self.ltm_options["order_bound"]
             mixtures = bool_to_lisp(self.ltm_options["mixtures"])
             update_exclusion = bool_to_lisp(self.ltm_options["update_exclusion"])
