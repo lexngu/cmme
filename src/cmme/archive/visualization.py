@@ -1,3 +1,5 @@
+import tempfile
+
 import numpy as np
 import pandas as pd
 import scipy.io as sio
@@ -10,6 +12,7 @@ from pathlib import Path
 from matplotlib.figure import Figure
 from matplotlib import pyplot as plt
 from cmme.drex.worker import MatlabWorker
+
 
 class DataFrame:
     """Aggregates ResultsFiles into a single dataframe (if the contained input sequence is commensurable)"""
@@ -61,7 +64,7 @@ class DataFrame:
         drex_belief_dynamics = drex_data.belief_dynamics
         drex_changedecision_probability = drex_data.change_decision_probability
         # Constants
-        ppm_alphabet_size = len(self.ppm_results_file._alphabet_levels)
+        ppm_alphabet_size = len(self.ppm_results_file.alphabet_levels)
         drex_positions = self.drex_results_file.psi.positions_by_feature(self.drex_feature_index)
         drex_changedecision_threshold = drex_data.change_decision_threshold  # TODO
         drex_changedecision_changepoint = drex_data.change_decision_changepoint
@@ -91,8 +94,6 @@ class DataFrame:
 
     def write_to_mat(self, instructions_file_path):
         data = {
-            "ppm_results_file_path": str(self.ppm_results_file.results_file_meta_path),
-            "drex_results_file_path": str(self.drex_results_file.results_file_path),
             "data_frame": {name: col.values for name, col in self.df.items()}
         }
 
@@ -128,7 +129,28 @@ class MatlabPlot(Plot):
     def __init__(self, data_frame: DataFrame):
         super().__init__(data_frame)
 
-    def plot(self, plot_output_file_path, instructions_file_path):
+    def plot(self, plot_output_file_path=None, instructions_file_path=None):
+        """
+        Write the instructions file and create the plot.
+
+        Parameters
+        ----------
+        plot_output_file_path
+            Path where the resulting plot is to be saved to
+        instructions_file_path
+            Path where the instructions file is to be saved to
+        Returns
+        -------
+        res
+            List of file paths
+        """
+        if instructions_file_path is None:
+            instructions_file_path = Path(tempfile.NamedTemporaryFile().name)
+            print("Instructions file path set to {}".format(instructions_file_path))
+        if plot_output_file_path is None:
+            plot_output_file_path = Path(tempfile.NamedTemporaryFile().name)
+            print("Plot output file path set to {}".format(plot_output_file_path))
+
         data_frame_path = self.data_frame.write_to_mat(instructions_file_path)
         result = MatlabWorker.plot(data_frame_path)
         result_figures = result['content']['figures']
