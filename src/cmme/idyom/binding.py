@@ -315,13 +315,13 @@ class IDYOMInstructionsFile(InstructionsFile):
             escape = self.stm_options["escape"].value if self.stm_options["escape"] else None
 
             stmo = []
-            if order_bound:
+            if order_bound is not None:
                 stmo.extend([":order-bound", order_bound])
-            if mixtures:
+            if mixtures is not None:
                 stmo.extend([":mixtures", mixtures])
-            if update_exclusion:
+            if update_exclusion is not None:
                 stmo.extend([":update-exclusion", update_exclusion])
-            if escape:
+            if escape is not None:
                 stmo.extend([":escape", escape])
             if len(stmo) > 0:
                 leb.add(":stmo")
@@ -345,13 +345,13 @@ class IDYOMInstructionsFile(InstructionsFile):
             escape = self.ltm_options["escape"].value if self.ltm_options["escape"] else None
 
             ltmo = []
-            if order_bound:
+            if order_bound is not None:
                 ltmo.extend([":order-bound", order_bound])
-            if mixtures:
+            if mixtures is not None:
                 ltmo.extend([":mixtures", mixtures])
-            if update_exclusion:
+            if update_exclusion is not None:
                 ltmo.extend([":update-exclusion", update_exclusion])
-            if escape:
+            if escape is not None:
                 ltmo.extend([":escape", escape])
             if len(ltmo) > 0:
                 leb.add(":ltmo")
@@ -373,7 +373,7 @@ class IDYOMInstructionsFile(InstructionsFile):
                 pretraining_ids = list(map(str, self.training_options["pretraining_dataset_ids"]))
                 leb.add(":pretraining-ids").add_list(pretraining_ids)
             k = self.training_options["resampling_folds_count_k"]
-            if k:
+            if k is not None:
                 leb.add(":k").add(k)
             if self.training_options["exclusively_to_be_used_resampling_fold_indices"]:
                 indices = list(map(str, self.training_options["exclusively_to_be_used_resampling_fold_indices"]))
@@ -455,7 +455,7 @@ class IDYOMInstructionsFile(InstructionsFile):
             else:
                 leb.add(":output-path").add("nil")
         overwrite = bool_to_lisp(self.output_options["overwrite"])
-        if overwrite:
+        if overwrite is not None:
             leb.add(":overwrite").add(overwrite)
         separator = self.output_options["separator"]
         if separator:
@@ -464,9 +464,9 @@ class IDYOMInstructionsFile(InstructionsFile):
         # (... [:use-resampling-set-cache? ... :use-ltms-cache? ...])
         use_resampling_set_cache = bool_to_lisp(self.caching_options["use_resampling_set_cache"])
         use_ltms_cache = bool_to_lisp(self.caching_options["use_ltms_cache"])
-        if use_resampling_set_cache:
+        if use_resampling_set_cache is not None:
             leb.add(":use-resampling-set-cache?").add(use_resampling_set_cache)
-        if use_ltms_cache:
+        if use_ltms_cache is not None:
             leb.add(":use-ltms-cache?").add(use_ltms_cache)
 
         return leb.build()
