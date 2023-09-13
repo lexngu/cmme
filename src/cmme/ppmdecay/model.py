@@ -10,7 +10,7 @@ import os
 from cmme.lib.model import ModelBuilder, Model
 from cmme.ppmdecay.base import PPMEscapeMethod, PPMModelType
 from cmme.ppmdecay.binding import PPMSimpleInstructionsFile, PPMDecayInstructionsFile, \
-    PPMResultsMetaFile, invoke_model
+    PPMResultsMetaFile, invoke_model, PPMInstructionsFile
 from cmme.ppmdecay.util import auto_convert_input_sequence
 
 
@@ -87,6 +87,9 @@ class PPMInstructionBuilder(ModelBuilder, ABC): # TODO rename to InstructionBuil
         self._input_time_sequence = input_time_sequence
 
         return self
+
+    def to_instructions_file(self) -> PPMInstructionsFile:
+        raise NotImplementedError
 
 
 class PPMSimpleInstructionBuilder(PPMInstructionBuilder):
