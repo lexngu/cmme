@@ -1,8 +1,15 @@
 function out = drex_intermediate_script(instructions_file_path)
 
-results_file_path = replace(instructions_file_path, "instructionsfile", "resultsfile");
+if contains(instructions_file_path, "instructionsfile")
+    results_file_path = replace(instructions_file_path, "instructionsfile", "resultsfile");
+else
+    [dir,name,ext] = fileparts(instructions_file_path);
+    results_file_path = append(dir, "resultsfile-", name, ext);
+end
+
 if isfile(results_file_path)
     fprintf("Results file at %s already exists. Skip.\n", instructions_file_path);
+    out = results_file_path;
     return;
 end
 
