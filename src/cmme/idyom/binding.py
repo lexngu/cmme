@@ -385,7 +385,7 @@ class IDYOMInstructionsFile(InstructionsFile):
             if isinstance(basis, IDYOMViewpointSelectionBasis):
                 leb.add(":basis").add(basis.value)
             elif isinstance(basis, list):
-                leb.add(":basis").add_list(basis)
+                leb.add(":basis").add_list(map(lambda e: e.value, basis))
             else:
                 raise ValueError("basis is invalid!")
 

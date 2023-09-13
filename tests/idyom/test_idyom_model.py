@@ -81,5 +81,3 @@ def test_idyom_both_run_succeeds():
         idyom_results_file = idyom_model.run_instructions_file(idyomif)
 
         assert idyom_results_file.df is not None
-
-# TODO test IDyOM's selection feature

@@ -59,7 +59,7 @@ class IDYOMInstructionBuilder(ModelBuilder):
         self.stm_options()
         self.ltm_options()
         self.training_options()
-        self.automatically_select_source_viewpoints()
+        self.automatically_select_source_viewpoints(None)
         self.output_options()
         self.caching_options()
 
@@ -173,8 +173,10 @@ class IDYOMInstructionBuilder(ModelBuilder):
             }
         return self
 
-    def automatically_select_source_viewpoints(self, basis: IDYOMViewpointSelectionBasis = None, dp=None,
-                                               max_links=None, min_links=None, viewpoint_selection_output=None):
+    def automatically_select_source_viewpoints(self,
+                                               basis: Union[IDYOMViewpointSelectionBasis, list[IDYOMViewpointSelectionBasis]] = IDYOMViewpointSelectionBasis.AUTO,
+                                               dp=None, max_links=None, min_links=None,
+                                               viewpoint_selection_output=None):
         """
 
         :param basis: If None, select options are reset.
@@ -184,9 +186,10 @@ class IDYOMInstructionBuilder(ModelBuilder):
         :param viewpoint_selection_output:
         :return:
         """
-        if basis is None:
+        if basis is None or basis == []:
             self._select_options = {}
         else:
+            raise NotImplementedError  # TODO implement, known problems: determine results, ensure distinct cache files
             self._select_options = {
                 "basis": basis,
                 "dp": dp,
@@ -230,12 +233,16 @@ class IDYOMInstructionBuilder(ModelBuilder):
         if len(self._target_viewpoints) == 0:
             msgs.append("There must be at least one element in target_viewpoints!")
             is_valid = False
-        if len(self._source_viewpoints) == 0:
-            msgs.append("There must be at least one element in source_viewpoints!")
+        if len(self._source_viewpoints) == 0 and self._select_options == {}:
+            msgs.append("There must be either at least one element in source_viewpoints "
+                        "or the automatic viewpoint selection must be used!")
+            is_valid = False
+        if len(self._source_viewpoints) > 0 and self._select_options != {}:
+            msgs.append("Only either source_viewpoints or the viewpoint selection must be used!")
             is_valid = False
         if not isinstance(self._model, IDYOMModelValue):
             msgs.append("model must be any value of IDYOMModelValue!")
-
+            is_valid = False
         return is_valid, msgs
 
     def assert_is_valid(self):
