@@ -30,7 +30,7 @@ class PPMInstructionBuilder(ModelBuilder, ABC): # TODO rename to InstructionBuil
         :param order_bound: non-negative int
         :return:
         """
-        if not order_bound > 0:
+        if not order_bound >= 0:
             raise ValueError("order_bound invalid! Value must be greater than or equal 0.")
         self._order_bound = order_bound
         return self
