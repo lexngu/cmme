@@ -5,14 +5,17 @@ ppmdecay_intermediate_script <- function(instructions_file_path) {
 
   # Read instructions file
   instructions_file <- arrow::read_feather(instructions_file_path)
+
+  # Determine results_file_path
   if (instructions_file$results_file_path != "") {
-    results_file_path <- paste(dirname(instructions_file_path), "/", basename(instructions_file$results_file_path), sep="")
-  } else {
-    if (grepl("instructionsfile", basename(instructions_file_path))) {
-        results_file_path <- paste(dirname(instructions_file_path), "/", gsub("instructionsfile", "resultsfile", basename(instructions_file_path)), sep="")
+    provided_value_is_abspath <- xfun::is_abs_path(instructions_file$results_file_path)
+    if (provided_value_is_abspath) {
+      results_file_path <- instructions_file$results_file_path
     } else {
-        results_file_path <- paste(dirname(instructions_file_path), "/", "resultsfile-", basename(instructions_file_path), sep="")
+      results_file_path <- paste(dirname(instructions_file_path), "/", basename(instructions_file$results_file_path), sep="")
     }
+  } else {
+    results_file_path <- paste(dirname(instructions_file_path), "/", "resultsfile-", basename(instructions_file_path), sep="")
   }
 
   # Set working directory

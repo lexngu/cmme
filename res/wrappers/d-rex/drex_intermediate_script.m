@@ -1,7 +1,17 @@
 function out = drex_intermediate_script(instructions_file_path)
 
-if contains(instructions_file_path, "instructionsfile")
-    results_file_path = replace(instructions_file_path, "instructionsfile", "resultsfile");
+% load D-REX
+mfilepath=fileparts(which(mfilename));
+addpath(fullfile(mfilepath, "../../models/DREX-model/"));
+
+% read instructions file
+if exist('OCTAVE_VERSION', 'builtin') == 0 %is MATLAB%
+    instructions_file_path = convertStringsToChars(instructions_file_path);
+end
+instructions_file = load(instructions_file_path);
+
+if ~strcmp(instructions_file.results_file_path, "")
+    results_file_path = instructions_file.results_file_path;
 else
     [dir,name,ext] = fileparts(instructions_file_path);
     results_file_path = append(dir, "resultsfile-", name, ext);
@@ -12,16 +22,6 @@ if isfile(results_file_path)
     out = results_file_path;
     return;
 end
-
-% load D-REX
-mfilepath=fileparts(which(mfilename));
-addpath(fullfile(mfilepath, "../../models/DREX-model/"));
-
-% read instructions file
-if exist('OCTAVE_VERSION', 'builtin') == 0 %is MATLAB%
-    instructions_file_path = convertStringsToChars(instructions_file_path);
-end
-instructions_file = load(instructions_file_path);
 
 % set working directory
 cd(fileparts(instructions_file_path));
@@ -98,9 +98,6 @@ if isfield(instructions_file, "run_DREX_model")
 
     distribution = rdm_instructions.params.distribution;
 
-    if ~strcmp(instructions_file.results_file_path, "")
-        results_file_path = instructions_file.results_file_path;
-    end
     save(results_file_path, "-v7", "instructions_file_path", "input_sequence", "distribution", "estimate_suffstat_results", "run_DREX_model_results", "post_DREX_changedecision_results", "post_DREX_prediction_results", "post_DREX_beliefdynamics_results", "post_DREX_changedecision_results", "change_decision_threshold");
 end
 
