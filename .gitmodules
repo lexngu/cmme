@@ -1,3 +1,9 @@
 [submodule "res/models/DREX-model"]
 	path = res/models/DREX-model
-	url = https://github.com/lexngu/cmme-DREX-model.git
+	url = https://github.com/lexngu/DREX-model.git
+[submodule "res/packages/cl4py"]
+	path = res/packages/cl4py
+	url = https://github.com/lexngu/cl4py.git
+[submodule "res/models/idyom"]
+	path = res/models/idyom
+	url = https://github.com/mtpearce/idyom.git
