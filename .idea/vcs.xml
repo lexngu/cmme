@@ -4,6 +4,7 @@
     <mapping directory="$PROJECT_DIR$/.." vcs="Git" />
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/res/models/DREX-model" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/res/models/idyom" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/res/packages/cl4py" vcs="Git" />
   </component>
 </project>

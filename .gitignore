@@ -20,3 +20,5 @@ io/plot/*
 
 # macOS
 .DS_Store
+
+.coverage
