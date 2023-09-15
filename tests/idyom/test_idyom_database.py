@@ -97,7 +97,7 @@ def test_get_all_compositions():
 
 def test_encode_composition():
     idyom_root_path = Config().idyom_root_path()
-    sample_midi_files_dir_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../sample_files/idyom-midi/"))
+    sample_midi_files_dir_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../sample_files/idyom-encoding-test/midi/"))
     with tempfile.TemporaryDirectory() as tmpdir:
         idyom_database_path = path_as_string_with_trailing_slash(tmpdir) + "db/database.sqlite"
 
@@ -108,7 +108,7 @@ def test_encode_composition():
         description = "test"
         dataset_id = idb.import_midi_dataset(sample_midi_files_dir_path, description=description)
         compositions = idb.get_all_compositions(dataset_id)
-        composition = compositions[0]
+        composition = compositions[0] # assume: file "test.mid"
 
         encoding = idb.encode_composition(composition, BasicViewpoint.CPITCH)
-        assert encoding == [97, 77, 42, 5, 81, 102, 67, 100, 123, 17, 28, 26, 24, 39, 89, 54, 43, 79, 118, 4, 25, 30, 68, 32, 36, 14, 126, 103, 105, 71, 86, 127, 95, 85, 10, 90, 82, 53, 46, 59, 94, 12, 58, 31, 88, 37, 51, 91, 104, 1, 110, 18, 75, 56, 63, 2, 11, 106, 44, 87, 83, 116, 84, 16, 62, 19, 27, 117, 92, 34, 93, 55, 57, 124, 73, 47, 120, 21, 66, 33, 64, 99, 20, 112, 74, 8, 38, 15, 119, 29, 52, 41, 3, 76, 45, 125, 107, 7, 40, 60, 108, 72, 109, 98, 61, 23, 35, 101, 0, 121, 111, 9, 6, 50, 48, 96, 13, 65, 113, 80, 69, 78, 115, 49, 22, 70, 114, 122]
+        assert encoding == [60, 61, 63, 65, 66, 68, 56, 54, 53, 51, 49, 44, 42, 41, 39, 37, 73, 77, 80, 68, 70, 72, 73, 127, 66, 66, 66, 0, 45, 46, 45]
