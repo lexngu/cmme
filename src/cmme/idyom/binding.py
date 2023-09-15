@@ -96,7 +96,7 @@ class IDYOMInstructionsFile(InstructionsFile):
         filename_cmd: str = instructions_file.to_filename_inference_expression()
 
         results_file_path = path_as_string_with_trailing_slash(instructions_file.output_options["output_path"]) \
-            if results_file_path is None else results_file_path
+            if results_file_path is None else str(results_file_path)
         results_file_path = '"' + results_file_path + '"'
         if instructions_file.idyom_root_path is None or instructions_file.idyom_database_path is None:
             file_contents = IDYOMInstructionsFile.INSTRUCTIONS_FILE_DEFAULT_TEMPLATE\
