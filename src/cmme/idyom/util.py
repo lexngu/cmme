@@ -14,6 +14,9 @@ from cmme.lib.util import path_as_string_with_trailing_slash
 import subprocess
 
 
+def escape_path_string(path) -> str:
+    return str(path).replace("\\", "\\\\")
+
 class LispExpressionBuilderMode(Enum):
     CL4PY = "cl4py",
     LISP = "lisp"
@@ -37,6 +40,11 @@ class LispExpressionBuilder:
 
     def add_string(self, value):
         value = str(value)
+        self.components.append('"' + value + '"')
+        return self
+
+    def add_path_string(self, value):
+        value = str(escape_path_string(value))
         self.components.append('"' + value + '"')
         return self
 

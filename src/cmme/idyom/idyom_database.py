@@ -4,6 +4,8 @@ from typing import Union, List
 
 import cl4py
 from cl4py import Lisp
+
+from . import escape_path_string
 from .base import Dataset, Composition, Viewpoint, BasicViewpoint, transform_viewpoints_list_to_string_list
 from .util import cl4py_cons_to_list
 from ..config import Config
@@ -14,8 +16,8 @@ import re
 class IDYOMDatabase:
     lisp: Lisp
 
-    def __init__(self, idyom_root_path: Union[str, Path]=Config().idyom_root_path(),
-                 idyom_sqlite_database_path: Union[str, Path]=Config().idyom_database_path()):
+    def __init__(self, idyom_root_path: Union[str, Path] = Config().idyom_root_path(),
+                 idyom_sqlite_database_path: Union[str, Path] = Config().idyom_database_path()):
         """
         Class to execute commands within IDyOM
 
@@ -33,7 +35,7 @@ class IDYOMDatabase:
         self._setup_lisp()
 
     def _setup_lisp(self):
-        self.eval(('defvar', 'common-lisp-user::*idyom-root*', '"' + self.idyom_root_path + '"'))
+        self.eval(('defvar', 'common-lisp-user::*idyom-root*', '"' + escape_path_string(self.idyom_root_path) + '"'))
         self.eval(('with-open-file', ('*standard-output**', '"/dev/null"', ':direction', ':output',
                                       ':if-exists', ':supersede'),
                    ('load', ('SB-IMPL::USERINIT-PATHNAME',))
@@ -42,7 +44,8 @@ class IDYOMDatabase:
                                       ':if-exists', ':supersede'),
                    ('ql:quickload', '"clsql"'),
                    ('ql:quickload', '"idyom"'),
-                   ('clsql:connect', ('list', '"' + self.idyom_sqlite_database_path + '"'), ':if-exists', ':old',
+                   ('clsql:connect', ('list', '"' + escape_path_string(self.idyom_sqlite_database_path) + '"'),
+                    ':if-exists', ':old',
                     ':database-type', ':sqlite3')
                    ))
 
@@ -106,13 +109,13 @@ class IDYOMDatabase:
         if not self._check_path_is_existing_and_nonempty_directory(path):
             print("Path is non-existing or a empty directory, abort.")
             return
-        
+
         if dataset_id is None:
             dataset_id = self.next_free_dataset_id()
 
         _, console_output = self.eval(
             ("let", (("kern2db::*default-timebase*", timebase),),
-             ('idyom-db:import-data', ':mid', '"' + path_as_string_with_trailing_slash(path) + '"',
+             ('idyom-db:import-data', ':mid', '"' + escape_path_string(path_as_string_with_trailing_slash(path)) + '"',
               '"' + description + '"', dataset_id))
         )
         result_dataset_id = int(re.findall(r"Inserting data into database: dataset (\d+)", console_output)[0])
@@ -153,7 +156,7 @@ class IDYOMDatabase:
 
         _, console_output = self.eval(
             ("let", (("kern2db::*default-timebase*", timebase),),
-             ('idyom-db:import-data', ':krn', '"' + path_as_string_with_trailing_slash(path) + '"',
+             ('idyom-db:import-data', ':krn', '"' + escape_path_string(path_as_string_with_trailing_slash(path)) + '"',
               '"' + description + '"', dataset_id))
         )
         result_dataset_id = int(re.findall(r"Inserting data into database: dataset (\d+)", console_output)[0])
@@ -273,13 +276,14 @@ class IDYOMDatabase:
         """
         if isinstance(composition, Composition):
             dataset = composition.dataset_id
-            composition = composition.id # intentionally set composition to id
+            composition = composition.id  # intentionally set composition to id
         else:
             if dataset is not None:
                 if isinstance(dataset, Dataset):
                     dataset = dataset.id
             else:
-                raise ValueError("dataset invalid! If composition is not of type Composition, dataset must not be None.")
+                raise ValueError(
+                    "dataset invalid! If composition is not of type Composition, dataset must not be None.")
 
         cmd = ("viewpoints:viewpoint-sequence", (
             "viewpoints:get-viewpoint", ("quote", tuple(transform_viewpoints_list_to_string_list(viewpoint_spec)))),
@@ -292,4 +296,3 @@ class IDYOMDatabase:
             viewpoint_sequence = []
 
         return viewpoint_sequence
-

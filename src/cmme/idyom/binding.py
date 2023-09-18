@@ -5,6 +5,7 @@ import pandas as pd
 from typing import Union
 import re
 
+from . import escape_path_string
 from .base import transform_viewpoints_list_to_string_list, IDYOMModelType, IDYOMViewpointSelectionBasis, \
     transform_string_list_to_viewpoints_list, IDYOMEscapeMethod
 from .util import LispExpressionBuilder, LispExpressionBuilderMode
@@ -97,7 +98,7 @@ class IDYOMInstructionsFile(InstructionsFile):
 
         results_file_path = path_as_string_with_trailing_slash(instructions_file.output_options["output_path"]) \
             if results_file_path is None else str(results_file_path)
-        results_file_path = '"' + results_file_path + '"'
+        results_file_path = '"' + escape_path_string(results_file_path) + '"'
         if instructions_file.idyom_root_path is None or instructions_file.idyom_database_path is None:
             file_contents = IDYOMInstructionsFile.INSTRUCTIONS_FILE_DEFAULT_TEMPLATE\
                 .format(results_file_path, idyom_cmd, filename_cmd)
@@ -401,7 +402,7 @@ class IDYOMInstructionsFile(InstructionsFile):
             if min_links:
                 leb.add(":min-links").add(min_links)
             if selection_output:
-                leb.add(":viewpoint-selection-output").add_string(selection_output)
+                leb.add(":viewpoint-selection-output").add_path_string(selection_output)
         # (CMD <dataset-id> <target-viewpoints> <source-viewpoints> :models <models> [:stmo ...] [:ltmo ...]
         # [:pretraining-ids ... :k ... :resampling-indices ...] [:basis ... :dp ... :max-links ... :min-links ...
         # :viewpoint-selection-output ...] :detail ...)
@@ -448,10 +449,12 @@ class IDYOMInstructionsFile(InstructionsFile):
         if results_file_path_variable is not None:
             leb.add(":output-path").add(results_file_path_variable)
         elif results_file_path is not None:
-            leb.add(":output-path").add_string(path_as_string_with_trailing_slash(results_file_path))
+            leb.add(":output-path")\
+                .add_path_string(path_as_string_with_trailing_slash(results_file_path))
         else:
             if self.output_options["output_path"]:
-                leb.add(":output-path").add_string(path_as_string_with_trailing_slash(self.output_options["output_path"]))
+                leb.add(":output-path")\
+                    .add_path_string(path_as_string_with_trailing_slash(self.output_options["output_path"]))
             else:
                 leb.add(":output-path").add("nil")
         overwrite = bool_to_lisp(self.output_options["overwrite"])
