@@ -36,8 +36,9 @@ def bool_to_lisp(b: bool | None) -> str | None:
 class IDYOMInstructionsFile(InstructionsFile):
 
     INSTRUCTIONS_FILE_DEFAULT_TEMPLATE = """;; Run IDyOM
-(with-open-file (*standard-output* "/dev/null" :direction :output
-                                   :if-exists :supersede)
+(with-open-file (*standard-output* #.(if (string-equal (uiop:getenv "OS") "Windows_NT") "NUL" "/dev/null") 
+                    :direction :output
+                    :if-exists :supersede)
     (load (SB-IMPL::USERINIT-PATHNAME))
     (start-idyom))
 
@@ -53,11 +54,13 @@ class IDYOMInstructionsFile(InstructionsFile):
 """
 
     INSTRUCTIONS_FILE_CUSTOM_ROOT_AND_DATABASE_TEMPLATE = """;; Run IDyOM
-(with-open-file (*standard-output* "/dev/null" :direction :output
-                                   :if-exists :supersede)
+(with-open-file (*standard-output* #.(if (string-equal (uiop:getenv "OS") "Windows_NT") "NUL" "/dev/null") 
+                    :direction :output
+                    :if-exists :supersede)
     (load (SB-IMPL::USERINIT-PATHNAME)))
-(with-open-file (*standard-output* "/dev/null" :direction :output
-                                   :if-exists :supersede)
+(with-open-file (*standard-output* #.(if (string-equal (uiop:getenv "OS") "Windows_NT") "NUL" "/dev/null") 
+                    :direction :output
+                    :if-exists :supersede)
     (ql:quickload "clsql")
     (defun start-idyom ()
         (defvar *idyom-root* "{}")
