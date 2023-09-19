@@ -5,9 +5,8 @@ from typing import Union, List
 import cl4py
 from cl4py import Lisp
 
-from . import escape_path_string
 from .base import Dataset, Composition, Viewpoint, BasicViewpoint, transform_viewpoints_list_to_string_list
-from .util import cl4py_cons_to_list
+from .util import cl4py_cons_to_list, escape_path_string
 from ..config import Config
 from ..lib.util import path_as_string_with_trailing_slash
 import re

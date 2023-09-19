@@ -5,10 +5,9 @@ import pandas as pd
 from typing import Union
 import re
 
-from . import escape_path_string
 from .base import transform_viewpoints_list_to_string_list, IDYOMModelType, IDYOMViewpointSelectionBasis, \
     transform_string_list_to_viewpoints_list, IDYOMEscapeMethod
-from .util import LispExpressionBuilder, LispExpressionBuilderMode
+from .util import LispExpressionBuilder, LispExpressionBuilderMode, escape_path_string
 from ..lib.instructions_file import InstructionsFile
 from ..lib.results_file import ResultsFile
 from ..lib.util import path_as_string_with_trailing_slash
