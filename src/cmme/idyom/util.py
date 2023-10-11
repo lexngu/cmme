@@ -139,6 +139,7 @@ def install_idyom(idyom_root_path: Union[str, Path], idyom_database_path: Union[
         Path(idyom_db_path).parent.mkdir(parents=True)
 
     lisp.eval(('defvar', 'common-lisp-user::*idyom-root*', '"' + escape_path_string(idyom_root_path) + '"'))
+    lisp.eval(('ql:quickload', '"trivial-features"'))
     lisp.eval(('ql:quickload', '"idyom"'))
     lisp.eval(('clsql:connect', (
         'list', '"' + escape_path_string(idyom_db_path) + '"'), ':if-exists', ':old', ':database-type', ':sqlite3'))

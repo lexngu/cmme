@@ -52,6 +52,7 @@ class IDYOMInstructionsFile(InstructionsFile):
     INSTRUCTIONS_FILE_CUSTOM_ROOT_AND_DATABASE_TEMPLATE = """;; Run IDyOM
 (load (SB-IMPL::USERINIT-PATHNAME))
 
+(ql:quickload "trivial-features" :silent t)
 (ql:quickload "clsql" :silent t)
 (defun start-idyom ()
     (defvar *idyom-root* "{}")

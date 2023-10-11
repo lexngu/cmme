@@ -36,6 +36,7 @@ class IDYOMDatabase:
     def _setup_lisp(self):
         self.eval(('defvar', 'common-lisp-user::*idyom-root*', '"' + escape_path_string(self.idyom_root_path) + '"'))
         self.eval(('load', ('SB-IMPL::USERINIT-PATHNAME',)))
+        self.eval(('ql:quickload', '"trivial-features"', ':silent', 't'))
         self.eval(('ql:quickload', '"clsql"', ':silent', 't'))
         self.eval(('ql:quickload', '"idyom"', ':silent', 't'))
         self.eval(('clsql:connect', ('list', '"' + escape_path_string(self.idyom_sqlite_database_path) + '"'),
