@@ -93,12 +93,12 @@ class IDYOMInstructionsFile(InstructionsFile):
         results_file_path = path_as_string_with_trailing_slash(instructions_file.output_options["output_path"]) \
             if results_file_path is None else str(results_file_path)
         results_file_path = '"' + escape_path_string(results_file_path) + '"'
-        idyom_root_path = escape_path_string(path_as_string_with_trailing_slash(instructions_file.idyom_root_path))
-        idyom_database_path = escape_path_string(instructions_file.idyom_database_path)
         if instructions_file.idyom_root_path is None or instructions_file.idyom_database_path is None:
             file_contents = IDYOMInstructionsFile.INSTRUCTIONS_FILE_DEFAULT_TEMPLATE\
                 .format(results_file_path, idyom_cmd, filename_cmd)
         else:
+            idyom_root_path = escape_path_string(path_as_string_with_trailing_slash(instructions_file.idyom_root_path))
+            idyom_database_path = escape_path_string(instructions_file.idyom_database_path)
             file_contents = IDYOMInstructionsFile.INSTRUCTIONS_FILE_CUSTOM_ROOT_AND_DATABASE_TEMPLATE \
                 .format(idyom_root_path, idyom_database_path, results_file_path, idyom_cmd, filename_cmd)
 
