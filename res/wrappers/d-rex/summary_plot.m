@@ -138,7 +138,11 @@ ax(8).Position = pos{8};
 
 % subplot: DREX bd
 subplot(subplotMaxN,1,9)
-post_bd = cell2mat(df.drex_bd);
+if (iscell(df.drex_bd)) 
+    post_bd = cell2mat(df.drex_bd);
+else
+    post_bd = df.drex_bd;
+end
 plot(post_bd);
 xlim([1 ntime]);
 ylim([0 1]);
@@ -148,7 +152,11 @@ ylabel("Divergence [bits]")
 
 % subplot: DREX cd
 subplot(subplotMaxN,1,10)
-post_cd = cell2mat(df.drex_cd_probability);
+if (iscell(df.drex_cd_probability)) 
+    post_cd = cell2mat(df.drex_cd_probability);
+else
+    post_cd = df.drex_cd_probability;
+end
 changepoint = df.drex_cd_changepoint;
 if iscell(changepoint)
     changepoint = cell2mat(df.drex_cd_changepoint);
