@@ -186,15 +186,17 @@ def test_load_ppmdecay_results_file():
         .alphabet_levels(alphabet_levels) \
         .input_sequence(input_sequence, input_time_sequence)
 
-    ppmif = ppmib.to_instructions_file()
-    ppmmodel = PPMModel()
-    ppmrf = ppmmodel.run_instructions_file(ppmif)
-    assert ppmrf.model_type == PPMModelType.DECAY
-    assert ppmrf.alphabet_levels == alphabet_levels
+    with tempfile.NamedTemporaryFile() as tmpfile:
+        ppmif = ppmib.to_instructions_file()
+        ppmif.save_self(tmpfile.name)
+        ppmmodel = PPMModel()
+        ppmrf = ppmmodel.run_instructions_file_at_path(tmpfile.name)
+        assert ppmrf.model_type == PPMModelType.DECAY
+        assert ppmrf.alphabet_levels == alphabet_levels
 
-    ppmrf_data = ppmrf.results_file_data
-    assert ppmrf_data.df is not None
-    assert len(ppmrf_data.trials) == 1
+        ppmrf_data = ppmrf.results_file_data
+        assert ppmrf_data.df is not None
+        assert len(ppmrf_data.trials) == 1
 
 
 def test_load_ppmsimple_results_file():
@@ -205,12 +207,14 @@ def test_load_ppmsimple_results_file():
         .alphabet_levels(alphabet_levels) \
         .input_sequence(input_sequence)
 
-    ppmif = ppmib.to_instructions_file()
-    ppmmodel = PPMModel()
-    ppmrf = ppmmodel.run_instructions_file(ppmif)
-    assert ppmrf.model_type == PPMModelType.SIMPLE
-    assert ppmrf.alphabet_levels == alphabet_levels
+    with tempfile.NamedTemporaryFile() as tmpfile:
+        ppmif = ppmib.to_instructions_file()
+        ppmif.save_self(tmpfile.name)
+        ppmmodel = PPMModel()
+        ppmrf = ppmmodel.run_instructions_file_at_path(tmpfile.name)
+        assert ppmrf.model_type == PPMModelType.SIMPLE
+        assert ppmrf.alphabet_levels == alphabet_levels
 
-    ppmrf_data = ppmrf.results_file_data
-    assert ppmrf_data.df is not None
-    assert len(ppmrf_data.trials) == 1
+        ppmrf_data = ppmrf.results_file_data
+        assert ppmrf_data.df is not None
+        assert len(ppmrf_data.trials) == 1

@@ -79,12 +79,14 @@ def test_run_ppm_decay_succeeds():
         .stm_weight(stm_weight).stm_duration(stm_duration)\
         .ltm_weight(ltm_weight).ltm_half_life(ltm_half_life).ltm_asymptote(ltm_asymptote)\
         .noise(noise).seed(seed)
-    ppmif = ppmdecay_instance.to_instructions_file()
-    ppm_model = PPMModel()
-    results_meta_file = ppm_model.run_instructions_file(ppmif)
+    with tempfile.NamedTemporaryFile() as tmpfile:
+        ppmif = ppmdecay_instance.to_instructions_file()
+        ppmif.save_self(tmpfile.name)
+        ppmmodel = PPMModel()
+        results_meta_file = ppmmodel.run_instructions_file_at_path(tmpfile.name)
 
-    assert results_meta_file.model_type == PPMModelType.DECAY
-    assert results_meta_file.alphabet_levels == str_to_list(list_to_str(alphabet_levels))
+        assert results_meta_file.model_type == PPMModelType.DECAY
+        assert results_meta_file.alphabet_levels == str_to_list(list_to_str(alphabet_levels))
 
 def test_run_ppm_simple_with_multitrial_input_succeeds():
     alphabet_levels = [1, 2, 3, 4, 5, 6]
@@ -93,16 +95,18 @@ def test_run_ppm_simple_with_multitrial_input_succeeds():
     ppmsimple_instance = PPMSimpleInstructionBuilder()
     ppmsimple_instance.alphabet_levels(alphabet_levels)\
         .input_sequence(input_sequence)
-    ppmif = ppmsimple_instance.to_instructions_file()
-    ppm_model = PPMModel()
-    results_meta_file = ppm_model.run_instructions_file(ppmif)
-    results_file_data = results_meta_file.results_file_data
+    with tempfile.NamedTemporaryFile() as tmpfile:
+        ppmif = ppmsimple_instance.to_instructions_file()
+        ppmif.save_self(tmpfile.name)
+        ppmmodel = PPMModel()
+        results_meta_file = ppmmodel.run_instructions_file_at_path(tmpfile.name)
+        results_file_data = results_meta_file.results_file_data
 
-    assert results_meta_file.model_type == PPMModelType.SIMPLE
-    assert results_meta_file.alphabet_levels == str_to_list(list_to_str(alphabet_levels))
-    assert list(set(results_file_data.df["trial_idx"].tolist())) == [1, 2]
-    assert results_file_data.df[results_file_data.df["trial_idx"] == 1]["symbol"].tolist() == list(map(str, input_sequence[0]))
-    assert results_file_data.df[results_file_data.df["trial_idx"] == 2]["symbol"].tolist() == list(map(str, input_sequence[1]))
+        assert results_meta_file.model_type == PPMModelType.SIMPLE
+        assert results_meta_file.alphabet_levels == str_to_list(list_to_str(alphabet_levels))
+        assert list(set(results_file_data.df["trial_idx"].tolist())) == [1, 2]
+        assert results_file_data.df[results_file_data.df["trial_idx"] == 1]["symbol"].tolist() == list(map(str, input_sequence[0]))
+        assert results_file_data.df[results_file_data.df["trial_idx"] == 2]["symbol"].tolist() == list(map(str, input_sequence[1]))
 
 def test_input_sequence():
     iseq = ["a", "b", "c", "d"]
