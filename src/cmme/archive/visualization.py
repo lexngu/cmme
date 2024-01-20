@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import scipy.io as sio
 from cmme.drex.binding import DREXResultsFile
+from cmme.lib.io import new_filepath
 from cmme.ppmdecay.binding import PPMResultsMetaFile
 
 import shutil
@@ -145,10 +146,10 @@ class MatlabPlot(Plot):
             List of file paths
         """
         if instructions_file_path is None:
-            instructions_file_path = Path(tempfile.NamedTemporaryFile().name)
+            instructions_file_path = new_filepath("visualization", "mat")
             print("Instructions file path set to {}".format(instructions_file_path))
         if plot_output_file_path is None:
-            plot_output_file_path = Path(tempfile.NamedTemporaryFile().name)
+            plot_output_file_path = new_filepath("visualization-output", "png")
             print("Plot output file path set to {}".format(plot_output_file_path))
 
         data_frame_path = self.data_frame.write_to_mat(instructions_file_path)
