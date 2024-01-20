@@ -404,8 +404,8 @@ def test_load_results_file_GMM():
     drex_instance.change_decision_threshold(change_decision_threshold)
     drex_instance.prior(prior)
     with tempfile.TemporaryDirectory() as tmpdirname:
-        instructions_file_path = tmpdirname + "-instructionsfile"
-        results_file_path = tmpdirname + "-resultsfile"
+        instructions_file_path = tmpdirname + "-instructionsfile.mat"
+        results_file_path = tmpdirname + "-resultsfile.mat"
 
         drex_model = DREXModel()
         drex_instance.to_instructions_file() \
@@ -438,8 +438,8 @@ def test_load_results_file_Gaussian():
     drex_instance.change_decision_threshold(change_decision_threshold)
     drex_instance.prior(prior)
     with tempfile.TemporaryDirectory() as tmpdirname:
-        instructions_file_path = tmpdirname + "-instructionsfile"
-        results_file_path = tmpdirname + "-resultsfile"
+        instructions_file_path = tmpdirname + "-instructionsfile.mat"
+        results_file_path = tmpdirname + "-resultsfile.mat"
 
         drex_model = DREXModel()
         drex_instance.to_instructions_file() \
@@ -472,8 +472,8 @@ def test_load_results_file_Lognormal():
     drex_instance.change_decision_threshold(change_decision_threshold)
     drex_instance.prior(prior)
     with tempfile.TemporaryDirectory() as tmpdirname:
-        instructions_file_path = tmpdirname + "-instructionsfile"
-        results_file_path = tmpdirname + "-resultsfile"
+        instructions_file_path = tmpdirname + "-instructionsfile.mat"
+        results_file_path = tmpdirname + "-resultsfile.mat"
 
         drex_model = DREXModel()
         drex_instance.to_instructions_file() \
@@ -506,8 +506,8 @@ def test_load_results_file_Lognormal():
     drex_instance.change_decision_threshold(change_decision_threshold)
     drex_instance.prior(prior)
     with tempfile.TemporaryDirectory() as tmpdirname:
-        instructions_file_path = tmpdirname + "-instructionsfile"
-        results_file_path = tmpdirname + "-resultsfile"
+        instructions_file_path = tmpdirname + "-instructionsfile.mat"
+        results_file_path = tmpdirname + "-resultsfile.mat"
 
         drex_model = DREXModel()
         drex_instance.to_instructions_file() \
