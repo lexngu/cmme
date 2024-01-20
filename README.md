@@ -49,7 +49,7 @@ Open the terminal at a directory, where you want the repository to be stored, th
 * Activate it: `conda activate cmme-env`
 * Install the "matlabengine" (see: [Install MATLAB Engine API for Python](https://de.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html))
 * Install CMME's dependencies:
-  * First run `pip install pyzmq`
+  * First run `pip install pyzmq numpy`
   * Then run `pip install -r requirements.txt`
   * Install our patched version of cl4py: `pip install git+https://github.com/lexngu/cl4py.git` <i>(The patched version implements means to capture the console output of SBCL for online interaction with IDyOM's database)</i>
 
