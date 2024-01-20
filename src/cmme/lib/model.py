@@ -3,6 +3,7 @@ from __future__ import annotations
 import tempfile
 from abc import ABC, abstractmethod
 from cmme.lib.instructions_file import InstructionsFile
+from cmme.lib.io import new_filepath
 from cmme.lib.results_file import ResultsFile
 
 
@@ -29,10 +30,19 @@ class Model(ABC):
 
     @classmethod
     def run_instructions_file(cls, instructions_file: InstructionsFile) -> ResultsFile:
-        tmpfile = tempfile.NamedTemporaryFile()
-        instructions_file.save_self(tmpfile.name)
-        print("Instructions file written to {}".format(tmpfile.name))
-        return cls.run_instructions_file_at_path(tmpfile.name)
+        match cls.__name__:
+            case "IDYOMModel":
+                extension = "lisp"
+            case "PPMModel":
+                extension = "feather"
+            case "DREXModel":
+                extension = "mat"
+            case _:
+                extension = None
+        if_path = new_filepath(cls.__name__, extension)
+        instructions_file.save_self(if_path)
+        print("Instructions file written to {}".format(if_path))
+        return cls.run_instructions_file_at_path(if_path)
 
     @staticmethod
     @abstractmethod

@@ -11,9 +11,9 @@ class Config:
     # Keys to look for
     CONFIG_R_HOME_KEY = "R_HOME"
     CONFIG_MATLAB_PATH_KEY = "MATLAB_PATH"
-    CONFIG_MODEL_IO_PATH_KEY = "MODEL_IO_PATH"
     CONFIG_IDYOM_ROOT = "IDYOM_ROOT"
     CONFIG_IDYOM_DATABASE = "IDYOM_DATABASE"
+    CONFIG_CMME_IO_DIR_KEY = "CMME_IO_DIR"
 
     def __init__(self, config_file_path: Path = DEFAULT_CONFIG_FILE_PATH):
         if not config_file_path.exists():
@@ -34,3 +34,6 @@ class Config:
 
     def idyom_database_path(self) -> Path:
         return Path(self.config_parser[Config.CONFIG_SECTION_KEY][Config.CONFIG_IDYOM_DATABASE])
+
+    def cmme_io_dir(self) -> Path:
+        return Path(self.config_parser[Config.CONFIG_SECTION_KEY][Config.CONFIG_CMME_IO_DIR_KEY])
