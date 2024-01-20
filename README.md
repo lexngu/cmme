@@ -25,21 +25,35 @@ For the comparison environment:
 * Python v3.10 (v3.7+ may also work)
 
 ## Installation
-* Install MATLAB, R, SBCL, and the virtual environment manager according to the official guides <br>(Note: On macOS, Homebrew/MacPorts may provide more recent precompiled releases of SBCL)
-* If you want to also use Jupyter notebooks, clone the cmme-jupyter repository and its submodules: `$ git clone github.com/lexngu/cmme-jupyter.git --recursive`
-* Open the terminal, and go to the directory containing CMME (`$ cd PATH_TO_CMME`).
-  * Initalize a new Python environment (here, using Miniconda):
-    * Create: `$ conda create -n cmme-env python=VERSION` <br>(VERSION must match the requirements of MATLAB (e.g., Python v3.10 for R2022b and newer, or Python v3.8 for R2020b and newer)
-    * Activate: `$ conda activate cmme-env`
-    * Install cmme's dependencies: `$ pip install -r requirements.txt`
-    * Install matlab-engine within this Python environment (see: [Install MATLAB Engine API for Python](https://de.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html))
-    * Install a patched version of cl4py: `$ pip install git+https://github.com/lexngu/cl4py.git` <i>(The patched version implements means to capture the console output of SBCL for online interaction with IDyOM's database)</i>
-* Open R, then: 
-  * Install dplyr, tidyr: `install.packages(c("tidyr", "dplyr", "arrow"))`
-  * Install PPM-Decay: `if (!require("devtools")) install.packages("devtools"); devtools::install_github("pmcharrison/ppm")`
-* For the following step (initializing IDyOM's database), check and edit `cmme/cmme-comparison.ini` as needed.
-* Run Python, then: 
-  * Initalize IDyOM's database `from cmme.idyom.util import install_idyom; install_idyom()` <br>(This will use the variables IDYOM_ROOT_PATH and IDYOM_DATABASE_PATH inside cmme-comparison.ini)
+The following instructions reflect our recommended way to setup CMME on macOS. You may adapt it to fit your requirements and/or technical environment.
+
+Please install following their official guides:
+* MATLAB R2023a or R2023b ([https://www.mathworks.com](https://www.mathworks.com))
+* R v4.x ([https://cran.rstudio.com](https://cran.r-project.org))
+* SBCL v2.x (We recommend installing Homebrew ([https://brew.sh](https://brew.sh)), then execute inside the terminal: `brew install sbcl`)
+* (Mini)conda ([https://docs.conda.io/projects/miniconda/en/latest/](https://docs.conda.io/projects/miniconda/en/latest/))
+
+To finish setting up R, open R (we recommend launching R's command-line interface in the terminal, i.e. run `R` inside the terminal). Inside R's CLI:
+* Install dplyr, tidyr, arrow: `install.packages(c("tidyr", "dplyr", "arrow"))`
+* Install PPM-Decay: `if (!require("devtools")) install.packages("devtools"); devtools::install_github("pmcharrison/ppm")`
+* Close the CLI: `q()`. If asked, don't save a workspace image.
+
+To finish setting up SBCL, install Quicklisp. Therefore, download [https://beta.quicklisp.org/quicklisp.lisp](https://beta.quicklisp.org/quicklisp.lisp), then open SBCL (we recommend using the terminal, execute: `sbcl`). Then:
+* Load Quicklisp, replace PATH (inside the double quotes) with the path to the downloaded file: `(load "FILE")`.
+* You will be asked to run `(quicklisp-quickstart:install)`. Please do so.
+* Close the CLI: `(quit)`.
+
+Clone this repository, then open a terminal at this directory. Inside:
+* Initalize a new Python environment: `conda create -n cmme-env python=3.10`
+* Activate it: `conda activate cmme-env`
+* Install the "matlabengine" (see: [Install MATLAB Engine API for Python](https://de.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html))
+* * Install CMME's dependencies: `pip install -r requirements.txt`
+* Install our patched version of cl4py: `pip install git+https://github.com/lexngu/cl4py.git` <i>(The patched version implements means to capture the console output of SBCL for online interaction with IDyOM's database)</i>
+
+Finally, setup IDyOM's database:
+* Check and edit `cmme/cmme-comparison.ini` in a text editor. It should be self-explanatory, what to set.
+* Inside the terminal (with correctly activated Python environment) open a Python CLI: `python`. Then run:
+ * `from cmme.idyom.util import install_idyom; install_idyom()` <br>(This will use the variables IDYOM_ROOT_PATH and IDYOM_DATABASE_PATH from cmme/cmme-comparison.ini)
 
 ## Examples
-See Jupyter notebooks.
+See our [Jupyter notebooks](https://github.com/lexngu/cmme-jupyter)https://github.com/lexngu/cmme-jupyter.
