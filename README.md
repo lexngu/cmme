@@ -54,9 +54,9 @@ Open the terminal at a directory, where you want the repository to be stored, th
   * Install our patched version of cl4py: `pip install git+https://github.com/lexngu/cl4py.git` <i>(The patched version implements means to capture the console output of SBCL for online interaction with IDyOM's database)</i>
 
 Finally, setup IDyOM's database:
-* Check and edit `cmme/cmme-comparison.ini` in a text editor. It should be self-explanatory, what to set.
+* Check and edit `cmme/cmme-comparison.ini` in a text editor. Change R_HOME, MATLAB_PATH as needed, replace the username in IDYOM-ROOT and IDYOM_DATABASE with your user account's.
 * Inside the terminal (with correctly activated Python environment) open a Python CLI: `python`. Then run:
  * `from cmme.idyom.util import install_idyom; install_idyom()` <br>(This will use the variables IDYOM_ROOT_PATH and IDYOM_DATABASE_PATH from cmme/cmme-comparison.ini)
 
 ## Examples
-See our [Jupyter notebooks](https://github.com/lexngu/cmme-jupyter)https://github.com/lexngu/cmme-jupyter.
+See our [Jupyter notebooks](https://github.com/lexngu/cmme-jupyter).
