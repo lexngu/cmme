@@ -30,7 +30,8 @@ The following instructions reflect our recommended way to setup CMME on macOS. Y
 Please install following their official guides:
 * MATLAB R2023a or R2023b ([https://www.mathworks.com](https://www.mathworks.com))
 * R v4.x ([https://cran.rstudio.com](https://cran.r-project.org))
-* SBCL v2.x (We recommend installing Homebrew ([https://brew.sh](https://brew.sh)), then execute inside the terminal: `brew install sbcl`)
+* SBCL v2.x (We recommend installing Homebrew ([https://brew.sh](https://brew.sh)), then execute inside the terminal: `brew install sbcl`; for reference: [https://www.sbcl.org/](https://www.sbcl.org/))
+* ZeroMQ (We recommend installing it via Homebrew: `brew install zmq`; for reference: [https://zeromq.org/download/](https://zeromq.org/download/))
 * (Mini)conda ([https://docs.conda.io/projects/miniconda/en/latest/](https://docs.conda.io/projects/miniconda/en/latest/))
 
 To finish setting up R, open R (we recommend launching R's command-line interface in the terminal, i.e. run `R` inside the terminal). Inside R's CLI:
