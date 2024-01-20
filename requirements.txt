@@ -7,4 +7,5 @@ rpy2==3.5.12
 scipy==1.11.2
 setuptools==67.8.0
 cl4py @ git+https://github.com/lexngu/cl4py@master
+pyarrow
 -e . 

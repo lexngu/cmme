@@ -51,7 +51,6 @@ Open the terminal at a directory, where you want the repository to be stored, th
 * Install CMME's dependencies:
   * First run `pip install pyzmq numpy`
   * Then run `pip install -r requirements.txt`
-  * Install our patched version of cl4py: `pip install git+https://github.com/lexngu/cl4py.git` <i>(The patched version implements means to capture the console output of SBCL for online interaction with IDyOM's database)</i>
 
 Finally, setup IDyOM's database:
 * Check and edit `cmme/cmme-comparison.ini` in a text editor. Change R_HOME, MATLAB_PATH as needed, replace the username in IDYOM-ROOT and IDYOM_DATABASE with your user account's.
