@@ -43,7 +43,7 @@ To finish setting up SBCL, install Quicklisp. Therefore, download [https://beta.
 * You will be asked to run `(quicklisp-quickstart:install)`. Please do so.
 * Close the CLI: `(quit)`.
 
-Clone this repository, then open a terminal at this directory. Inside:
+Open the terminal at a directory, where you want the repository to be stored, then clone this repository and its submodules: `git clone --recurse-submodules https://github.com/lexngu/cmme.git`. Then open a terminal inside the repository's directory, and run:
 * Initalize a new Python environment: `conda create -n cmme-env python=3.10`
 * Activate it: `conda activate cmme-env`
 * Install the "matlabengine" (see: [Install MATLAB Engine API for Python](https://de.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html))
