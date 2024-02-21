@@ -68,7 +68,7 @@ class PPMSimpleInstructionsFile(PPMInstructionsFile):
         })
 
         df = pd.DataFrame.from_dict(data)
-        df.to_feather(instructions_file_path)
+        df.to_feather(instructions_file_path, compression="zstd", compression_level=16)
 
     @staticmethod
     def load(file_path: Union[str, Path]) -> PPMSimpleInstructionsFile:
@@ -126,7 +126,7 @@ class PPMDecayInstructionsFile(PPMInstructionsFile):
         })
 
         df = pd.DataFrame.from_dict(data)
-        df.to_feather(instructions_file_path)
+        df.to_feather(instructions_file_path, compression="zstd", compression_level=16)
 
     @staticmethod
     def load(file_path: Union[str, Path]) -> InstructionsFile:
@@ -216,8 +216,8 @@ class PPMResultsMetaFile(ResultsFile):
         })
         data_df = results_file.results_file_data
 
-        meta_df.to_feather(file_path)
-        data_df.df.to_feather(str(file_path).replace(".feather", ".data.feather"))
+        meta_df.to_feather(file_path, compression="zstd", compression_level=16)
+        data_df.df.to_feather(str(file_path).replace(".feather", ".data.feather"), compression="zstd", compression_level=16)
 
     @staticmethod
     def load(file_path: Union[str, Path]) -> PPMResultsMetaFile:

@@ -110,7 +110,7 @@ ppmdecay_intermediate_script <- function(instructions_file_path) {
     instructions_file_path,
     results_file_data_path
   )
-  write_feather(meta_information, results_file_path)
+  write_feather(meta_information, results_file_path, compression="zstd", compression_level=16)
   
   # Return results_file_path
   return(results_file_path)
