@@ -95,7 +95,7 @@ ppmdecay_intermediate_script <- function(instructions_file_path) {
 
   # Write results file data
   results_file_data_path <- paste(gsub("\\.feather", "", results_file_path), "-data.feather", sep="")
-  write_feather(results, results_file_data_path)
+  write_feather(results, results_file_data_path, compression="zstd", compression_level=16)
   
   # Write results file
   meta_information = df <- data.frame(
