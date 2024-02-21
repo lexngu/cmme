@@ -114,7 +114,7 @@ class IDYOMDatabase:
         )
         result_dataset_id = int(re.findall(r"Inserting data into database: dataset (\d+)", console_output)[0])
 
-        if dataset_id != result_dataset_id:
+        if int(dataset_id) != result_dataset_id:
             raise RuntimeError("Unexpectedly, dataset_id does not match result_dataset_id!")
 
         return result_dataset_id
