@@ -42,6 +42,7 @@ To finish setting up R, open R (we recommend launching R's command-line interfac
 To finish setting up SBCL, install Quicklisp. Therefore, download [https://beta.quicklisp.org/quicklisp.lisp](https://beta.quicklisp.org/quicklisp.lisp), then open SBCL (we recommend using the terminal, execute: `sbcl`). Then:
 * Load Quicklisp, replace PATH (inside the double quotes) with the path to the downloaded file: `(load "FILE")`.
 * You will be asked to run `(quicklisp-quickstart:install)`. Please do so.
+* Also, don't forget to run: `(ql:add-to-init-file)`.
 * Close the CLI: `(quit)`.
 
 Open the terminal at a directory, where you want the repository to be stored, then clone this repository and its submodules: `git clone --recurse-submodules https://github.com/lexngu/cmme.git`. Then open a terminal inside the repository's directory, and run:
