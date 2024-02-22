@@ -140,7 +140,7 @@ class PPMDecayInstructionBuilder(PPMInstructionBuilder):
         self._ltm_asymptote = 0
         self._noise = 0
 
-        self._seed = random.randint(1, pow(2, 31) - 1)
+        self._seed = 1 #random.randint(1, pow(2, 31) - 1)
 
     def buffer_weight(self, buffer_weight):
         if not (buffer_weight >= self._stm_weight and buffer_weight >= self._ltm_weight):
