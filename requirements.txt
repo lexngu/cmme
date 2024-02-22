@@ -1,7 +1,7 @@
 matplotlib==3.7.1
 numpy==1.24.3
 pandas==2.0.2
-pymatbridge==0.5.2
+pymatbridge @ git+https://github.com/arokem/python-matlab-bridge@master
 pytest==7.3.2
 rpy2==3.5.12
 scipy==1.11.2
