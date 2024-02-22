@@ -12,6 +12,7 @@ from cmme.idyom.base import Viewpoint, BasicViewpoint, DerivedViewpoint, Threade
 from cmme.lib.util import path_as_string_with_trailing_slash
 
 import subprocess
+import time
 
 
 def escape_path_string(path) -> str:
@@ -131,9 +132,15 @@ def install_idyom(idyom_root_path: Union[str, Path], idyom_database_path: Union[
     idyom_db_path = Path(os.path.join(idyom_root_path, "db/database.sqlite")) if idyom_database_path is None \
         else Path(idyom_database_path)
 
-    if idyom_db_path.exists() and not force_reset:
-        print(
-            "Database at {} already exists. Use force_reset, if you want to reset the database.".format(idyom_db_path))
+    if idyom_db_path.exists():
+        if not force_reset:
+            print("Database at {} already exists. Use force_reset, if you want to reset the database.".format(idyom_db_path))
+        else:
+            print("Database at {} already exists.".format(idyom_db_path))
+            print("Reset database in 10 seconds...")
+            time.sleep(10)
+            idyom_db_path.rename(str(idyom_db_path) + ".bak")
+            idyom_db_path.touch()
 
     if not idyom_db_path.parent.exists():
         Path(idyom_db_path).parent.mkdir(parents=True)
