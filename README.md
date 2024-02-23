@@ -56,7 +56,7 @@ Open the terminal at a directory, where you want the repository to be stored, th
 Finally, setup IDyOM's database:
 * Check and edit `cmme/cmme-comparison.ini` in a text editor. Change R_HOME, MATLAB_PATH as needed, replace the username in IDYOM-ROOT and IDYOM_DATABASE with your user account's.
 * Inside the terminal (with correctly activated Python environment) open a Python CLI: `python`. Then run:
- * `from cmme.idyom.util import install_idyom; install_idyom()` <br>(This will use the variables IDYOM_ROOT_PATH and IDYOM_DATABASE_PATH from cmme/cmme-comparison.ini)
+ * `from cmme.config import Config; from cmme.idyom.util import install_idyom; install_idyom(Config().idyom_root_path(), Config().idyom_database_path())` <br>(This will use the variables IDYOM_ROOT_PATH and IDYOM_DATABASE_PATH from cmme/cmme-comparison.ini)
 
 ## Examples
 See our [Jupyter notebooks](https://github.com/lexngu/cmme-jupyter).
